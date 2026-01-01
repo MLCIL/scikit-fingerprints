@@ -1,40 +1,16 @@
 from typing import List
+
 import numpy as np
 from scipy import sparse
-from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+from sklearn.base import BaseEstimator, ClusterMixin
+
 from rdkit.DataStructs import BulkTanimotoSimilarity
+from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters.rdSimDivPickers import MaxMinPicker
-from sklearn.base import ClusterMixin
 
 
-class BaseClusterer(ClusterMixin):
-    """Base class for clustering with binary fingerprints."""
 
-    def _array_to_bitvectors(
-        self, X: np.ndarray | sparse.spmatrix
-    ) -> List[ExplicitBitVect]:
-        if sparse.issparse(X):
-            X = X.tocoo()
-            n_samples, n_bits = X.shape
-            bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
-            for i, j, v in zip(X.row, X.col, X.data):
-                if v:
-                    bitvecs[i].SetBit(int(j))
-            return bitvecs
-
-        arr = np.asarray(X)
-        if arr.ndim != 2:
-            raise ValueError("X must be 2D (n_samples, n_bits)")
-
-        n_samples, n_bits = arr.shape
-        bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
-        for i in range(n_samples):
-            for bit in np.nonzero(arr[i])[0]:
-                bitvecs[i].SetBit(int(bit))
-        return bitvecs
-
-
-class MinMaxClustering(BaseClusterer):
+class MinMaxClustering(BaseEstimator,ClusterMixin):
     """
     MinMax clustering for binary fingerprints using Tanimoto similarity.
 
@@ -107,3 +83,26 @@ class MinMaxClustering(BaseClusterer):
         """Fit and return cluster labels for X."""
         self.fit(X)
         return self.labels_
+    
+    def _array_to_bitvectors(
+        self, X: np.ndarray | sparse.spmatrix
+    ) -> List[ExplicitBitVect]:
+        if sparse.issparse(X):
+            X = X.tocoo()
+            n_samples, n_bits = X.shape
+            bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
+            for i, j, v in zip(X.row, X.col, X.data):
+                if v:
+                    bitvecs[i].SetBit(int(j))
+            return bitvecs
+
+        arr = np.asarray(X)
+        if arr.ndim != 2:
+            raise ValueError("X must be 2D (n_samples, n_bits)")
+
+        n_samples, n_bits = arr.shape
+        bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
+        for i in range(n_samples):
+            for bit in np.nonzero(arr[i])[0]:
+                bitvecs[i].SetBit(int(bit))
+        return bitvecs
