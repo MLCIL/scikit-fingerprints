@@ -75,7 +75,7 @@ def test_empty_input_raises():
 
 
 def test_invalid_distance_threshold_raises():
-    with pytest.raises(ValueError, match="distance_threshold must be between 0 and 1"):
+    with pytest.raises(ValueError, match="Distance_threshold must be between 0 and 1"):
         MaxMinClustering(distance_threshold=1.5)
 
 
