@@ -8,12 +8,38 @@ from sklearn.utils.validation import check_is_fitted
 
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
-    """
-    MaxMin clustering for binary fingerprints using Tanimoto similarity.
+    """MaxMin clustering for binary fingerprints using Tanimoto similarity.
 
-    Centroids are selected using RDKit's MaxMinPicker with a distance threshold
-    (distance = 1 - Tanimoto similarity). All samples are then assigned to the
-    nearest centroid by maximum Tanimoto similarity.
+    Centroids are selected using RDKit's :class:`~rdkit.SimDivFilters.MaxMinPicker`
+    with a distance threshold (distance = 1 - Tanimoto similarity). After
+    selecting centroids, each sample is assigned to the centroid with the
+    highest Tanimoto similarity.
+
+    Parameters
+    ----------
+    distance_threshold : float, default=0.5
+        Distance threshold used by the MaxMin picker. Must be between 0 and 1.
+        Smaller values typically produce more clusters.
+    random_state : int or None, default=None
+        Seed for centroid selection to ensure deterministic behavior when set.
+
+    Attributes
+    ----------
+    centroid_indices_ : list of int
+        Indices of samples chosen as centroids after :meth:`fit`.
+    centroid_bitvectors_ : list of rdkit.DataStructs.cDataStructs.ExplicitBitVect
+        Centroid fingerprints as RDKit ExplicitBitVect objects.
+    centroids_ : ndarray of bool, shape (n_centroids, n_bits)
+        Centroids represented as boolean numpy arrays when input was dense or
+        sparse matrix.
+    labels_ : ndarray of int, shape (n_samples,)
+        Cluster labels for each sample.
+
+    Notes
+    -----
+    This estimator follows the scikit-learn estimator API and accepts dense
+    numpy arrays, scipy sparse matrices, or lists/tuples of RDKit
+    :class:`~rdkit.DataStructs.cDataStructs.ExplicitBitVect` objects as input.
     """
 
     def __init__(
@@ -22,13 +48,34 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         random_state: int | None = None,
     ):
         if not (0.0 <= distance_threshold <= 1.0):
-            raise ValueError("distance_threshold must be between 0 and 1")
+            raise ValueError("Distance_threshold must be between 0 and 1")
 
         self.distance_threshold = float(distance_threshold)
         self.random_state = None if random_state is None else int(random_state)
 
     def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
-        """Fit the MaxMin clustering model."""
+        """Fit the MaxMin clustering model.
+
+        Parameters
+        ----------
+        X : array-like or sparse matrix or list of ExplicitBitVect
+            Binary fingerprint data. Expected shapes are ``(n_samples, n_bits)``
+            for arrays and sparse matrices. Alternatively a list/tuple of RDKit
+            :class:`~rdkit.DataStructs.cDataStructs.ExplicitBitVect` objects is
+            accepted.
+        y : ignored
+            Not used, present for API consistency with scikit-learn.
+
+        Returns
+        -------
+        self : MaxMinClustering
+            Fitted estimator with attributes described in the class docstring.
+
+        Raises
+        ------
+        ValueError
+            If `X` is empty or not 2D when provided as an array.
+        """
         _ = y  # explicitly unused (sklearn compatibility)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
@@ -83,14 +130,46 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return labels
 
     def predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
-        """Assign new samples to existing centroids."""
+        """Assign new samples to existing centroids.
+
+        Parameters
+        ----------
+        X : array-like or sparse matrix or list of ExplicitBitVect
+            New samples to assign to clusters. The input formats match those
+            accepted by :meth:`fit`.
+
+        Returns
+        -------
+        labels : ndarray of int, shape (n_samples,)
+            Cluster labels for the input samples.
+
+        Raises
+        ------
+        ValueError
+            If the estimator is not fitted (i.e., ``centroid_bitvectors_`` is
+            not present).
+        """
         check_is_fitted(self, "centroid_bitvectors_")
 
         bitvecs = self._array_to_bitvectors(X)
         return self._assign_labels(bitvecs)
 
     def fit_predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
-        """Fit and return cluster labels for X."""
+        """Fit the estimator on ``X`` and return cluster labels.
+
+        This is a convenience method that calls :meth:`fit` followed by returning
+        the ``labels_`` attribute.
+
+        Parameters
+        ----------
+        X : array-like or sparse matrix or list of ExplicitBitVect
+            Input data to cluster.
+
+        Returns
+        -------
+        labels : ndarray of int, shape (n_samples,)
+            Cluster labels for ``X``.
+        """
         self.fit(X)
         return self.labels_
 
@@ -122,8 +201,18 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return bitvecs
 
     def get_clusters(self) -> dict[int, np.ndarray]:
-        """
-        Get the clusters as a dictionary mapping cluster IDs to arrays of sample indices.
+        """Return clusters as a mapping from cluster id to sample indices.
+
+        Returns
+        -------
+        dict
+            Mapping from integer cluster id to a 1D numpy array containing the
+            indices of samples belonging to that cluster.
+
+        Raises
+        ------
+        ValueError
+            If the estimator is not fitted (``labels_`` missing).
         """
         check_is_fitted(self, "labels_")
         return {
