@@ -7,9 +7,9 @@ from sklearn.base import BaseEstimator, ClusterMixin
 from sklearn.utils.validation import check_is_fitted
 
 
-class MinMaxClustering(BaseEstimator, ClusterMixin):
+class MaxMinClustering(BaseEstimator, ClusterMixin):
     """
-    MinMax clustering for binary fingerprints using Tanimoto similarity.
+    MaxMin clustering for binary fingerprints using Tanimoto similarity.
 
     Centroids are selected using RDKit's MaxMinPicker with a distance threshold
     (distance = 1 - Tanimoto similarity). All samples are then assigned to the
@@ -28,7 +28,7 @@ class MinMaxClustering(BaseEstimator, ClusterMixin):
         self.random_state = None if random_state is None else int(random_state)
 
     def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
-        """Fit the MinMax clustering model."""
+        """Fit the MaxMin clustering model."""
         _ = y  # explicitly unused (sklearn compatibility)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
@@ -40,7 +40,7 @@ class MinMaxClustering(BaseEstimator, ClusterMixin):
         if n_samples == 0:
             raise ValueError("Empty input")
 
-        # --- centroid selection (MinMax) ---
+        # --- centroid selection (MaxMin) ---
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)

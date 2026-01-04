@@ -1,1 +1,1 @@
-from .minmax import MinMaxClustering
+from .maxmin import MaxMinClustering
