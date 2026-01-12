@@ -9,14 +9,21 @@ from sklearn.utils.validation import check_is_fitted
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
     """
-    MaxMin clustering
+    MaxMin clustering.
 
-    It uses binary fingerprints and Tanimoto similarity.
+    This is a centroid-based clustering algorithm using binary fingerprints
+    and Tanimoto similarity.
 
-    Centroids are selected using RDKit's :class:`~rdkit.SimDivFilters.MaxMinPicker`
-    with a distance threshold (distance = 1 - Tanimoto similarity). After
-    selecting centroids, each sample is assigned to the centroid with the
-    highest Tanimoto similarity.
+    The method follows the MaxMin heuristic originally described by
+    Ashton et al. (2002), where centroids are iteratively selected to
+    maximize the minimum distance to previously chosen centroids. This
+    distinguishes it from density-based clustering methods such as
+    Butina clustering.
+
+    Centroids are selected using RDKit's
+    :class:`~rdkit.SimDivFilters.MaxMinPicker` with a distance threshold
+    (distance = 1 - Tanimoto similarity). After selecting centroids, each
+    sample is assigned to the centroid with the highest Tanimoto similarity.
 
     Parameters
     ----------
@@ -33,16 +40,25 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     centroid_bitvectors_ : list of rdkit.DataStructs.cDataStructs.ExplicitBitVect
         Centroid fingerprints as RDKit ExplicitBitVect objects.
     centroids_ : ndarray of bool, shape (n_centroids, n_bits)
-        Centroids represented as boolean numpy arrays when input was dense or
-        sparse matrix.
+        Centroids represented as boolean numpy arrays when the input was a
+        dense array or sparse matrix.
     labels_ : ndarray of int, shape (n_samples,)
         Cluster labels for each sample.
 
     Notes
     -----
     This estimator follows the scikit-learn estimator API and accepts dense
-    numpy arrays, scipy sparse matrices, or lists/tuples of RDKit
+    NumPy arrays, SciPy sparse matrices, or lists/tuples of RDKit
     :class:`~rdkit.DataStructs.cDataStructs.ExplicitBitVect` objects as input.
+
+    References
+    ----------
+    Ashton, M., Barnard, J. M., Casset, F., Charlton, M. H., Downs, G. M.,
+    and Willett, P. (2002).
+    Identification of diverse database subsets using property-based and
+    fragment-based molecular descriptions.
+    *QSAR & Combinatorial Science*, 21(6), 598-604.
+    https://doi.org/10.1002/qsar.200290002
     """
 
     def __init__(
