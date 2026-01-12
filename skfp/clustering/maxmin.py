@@ -8,7 +8,10 @@ from sklearn.utils.validation import check_is_fitted
 
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
-    """MaxMin clustering for binary fingerprints using Tanimoto similarity.
+    """
+    MaxMin clustering
+
+    It uses binary fingerprints and Tanimoto similarity.
 
     Centroids are selected using RDKit's :class:`~rdkit.SimDivFilters.MaxMinPicker`
     with a distance threshold (distance = 1 - Tanimoto similarity). After
@@ -54,7 +57,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.random_state = None if random_state is None else int(random_state)
 
     def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
-        """Fit the MaxMin clustering model.
+        """
+        Fit the MaxMin clustering model.
 
         Parameters
         ----------
@@ -119,7 +123,9 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return self
 
     def _assign_labels(self, bitvecs: list[ExplicitBitVect]) -> np.ndarray:
-        """Assign each sample to the nearest centroid by Tanimoto similarity."""
+        """
+        Assign each sample to the nearest centroid by Tanimoto similarity.
+        """
         n_samples = len(bitvecs)
         labels = np.empty(n_samples, dtype=int)
 
@@ -130,7 +136,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return labels
 
     def predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
-        """Assign new samples to existing centroids.
+        """
+        Assign new samples to existing centroids.
 
         Parameters
         ----------
@@ -155,7 +162,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return self._assign_labels(bitvecs)
 
     def fit_predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
-        """Fit the estimator on ``X`` and return cluster labels.
+        """
+        Fit the estimator on ``X`` and return cluster labels.
 
         This is a convenience method that calls :meth:`fit` followed by returning
         the ``labels_`` attribute.
@@ -201,7 +209,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return bitvecs
 
     def get_clusters(self) -> dict[int, np.ndarray]:
-        """Return clusters as a mapping from cluster id to sample indices.
+        """
+        Return clusters as a mapping from cluster id to sample indices.
 
         Returns
         -------
