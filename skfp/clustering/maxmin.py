@@ -28,8 +28,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     Parameters
     ----------
     distance_threshold : float, default=0.5
-        Distance threshold used by the MaxMin picker. Must be between 0 and 1.
-        Smaller values typically produce more clusters.
+        Distance threshold, denotes minimal Tanimoto distance between clusters. Must be between 0 and 1.
     random_state : int or None, default=None
         Seed for centroid selection to ensure deterministic behavior when set.
 
