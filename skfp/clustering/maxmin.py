@@ -29,18 +29,22 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     ----------
     distance_threshold : float, default=0.5
         Distance threshold, denotes minimal Tanimoto distance between clusters. Must be between 0 and 1.
+
     random_state : int or None, default=None
-        Seed for centroid selection to ensure deterministic behavior when set.
+       Determines random number generation for selection of the first centroid. Deterministic when integer is used
 
     Attributes
     ----------
     centroid_indices_ : list of int
         Indices of samples chosen as centroids after :meth:`fit`.
+
     centroid_bitvectors_ : list of rdkit.DataStructs.cDataStructs.ExplicitBitVect
         Centroid fingerprints as RDKit ExplicitBitVect objects.
+
     centroids_ : ndarray of bool, shape (n_centroids, n_bits)
         Centroids represented as boolean numpy arrays when the input was a
         dense array or sparse matrix.
+
     labels_ : ndarray of int, shape (n_samples,)
         Cluster labels for each sample.
 
@@ -63,7 +67,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     def __init__(
         self,
         distance_threshold: float = 0.5,
-        random_state: int | None = None,
+        random_state: int | None = 0,
     ):
         if not (0.0 <= distance_threshold <= 1.0):
             raise ValueError("Distance_threshold must be between 0 and 1")
