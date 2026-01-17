@@ -1,9 +1,12 @@
+from numbers import Integral
+
 import numpy as np
 from rdkit.DataStructs import BulkTanimotoSimilarity
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters import MaxMinPicker
 from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.utils._param_validation import Interval, RealNotInt
 from sklearn.utils.validation import check_is_fitted
 
 
@@ -30,7 +33,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     distance_threshold : float, default=0.5
         Distance threshold, denotes minimal Tanimoto distance between clusters. Must be between 0 and 1.
 
-    random_state : int or None, default=None
+    random_state : int or None, default=0
        Determines random number generation for selection of the first centroid. Deterministic when integer is used
 
     Attributes
@@ -64,14 +67,16 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     https://doi.org/10.1002/qsar.200290002
     """
 
+    _parameter_constraints: dict = {
+        "distance_threshold": [Interval(RealNotInt, 0, 1, closed="both")],
+        "random_state": [Integral, None],
+    }
+
     def __init__(
         self,
         distance_threshold: float = 0.5,
         random_state: int | None = 0,
     ):
-        if not (0.0 <= distance_threshold <= 1.0):
-            raise ValueError("Distance_threshold must be between 0 and 1")
-
         self.distance_threshold = float(distance_threshold)
         self.random_state = None if random_state is None else int(random_state)
 
@@ -99,6 +104,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         ValueError
             If `X` is empty or not 2D when provided as an array.
         """
+        super()._validate_params()
         _ = y  # explicitly unused (sklearn compatibility)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
