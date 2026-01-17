@@ -78,7 +78,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         random_state: int | None = 0,
     ):
         self.distance_threshold = float(distance_threshold)
-        self.random_state = None if random_state is None else int(random_state)
+        self.random_state = random_state
 
     def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
         """
