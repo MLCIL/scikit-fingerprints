@@ -80,6 +80,25 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.distance_threshold = float(distance_threshold)
         self.random_state = random_state
 
+    def _validate_X(self, X):
+        """
+        Validate input data for clustering.
+        """
+        if sparse.issparse(X):
+            return X.tocsr()
+
+        if isinstance(X, np.ndarray):
+            if X.ndim != 2:
+                raise ValueError("X must be a 2D NumPy array.")
+            return X
+
+        if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
+            return X
+        raise TypeError(
+            "X must be a 2D NumPy array, a SciPy sparse matrix, "
+            "or a 1D array-like of RDKit ExplicitBitVect objects."
+        )
+
     def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
         """
         Fit the MaxMin clustering model.
@@ -105,7 +124,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             If `X` is empty or not 2D when provided as an array.
         """
         super()._validate_params()
-        _ = y  # explicitly unused (sklearn compatibility)
+        _ = y
+        X = self._validate_X(X)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
         if sparse.issparse(X):
@@ -120,7 +140,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)
-        seed = -1 if self.random_state is None else int(self.random_state)
+        seed = -1 if self.random_state is None else self.random_state
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
             fps,
             poolSize=len(fps),
