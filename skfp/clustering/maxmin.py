@@ -194,11 +194,6 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         -------
         labels : ndarray of int, shape (n_samples,)
             Cluster labels for the input samples.
-
-        Raises
-        ------
-        ValueError
-            If the estimator is not fitted before calling this method.
         """
         check_is_fitted(self)
 
@@ -276,11 +271,6 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         dict
             Mapping from integer cluster id to a 1D numpy array containing the
             indices of samples belonging to that cluster.
-
-        Raises
-        ------
-        ValueError
-            If the estimator is not fitted.
         """
         check_is_fitted(self)
         return {
