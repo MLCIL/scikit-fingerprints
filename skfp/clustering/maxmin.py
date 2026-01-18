@@ -156,7 +156,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         # store centroids as boolean numpy arrays
         if sparse.issparse(X) or isinstance(X, np.ndarray):
             arr = np.asarray(X.todense()) if sparse.issparse(X) else np.asarray(X)
-            self.centroids_ = arr[self.centroid_indices_].astype(bool)
+            self.centroids_ = arr[self.centroid_indices_].astype(np.uint8)
 
         # --- assignment ---
         self.labels_ = self._assign_labels(fps)
@@ -230,7 +230,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self, X: np.ndarray | sparse.spmatrix
     ) -> list[ExplicitBitVect]:
         # Case 1: already RDKit fingerprints
-        if isinstance(X, (list, tuple)) and isinstance(X[0], ExplicitBitVect):
+
+        if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
             return list(X)
         # Case 2: sparse matrix
         if sparse.issparse(X):
