@@ -198,10 +198,9 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         Raises
         ------
         ValueError
-            If the estimator is not fitted (i.e., ``centroid_bitvectors_`` is
-            not present).
+            If the estimator is not fitted before calling this method.
         """
-        check_is_fitted(self, "centroid_bitvectors_")
+        check_is_fitted(self)
 
         bitvecs = self._array_to_bitvectors(X)
         return self._assign_labels(bitvecs)
@@ -281,9 +280,9 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         Raises
         ------
         ValueError
-            If the estimator is not fitted (``labels_`` missing).
+            If the estimator is not fitted.
         """
-        check_is_fitted(self, "labels_")
+        check_is_fitted(self)
         return {
             k: np.where(self.labels_ == k)[0]
             for k in range(len(self.centroid_indices_))
