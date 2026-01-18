@@ -77,7 +77,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         distance_threshold: float = 0.5,
         random_state: int | None = 0,
     ):
-        self.distance_threshold = float(distance_threshold)
+        self.distance_threshold = distance_threshold
         self.random_state = random_state
 
     def _validate_X(self, X):
@@ -140,7 +140,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)
-        seed = -1 if self.random_state is None else self.random_state
+        seed = self.random_state
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
             fps,
             poolSize=len(fps),
@@ -176,7 +176,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
         for i, fp in enumerate(bitvecs):
             sims = BulkTanimotoSimilarity(fp, self.centroid_bitvectors_)
-            labels[i] = int(np.argmax(sims))
+            labels[i] = np.argmax(sims)
 
         return labels
 
@@ -234,7 +234,6 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
             return list(X)
 
-        # Case 2: SciPy sparse matrix (CSR preferred)
         if sparse.issparse(X):
             X = X.tocsr()
             n_samples, n_bits = X.shape
