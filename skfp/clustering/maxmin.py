@@ -155,7 +155,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
         # store centroids as boolean numpy arrays
         if sparse.issparse(X) or isinstance(X, np.ndarray):
-            arr = np.asarray(X.todense()) if sparse.issparse(X) else np.asarray(X)
+            arr = X.todense() if sparse.issparse(X) else X
             self.centroids_ = arr[self.centroid_indices_].astype(np.uint8)
 
         # --- assignment ---
