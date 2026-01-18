@@ -262,14 +262,14 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             "or a 1D array-like of RDKit ExplicitBitVect objects."
         )
 
-    def get_clusters(self) -> dict[int, np.ndarray]:
+    def get_clusters_and_points(self) -> dict[int, np.ndarray]:
         """
-        Return clusters as a mapping from cluster id to sample indices.
+        Return clusters as a mapping from cluster ID to sample indices.
 
         Returns
         -------
-        dict
-            Mapping from integer cluster id to a 1D numpy array containing the
+        clusters : dict
+            Mapping from integer cluster ID to a 1D NumPy array containing the
             indices of samples belonging to that cluster.
         """
         check_is_fitted(self)
