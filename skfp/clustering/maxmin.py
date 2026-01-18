@@ -226,33 +226,48 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.fit(X)
         return self.labels_
 
-    def _array_to_bitvectors(
-        self, X: np.ndarray | sparse.spmatrix
-    ) -> list[ExplicitBitVect]:
-        # Case 1: already RDKit fingerprints
-
+    def _array_to_bitvectors(self, X) -> list[ExplicitBitVect]:
+        """
+        Convert input data to a list of RDKit ExplicitBitVect objects.
+        """
+        bitvecs: list[ExplicitBitVect] = []
         if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
             return list(X)
-        # Case 2: sparse matrix
+
+        # Case 2: SciPy sparse matrix (CSR preferred)
         if sparse.issparse(X):
-            X = X.tocoo()
+            X = X.tocsr()
             n_samples, n_bits = X.shape
-            bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
-            for i, j, v in zip(X.row, X.col, X.data, strict=True):
-                if v:
-                    bitvecs[i].SetBit(int(j))
+
+            for i in range(n_samples):
+                bv = ExplicitBitVect(n_bits)
+                row_start = X.indptr[i]
+                row_end = X.indptr[i + 1]
+
+                for bit in X.indices[row_start:row_end]:
+                    bv.SetBit(bit)
+
+                bitvecs.append(bv)
+
             return bitvecs
 
-        arr = np.asarray(X)
-        if arr.ndim != 2:
-            raise ValueError("X must be 2D (n_samples, n_bits)")
+        if isinstance(X, np.ndarray):
+            if X.ndim != 2:
+                raise ValueError("X must be a 2D NumPy array.")
+            n_samples, n_bits = X.shape
 
-        n_samples, n_bits = arr.shape
-        bitvecs = [ExplicitBitVect(n_bits) for _ in range(n_samples)]
-        for i in range(n_samples):
-            for bit in np.nonzero(arr[i])[0]:
-                bitvecs[i].SetBit(int(bit))
-        return bitvecs
+            for i in range(n_samples):
+                bv = ExplicitBitVect(n_bits)
+                for bit in np.flatnonzero(X[i]):
+                    bv.SetBit(bit)
+                bitvecs.append(bv)
+
+            return bitvecs
+
+        raise TypeError(
+            "X must be a 2D NumPy array, a SciPy sparse matrix, "
+            "or a 1D array-like of RDKit ExplicitBitVect objects."
+        )
 
     def get_clusters(self) -> dict[int, np.ndarray]:
         """
