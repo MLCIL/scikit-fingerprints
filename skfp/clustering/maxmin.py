@@ -6,6 +6,7 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters import MaxMinPicker
 from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
 from sklearn.utils.validation import check_is_fitted
 
@@ -140,7 +141,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)
-        seed = self.random_state
+        rng = check_random_state(self.random_state)
+        seed = rng.randint(0, 2**31 - 1)
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
             fps,
             poolSize=len(fps),
@@ -238,7 +240,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
                 row_end = X.indptr[i + 1]
 
                 for bit in X.indices[row_start:row_end]:
-                    bv.SetBit(bit)
+                    # RDKit ExplicitBitVect uses int indices, not Numpy integers
+                    bv.SetBit(int(bit))
 
                 bitvecs.append(bv)
 
@@ -252,7 +255,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             for i in range(n_samples):
                 bv = ExplicitBitVect(n_bits)
                 for bit in np.flatnonzero(X[i]):
-                    bv.SetBit(bit)
+                    bv.SetBit(int(bit))
                 bitvecs.append(bv)
 
             return bitvecs
