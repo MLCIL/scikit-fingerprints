@@ -106,26 +106,3 @@ def test_sparse_input_handling(binary_X):
     labels_sparse = c2.fit_predict(sparse_matrix)
 
     assert np.array_equal(labels_dense, labels_sparse)
-
-
-# def test_cloning_works():
-#    clusterer = MaxMinClustering(distance_threshold=0.5, random_state=42)
-#
-#    cloned_clusterer = clone(clusterer)
-#    assert cloned_clusterer is not clusterer
-#    assert isinstance(cloned_clusterer, MaxMinClustering)
-#    assert cloned_clusterer.distance_threshold == clusterer.distance_threshold
-#    assert cloned_clusterer.random_state == clusterer.random_state
-#
-#
-# def test_pickle_roundtrip(binary_X):
-#    c = MaxMinClustering(distance_threshold=0.5, random_state=42)
-#    c.fit(binary_X)
-#
-#    blob = pickle.dumps(c)
-#    c2 = pickle.loads(blob)
-#    assert np.array_equal(c.labels_, c2.labels_)
-#    assert c.centroid_indices_ == c2.centroid_indices_
-#    assert np.array_equal(
-#        c.predict(binary_X), c2.predict(binary_X)
-#    )
