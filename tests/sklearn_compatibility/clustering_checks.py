@@ -17,7 +17,6 @@ import skfp.clustering
 n_samples = 10
 rng = np.random.RandomState(0)
 X = rng.randint(0, 2, size=(n_samples, 8), dtype=np.uint8)
-y = None
 
 
 def get_all_clusterers():
@@ -41,10 +40,6 @@ def run_clusterer_checks(name, estimator):
         check_get_params_invariance,
         check_set_params,
         check_dont_overwrite_parameters,
-    ]
-
-    # checks that need (estimator, X, y)
-    data_checks = [
         check_estimators_fit_returns_self,
         check_estimators_pickle,
     ]
@@ -52,13 +47,6 @@ def run_clusterer_checks(name, estimator):
     for check in name_estimator_checks:
         try:
             check(name, estimator)
-        except Exception:
-            print(f"\n{name} failed check {check.__name__}")
-            raise
-
-    for check in data_checks:
-        try:
-            check(estimator, X, y)
         except Exception:
             print(f"\n{name} failed check {check.__name__}")
             raise
