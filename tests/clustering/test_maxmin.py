@@ -82,7 +82,12 @@ def test_deterministic_with_fixed_seed(binary_X):
 
 def test_empty_input_raises():
     clusterer = MaxMinClustering()
-    with pytest.raises(ValueError, match="Empty input"):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Found array with 0 sample(s) (shape=(0, 8)) while a minimum of 1 is required by MaxMinClustering."
+        ),
+    ):
         clusterer.fit(np.empty((0, 8)))
 
 

@@ -8,7 +8,7 @@ from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
 from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, validate_data
 
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
@@ -24,8 +24,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     distinguishes it from density-based clustering methods such as
     Butina clustering.
 
-    Centroids are selected using RDKit's
-    :class:`~rdkit.SimDivFilters.MaxMinPicker` with a distance threshold
+    Centroids are selected using RDKit's MaxMinPicker with a distance threshold
     (distance = 1 - Tanimoto similarity). After selecting centroids, each
     sample is assigned to the centroid with the highest Tanimoto similarity.
 
@@ -42,11 +41,11 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     centroid_indices_ : list of int
         Indices of samples chosen as centroids after :meth:`fit`.
 
-    centroid_bitvectors_ : list of rdkit.DataStructs.cDataStructs.ExplicitBitVect
+    centroid_bitvectors_ : list of ExplicitBitVect
         Centroid fingerprints as RDKit ExplicitBitVect objects.
 
     centroids_ : ndarray of bool, shape (n_centroids, n_bits)
-        Centroids represented as boolean numpy arrays when the input was a
+        Centroids represented as boolean NumPy arrays when the input was a
         dense array or sparse matrix.
 
     labels_ : ndarray of int, shape (n_samples,)
@@ -56,7 +55,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     -----
     This estimator follows the scikit-learn estimator API and accepts dense
     NumPy arrays, SciPy sparse matrices, or lists/tuples of RDKit
-    :class:`~rdkit.DataStructs.cDataStructs.ExplicitBitVect` objects as input.
+    ExplicitBitVect objects as input.
 
     References
     ----------
@@ -81,26 +80,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.distance_threshold = distance_threshold
         self.random_state = random_state
 
-    def _validate_X(self, X):
-        """
-        Validate input data for clustering.
-        """
-        if sparse.issparse(X):
-            return X.tocsr()
-
-        if isinstance(X, np.ndarray):
-            if X.ndim != 2:
-                raise ValueError("X must be a 2D NumPy array.")
-            return X
-
-        if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
-            return X
-        raise TypeError(
-            "X must be a 2D NumPy array, a SciPy sparse matrix, "
-            "or a 1D array-like of RDKit ExplicitBitVect objects."
-        )
-
-    def fit(self, X: np.ndarray | sparse.spmatrix, y=None):
+    def fit(self, X: np.ndarray | sparse.spmatrix, y=None):  # noqa: ARG002
         """
         Fit the MaxMin clustering model.
 
@@ -109,8 +89,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         X : array-like or sparse matrix or list of ExplicitBitVect
             Binary fingerprint data. Expected shapes are ``(n_samples, n_bits)``
             for arrays and sparse matrices. Alternatively a list/tuple of RDKit
-            :class:`~rdkit.DataStructs.cDataStructs.ExplicitBitVect` objects is
-            accepted.
+            ExplicitBitVect objects is accepted.
+
         y : ignored
             Not used, present for API consistency with scikit-learn.
 
@@ -118,15 +98,9 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         -------
         self : MaxMinClustering
             Fitted estimator with attributes described in the class docstring.
-
-        Raises
-        ------
-        ValueError
-            If `X` is empty or not 2D when provided as an array.
         """
         super()._validate_params()
-        _ = y
-        X = self._validate_X(X)
+        X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
         if sparse.issparse(X):
@@ -222,12 +196,14 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.fit(X)
         return self.labels_
 
-    def _array_to_bitvectors(self, X) -> list[ExplicitBitVect]:
+    def _array_to_bitvectors(
+        self, X: np.ndarray | sparse.spmatrix
+    ) -> list[ExplicitBitVect]:
         """
         Convert input data to a list of RDKit ExplicitBitVect objects.
         """
         bitvecs: list[ExplicitBitVect] = []
-        if np.ndim(X) == 1 and isinstance(X[0], ExplicitBitVect):
+        if np.ndim(X) == 1 and len(X) > 0 and isinstance(X[0], ExplicitBitVect):
             return list(X)
 
         if sparse.issparse(X):
@@ -247,23 +223,18 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
             return bitvecs
 
-        if isinstance(X, np.ndarray):
-            if X.ndim != 2:
-                raise ValueError("X must be a 2D NumPy array.")
-            n_samples, n_bits = X.shape
+        if not isinstance(X, np.ndarray) or X.ndim != 2:
+            raise ValueError("X must be a 2D NumPy array (n_samples, n_bits).")
 
-            for i in range(n_samples):
-                bv = ExplicitBitVect(n_bits)
-                for bit in np.flatnonzero(X[i]):
-                    bv.SetBit(int(bit))
-                bitvecs.append(bv)
+        n_samples, n_bits = X.shape
 
-            return bitvecs
+        for i in range(n_samples):
+            bv = ExplicitBitVect(n_bits)
+            for bit in np.flatnonzero(X[i]):
+                bv.SetBit(int(bit))
+            bitvecs.append(bv)
 
-        raise TypeError(
-            "X must be a 2D NumPy array, a SciPy sparse matrix, "
-            "or a 1D array-like of RDKit ExplicitBitVect objects."
-        )
+        return bitvecs
 
     def get_clusters_and_points(self) -> dict[int, np.ndarray]:
         """
