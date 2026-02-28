@@ -6,7 +6,6 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters import MaxMinPicker
 from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
-from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
 from sklearn.utils.validation import check_is_fitted, validate_data
 
@@ -19,7 +18,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     and Tanimoto similarity.
 
     The method follows the MaxMin heuristic originally described by
-    Ashton et al. (2002), where centroids are iteratively selected to
+    Ashton et al. [1]_, where centroids are iteratively selected to
     maximize the minimum distance to previously chosen centroids. This
     distinguishes it from density-based clustering methods such as
     Butina clustering.
@@ -30,11 +29,14 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
     Parameters
     ----------
-    distance_threshold : float, default=0.5
+    distance_threshold : float, default=0.1
         Distance threshold, denotes minimal Tanimoto distance between clusters. Must be between 0 and 1.
+        The default value of 0.1 was chosen based on analysis of multiple chemical datasets (ChEMBL,
+        Enamine 720M library), as documented in [2]_, which showed that this threshold produces a
+        reasonable number of clusters while effectively capturing molecular diversity.
 
     random_state : int or None, default=0
-       Determines random number generation for selection of the first centroid. Deterministic when integer is used
+       Determines random number generation for selection of the first centroid. Deterministic when integer is used.
 
     Attributes
     ----------
@@ -59,22 +61,27 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
     References
     ----------
-    Ashton, M., Barnard, J. M., Casset, F., Charlton, M. H., Downs, G. M.,
-    and Willett, P. (2002).
-    Identification of diverse database subsets using property-based and
-    fragment-based molecular descriptions.
-    *QSAR & Combinatorial Science*, 21(6), 598-604.
-    https://doi.org/10.1002/qsar.200290002
+    .. [1] `Ashton, M., Barnard, J. M., Casset, F., Charlton, M. H., Downs, G. M.,
+        and Willett, P. (2002).
+        Identification of diverse database subsets using property-based and
+        fragment-based molecular descriptions.
+        *QSAR & Combinatorial Science*, 21(6), 598-604.
+        <https://doi.org/10.1002/qsar.200290002>`_
+
+    .. [2] `Sayle, R. A. (2019).
+        Clustering chembl compounds.
+        RDKit User Group Meeting.
+        <https://github.com/rdkit/UGM_2019/blob/master/Presentations/Sayle_Clustering.pdf>`_
     """
 
     _parameter_constraints: dict = {
-        "distance_threshold": [Interval(RealNotInt, 0, 1, closed="both")],
+        "distance_threshold": [Interval(RealNotInt, 0, 1, closed="neither")],
         "random_state": [Integral, None],
     }
 
     def __init__(
         self,
-        distance_threshold: float = 0.5,
+        distance_threshold: float = 0.1,
         random_state: int | None = 0,
     ):
         self.distance_threshold = distance_threshold
@@ -111,12 +118,15 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         if n_samples == 0:
             raise ValueError("Empty input")
 
-        # --- centroid selection (MaxMin) ---
+        # centroid selection (MaxMin)
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)
-        rng = check_random_state(self.random_state)
-        seed = rng.randint(0, 2**31 - 1)
+        seed = (
+            np.random.randint(0, 2**31 - 1)
+            if self.random_state is None
+            else self.random_state
+        )
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
             fps,
             poolSize=len(fps),
@@ -129,12 +139,12 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         self.centroid_indices_ = centroid_indices
         self.centroid_bitvectors_ = [fps[i] for i in centroid_indices]
 
-        # store centroids as boolean numpy arrays
+        # store centroids as numpy arrays
         if sparse.issparse(X) or isinstance(X, np.ndarray):
             arr = X.todense() if sparse.issparse(X) else X
             self.centroids_ = arr[self.centroid_indices_].astype(np.uint8)
 
-        # --- assignment ---
+        # cluster assignment
         self.labels_ = self._assign_labels(fps)
 
         # enforce invariant: each centroid labels itself
@@ -172,6 +182,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             Cluster labels for the input samples.
         """
         check_is_fitted(self)
+        X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
 
         bitvecs = self._array_to_bitvectors(X)
         return self._assign_labels(bitvecs)
@@ -222,9 +233,6 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
                 bitvecs.append(bv)
 
             return bitvecs
-
-        if not isinstance(X, np.ndarray) or X.ndim != 2:
-            raise ValueError("X must be a 2D NumPy array (n_samples, n_bits).")
 
         n_samples, n_bits = X.shape
 
