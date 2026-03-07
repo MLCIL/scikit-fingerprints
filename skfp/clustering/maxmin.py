@@ -1,11 +1,10 @@
-from numbers import Integral
-
 import numpy as np
 from rdkit.DataStructs import BulkTanimotoSimilarity
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters import MaxMinPicker
 from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
+from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
 from sklearn.utils.validation import check_is_fitted, validate_data
 
@@ -35,8 +34,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         Enamine 720M library), as documented in [2]_, which showed that this threshold produces a
         reasonable number of clusters while effectively capturing molecular diversity.
 
-    random_state : int or None, default=0
-       Determines random number generation for selection of the first centroid. Deterministic when integer is used.
+    random_state : int, RandomState instance or None, default=None
+       Determines random number generation for selection of the first centroid. Pass an int for reproducible output across multiple function calls.
 
     Attributes
     ----------
@@ -56,7 +55,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
     Notes
     -----
     This estimator follows the scikit-learn estimator API and accepts dense
-    NumPy arrays, SciPy sparse matrices, or lists/tuples of RDKit
+    NumPy arrays, SciPy sparse arrays, or lists/tuples of RDKit
     ExplicitBitVect objects as input.
 
     References
@@ -76,26 +75,26 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
     _parameter_constraints: dict = {
         "distance_threshold": [Interval(RealNotInt, 0, 1, closed="neither")],
-        "random_state": [Integral, None],
+        "random_state": ["random_state"],
     }
 
     def __init__(
         self,
         distance_threshold: float = 0.1,
-        random_state: int | None = 0,
+        random_state: int | np.random.RandomState | None = None,
     ):
         self.distance_threshold = distance_threshold
         self.random_state = random_state
 
-    def fit(self, X: np.ndarray | sparse.spmatrix, y=None):  # noqa: ARG002
+    def fit(self, X: np.ndarray | sparse.csr_array, y=None):  # noqa: ARG002
         """
         Fit the MaxMin clustering model.
 
         Parameters
         ----------
-        X : array-like or sparse matrix or list of ExplicitBitVect
+        X : array-like or sparse array or list of ExplicitBitVect
             Binary fingerprint data. Expected shapes are ``(n_samples, n_bits)``
-            for arrays and sparse matrices. Alternatively a list/tuple of RDKit
+            for arrays and sparse arrays. Alternatively a list/tuple of RDKit
             ExplicitBitVect objects is accepted.
 
         y : ignored
@@ -110,23 +109,14 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
 
         # Determine number of samples robustly for arrays, lists and sparse matrices
-        if sparse.issparse(X):
-            n_samples = int(X.shape[0])
-        else:
-            n_samples = len(X)
-
-        if n_samples == 0:
-            raise ValueError("Empty input")
+        n_samples = int(X.shape[0]) if sparse.issparse(X) else len(X)
 
         # centroid selection (MaxMin)
         picker = MaxMinPicker()
 
         fps = self._array_to_bitvectors(X)
-        seed = (
-            np.random.randint(0, 2**31 - 1)
-            if self.random_state is None
-            else self.random_state
-        )
+        rng = check_random_state(self.random_state)
+        seed = rng.randint(0, 2**31 - 1)
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
             fps,
             poolSize=len(fps),
@@ -166,13 +156,13 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
 
         return labels
 
-    def predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
+    def predict(self, X: np.ndarray | sparse.csr_array) -> np.ndarray:
         """
         Assign new samples to existing centroids.
 
         Parameters
         ----------
-        X : array-like or sparse matrix or list of ExplicitBitVect
+        X : array-like or sparse array or list of ExplicitBitVect
             New samples to assign to clusters. The input formats match those
             accepted by :meth:`fit`.
 
@@ -187,7 +177,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         bitvecs = self._array_to_bitvectors(X)
         return self._assign_labels(bitvecs)
 
-    def fit_predict(self, X: np.ndarray | sparse.spmatrix) -> np.ndarray:
+    def fit_predict(self, X: np.ndarray | sparse.csr_array) -> np.ndarray:
         """
         Fit the estimator on ``X`` and return cluster labels.
 
@@ -208,7 +198,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return self.labels_
 
     def _array_to_bitvectors(
-        self, X: np.ndarray | sparse.spmatrix
+        self, X: np.ndarray | sparse.csr_array
     ) -> list[ExplicitBitVect]:
         """
         Convert input data to a list of RDKit ExplicitBitVect objects.
