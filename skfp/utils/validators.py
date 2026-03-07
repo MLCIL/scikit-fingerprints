@@ -9,7 +9,7 @@ from rdkit.Chem.PropertyMol import PropertyMol
 def ensure_mols(X: Sequence[Any]) -> list[Mol]:
     """
     Ensure that all input sequence elements are RDKit ``Mol`` objects. Requires
-    all input elements to be of the same type: string (SMILES or InChI  strings) or ``Mol``.
+    all input elements to be of the same type: string (SMILES or InChI strings) or ``Mol``.
     In the case of SMILES or InChI strings, they are converted to RDKit ``Mol`` objects with
     default settings.
     """
