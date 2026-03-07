@@ -111,3 +111,10 @@ def test_sparse_input_handling(binary_X):
     labels_sparse = c2.fit_predict(sparse_matrix)
 
     assert np.array_equal(labels_dense, labels_sparse)
+
+
+def test_get_clusters_and_points(binary_X):
+    c = MaxMinClustering(distance_threshold=0.5, random_state=42).fit(binary_X)
+    clusters = c.get_clusters_and_points()
+    for k, idx in clusters.items():
+        assert np.all(c.labels_[idx] == k)
