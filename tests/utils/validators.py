@@ -29,6 +29,15 @@ def test_ensure_mols_wrong_smiles():
     assert "at index 1 as molecule" in str(exc_info)
 
 
+def test_ensure_mols_wrong_inchi():
+    inchi_list = ["InChI=1S/H2O/h1H2", "InChI=1S/invalid"]
+    with pytest.raises(TypeError) as exc_info:
+        ensure_mols(inchi_list)
+
+    assert "Could not parse" in str(exc_info)
+    assert "at index 1 as molecule" in str(exc_info)
+
+
 def test_ensure_mols_in_fingerprint():
     smiles_list = ["O", "O=N([O-])C1=C(CN=C1NCCSCc2ncccc2)Cc3ccccc3"]
     fp = AtomPairFingerprint()
