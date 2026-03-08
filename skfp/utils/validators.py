@@ -19,12 +19,11 @@ def ensure_mols(X: Sequence[Any]) -> list[Mol]:
             f"Passed values must be RDKit Mol objects, SMILES or InChI strings, got types: {types}"
         )
 
-    mols = []
-    for x in X:
-        if isinstance(x, str):
-            mols.append(MolFromInchi(x) if x.startswith("InChI=") else MolFromSmiles(x))
-        else:
-            mols.append(x)
+    if isinstance(X[0], str):
+        parser = MolFromInchi if X[0].startswith("InChI=") else MolFromSmiles
+        mols = [parser(x) for x in X]
+    else:
+        mols = list(X)
 
     if any(x is None for x in mols):
         idx = mols.index(None)
