@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 
 import numpy as np
 import pytest
@@ -70,9 +71,12 @@ def test_assignment_is_nearest_centroid(binary_X, maxmin_clusterer):
         assert assigned_centroid == max_sim_index
 
 
-def test_deterministic_with_fixed_seed(binary_X):
-    c1 = MaxMinClustering(distance_threshold=0.5, random_state=42)
-    c2 = MaxMinClustering(distance_threshold=0.5, random_state=42)
+@pytest.mark.parametrize("random_state", [0, np.random.RandomState(0)])
+def test_deterministic_with_fixed_seed(binary_X, random_state):
+    random_state_copy = deepcopy(random_state)
+
+    c1 = MaxMinClustering(distance_threshold=0.5, random_state=random_state)
+    c2 = MaxMinClustering(distance_threshold=0.5, random_state=random_state_copy)
 
     labels1 = c1.fit_predict(binary_X)
     labels2 = c2.fit_predict(binary_X)
@@ -96,7 +100,8 @@ def test_predict_before_fit_raises(binary_X):
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "This MaxMinClustering instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+            "This MaxMinClustering instance is not fitted yet. "
+            "Call 'fit' with appropriate arguments before using this estimator."
         ),
     ):
         clusterer.predict(binary_X)
@@ -104,8 +109,8 @@ def test_predict_before_fit_raises(binary_X):
 
 def test_sparse_input_handling(binary_X):
     sparse_matrix = csr_matrix(binary_X)
-    c1 = MaxMinClustering(distance_threshold=0.5, random_state=42)
-    c2 = MaxMinClustering(distance_threshold=0.5, random_state=42)
+    c1 = MaxMinClustering(distance_threshold=0.5, random_state=0)
+    c2 = MaxMinClustering(distance_threshold=0.5, random_state=0)
 
     labels_dense = c1.fit_predict(binary_X)
     labels_sparse = c2.fit_predict(sparse_matrix)
@@ -114,7 +119,7 @@ def test_sparse_input_handling(binary_X):
 
 
 def test_get_clusters_and_points(binary_X):
-    c = MaxMinClustering(distance_threshold=0.5, random_state=42).fit(binary_X)
+    c = MaxMinClustering(distance_threshold=0.5, random_state=0).fit(binary_X)
     clusters = c.get_clusters_and_points()
     for k, idx in clusters.items():
         assert np.all(c.labels_[idx] == k)
