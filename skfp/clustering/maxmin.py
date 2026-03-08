@@ -167,7 +167,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         return self._assign_labels(bitvecs)
 
     def fit_predict(
-        self, X: np.ndarray | sparse.csr_array | Sequence[ExplicitBitVect], y=None
+        self, X: np.ndarray | sparse.csr_array | Sequence[ExplicitBitVect], y=None  # noqa: ARG002
     ) -> np.ndarray:
         """
         Fit the MaxMin clustering model and return cluster labels.
