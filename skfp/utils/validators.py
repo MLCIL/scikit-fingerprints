@@ -2,24 +2,28 @@ import functools
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from rdkit.Chem import Mol, MolFromSmiles, MolToSmiles
+from rdkit.Chem import Mol, MolFromInchi, MolFromSmiles, MolToSmiles
 from rdkit.Chem.PropertyMol import PropertyMol
 
 
 def ensure_mols(X: Sequence[Any]) -> list[Mol]:
     """
     Ensure that all input sequence elements are RDKit ``Mol`` objects. Requires
-    all input elements to be of the same type: string (SMILES strings) or ``Mol``.
-    In the case of SMILES strings, they are converted to RDKit ``Mol`` objects with
+    all input elements to be of the same type: string (SMILES or InChI strings) or ``Mol``.
+    In the case of SMILES or InChI strings, they are converted to RDKit ``Mol`` objects with
     default settings.
     """
     if not all(isinstance(x, (Mol, PropertyMol, str)) for x in X):
         types = {type(x) for x in X}
         raise TypeError(
-            f"Passed values must be RDKit Mol objects or SMILES strings, got types: {types}"
+            f"Passed values must be RDKit Mol objects, SMILES or InChI strings, got types: {types}"
         )
 
-    mols = [MolFromSmiles(x) if isinstance(x, str) else x for x in X]
+    if isinstance(X[0], str):
+        parser = MolFromInchi if X[0].startswith("InChI=") else MolFromSmiles
+        mols = [parser(x) for x in X]
+    else:
+        mols = list(X)
 
     if any(x is None for x in mols):
         idx = mols.index(None)
