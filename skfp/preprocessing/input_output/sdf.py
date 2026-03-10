@@ -123,11 +123,13 @@ class MolFromSDFTransformer(BasePreprocessor):
                     removeHs=self.remove_hydrogens,
                     numWriterThreads=n_jobs,
                 ) as supplier:
-                    mols_with_record_ids = [(supplier.GetLastRecordId(), mol) for mol in supplier]
+                    mols_with_record_ids = [
+                        (supplier.GetLastRecordId(), mol) for mol in supplier
+                    ]
                 # sorting molecules to maintain the order from the file
                 mols_with_record_ids.sort(key=lambda item: item[0])
                 return [mol for _, mol in mols_with_record_ids]
-        
+
         # if problem with import or n_jobs == 1
         return list(
             SDMolSupplier(
