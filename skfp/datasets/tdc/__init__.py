@@ -3,7 +3,6 @@ from .adme import (
     load_b3db_regression,
     load_bioavailability_ma,
     load_caco2_wang,
-    load_clearance_hepatocyte_az,
     load_clearance_microsome_az,
     load_cyp1a2_veith,
     load_cyp2c9_substrate_carbonmangels,

@@ -29,6 +29,27 @@ def test_ensure_mols_wrong_smiles():
     assert "at index 1 as molecule" in str(exc_info)
 
 
+def test_ensure_mols_valid_inchi():
+    inchi_list = ["InChI=1S/H2O/h1H2", "InChI=1S/CH4/h1H4"]
+    mols = ensure_mols(inchi_list)
+    assert all(m is not None for m in mols)
+    assert len(mols) == 2
+    from rdkit.Chem import MolToSmiles
+
+    smiles = [MolToSmiles(m) for m in mols]
+    assert "O" in smiles
+    assert "C" in smiles
+
+
+def test_ensure_mols_invalid_inchi():
+    inchi_list = ["InChI=1S/H2O/h1H2", "InChI=1S/invalid"]
+    with pytest.raises(TypeError) as exc_info:
+        ensure_mols(inchi_list)
+
+    assert "Could not parse" in str(exc_info)
+    assert "at index 1 as molecule" in str(exc_info)
+
+
 def test_ensure_mols_in_fingerprint():
     smiles_list = ["O", "O=N([O-])C1=C(CN=C1NCCSCc2ncccc2)Cc3ccccc3"]
     fp = AtomPairFingerprint()
