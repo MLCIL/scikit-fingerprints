@@ -29,7 +29,6 @@ ADME dataset loaders
     adme.load_b3db_regression
     adme.load_bioavailability_ma
     adme.load_caco2_wang
-    adme.load_clearance_hepatocyte_az
     adme.load_clearance_microsome_az
     adme.load_cyp1a2_veith
     adme.load_cyp2c19_veith

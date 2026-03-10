@@ -12,7 +12,6 @@ from .adme import (
     load_b3db_regression,
     load_bioavailability_ma,
     load_caco2_wang,
-    load_clearance_hepatocyte_az,
     load_clearance_microsome_az,
     load_cyp1a2_veith,
     load_cyp2c9_substrate_carbonmangels,
@@ -53,7 +52,6 @@ TDC_DATASET_NAMES = [
     "b3db_regression",
     "bioavailability_ma",
     "caco2_wang",
-    "clearance_hepatocyte_az",
     "clearance_microsome_az",
     "cyp1a2_veith",
     "cyp2c19_veith",
@@ -95,7 +93,6 @@ TDC_DATASET_NAME_TO_LOADER_FUNC = {
     "b3db_regression": load_b3db_regression,
     "bioavailability_ma": load_bioavailability_ma,
     "caco2_wang": load_caco2_wang,
-    "clearance_hepatocyte_az": load_clearance_hepatocyte_az,
     "clearance_microsome_az": load_clearance_microsome_az,
     "cyp1a2_veith": load_cyp1a2_veith,
     "cyp2c19_veith": load_cyp2c19_veith,
@@ -170,7 +167,6 @@ def load_tdc_benchmark(
     - "b3db_regression"
     - "bioavailability_ma"
     - "caco2_wang"
-    - "clearance_hepatocyte_az"
     - "clearance_microsome_az"
     - "cyp1a2_veith"
     - "cyp2c19_veith"
@@ -404,7 +400,6 @@ def _subset_to_dataset_names(subset: str | list[str] | None) -> list[str]:
         "b3db_regression",
         "bioavailability_ma",
         "caco2_wang",
-        "clearance_hepatocyte_az",
         "clearance_microsome_az",
         "cyp1a2_veith",
         "cyp2c19_veith",
