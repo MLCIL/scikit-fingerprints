@@ -104,7 +104,7 @@ class BaseFingerprintTransformer(
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-        random_state: int | None = 0,
+        random_state: int | np.random.RandomState | np.random.Generator | None = 0,
     ):
         self.count = count
         self.sparse = sparse
