@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 
 import numpy as np
 import pytest
@@ -70,9 +71,12 @@ def test_assignment_is_nearest_centroid(binary_X, maxmin_clusterer):
         assert assigned_centroid == max_sim_index
 
 
-def test_deterministic_with_fixed_seed(binary_X):
-    c1 = MaxMinClustering(distance_threshold=0.5, random_state=42)
-    c2 = MaxMinClustering(distance_threshold=0.5, random_state=42)
+@pytest.mark.parametrize("random_state", [0, np.random.RandomState(0)])
+def test_deterministic_with_fixed_seed(binary_X, random_state):
+    random_state_copy = deepcopy(random_state)
+
+    c1 = MaxMinClustering(distance_threshold=0.5, random_state=random_state)
+    c2 = MaxMinClustering(distance_threshold=0.5, random_state=random_state_copy)
 
     labels1 = c1.fit_predict(binary_X)
     labels2 = c2.fit_predict(binary_X)
@@ -82,7 +86,12 @@ def test_deterministic_with_fixed_seed(binary_X):
 
 def test_empty_input_raises():
     clusterer = MaxMinClustering()
-    with pytest.raises(ValueError, match="Empty input"):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Found array with 0 sample(s) (shape=(0, 8)) while a minimum of 1 is required by MaxMinClustering."
+        ),
+    ):
         clusterer.fit(np.empty((0, 8)))
 
 
@@ -91,7 +100,8 @@ def test_predict_before_fit_raises(binary_X):
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "This MaxMinClustering instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator."
+            "This MaxMinClustering instance is not fitted yet. "
+            "Call 'fit' with appropriate arguments before using this estimator."
         ),
     ):
         clusterer.predict(binary_X)
@@ -99,8 +109,8 @@ def test_predict_before_fit_raises(binary_X):
 
 def test_sparse_input_handling(binary_X):
     sparse_matrix = csr_matrix(binary_X)
-    c1 = MaxMinClustering(distance_threshold=0.5, random_state=42)
-    c2 = MaxMinClustering(distance_threshold=0.5, random_state=42)
+    c1 = MaxMinClustering(distance_threshold=0.5, random_state=0)
+    c2 = MaxMinClustering(distance_threshold=0.5, random_state=0)
 
     labels_dense = c1.fit_predict(binary_X)
     labels_sparse = c2.fit_predict(sparse_matrix)
@@ -108,24 +118,8 @@ def test_sparse_input_handling(binary_X):
     assert np.array_equal(labels_dense, labels_sparse)
 
 
-# def test_cloning_works():
-#    clusterer = MaxMinClustering(distance_threshold=0.5, random_state=42)
-#
-#    cloned_clusterer = clone(clusterer)
-#    assert cloned_clusterer is not clusterer
-#    assert isinstance(cloned_clusterer, MaxMinClustering)
-#    assert cloned_clusterer.distance_threshold == clusterer.distance_threshold
-#    assert cloned_clusterer.random_state == clusterer.random_state
-#
-#
-# def test_pickle_roundtrip(binary_X):
-#    c = MaxMinClustering(distance_threshold=0.5, random_state=42)
-#    c.fit(binary_X)
-#
-#    blob = pickle.dumps(c)
-#    c2 = pickle.loads(blob)
-#    assert np.array_equal(c.labels_, c2.labels_)
-#    assert c.centroid_indices_ == c2.centroid_indices_
-#    assert np.array_equal(
-#        c.predict(binary_X), c2.predict(binary_X)
-#    )
+def test_get_clusters_and_points(binary_X):
+    c = MaxMinClustering(distance_threshold=0.5, random_state=0).fit(binary_X)
+    clusters = c.get_clusters_and_points()
+    for k, idx in clusters.items():
+        assert np.all(c.labels_[idx] == k)
