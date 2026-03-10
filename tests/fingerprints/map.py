@@ -117,7 +117,6 @@ def test_map_chirality(smallest_mols_list):
 
 
 def test_map_chirality_uses_substructure():
-    """Chirality mode should use sub_molecule SMILES, not full molecule SMILES."""
     # L-alanine and D-alanine are enantiomers with different CIP labels
     l_ala = MolFromSmiles("N[C@@H](C)C(=O)O")
     d_ala = MolFromSmiles("N[C@H](C)C(=O)O")
