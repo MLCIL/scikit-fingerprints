@@ -1,7 +1,9 @@
 import os.path
 import warnings
 from collections.abc import Sequence
+from numbers import Integral
 
+from joblib import effective_n_jobs
 from rdkit.Chem import Mol, SDMolSupplier, SDWriter
 from rdkit.Chem.PropertyMol import PropertyMol
 
@@ -29,6 +31,12 @@ class MolFromSDFTransformer(BasePreprocessor):
         Remove explicit hydrogens from the molecule where possible, using RDKit
         implicit hydrogens instead.
 
+    n_jobs : int, default=None
+        The number of jobs to use when reading molecules from an SDF file path.
+        If ``n_jobs > 1`` and the installed RDKit supports
+        ``MultithreadedSDMolSupplier``, the file is read in parallel. Raw SDF text
+        input is always processed sequentially.
+
     References
     ----------
     .. [1] `RDKit SDMolSupplier documentation
@@ -50,14 +58,16 @@ class MolFromSDFTransformer(BasePreprocessor):
     _parameter_constraints: dict = {
         "sanitize": ["boolean"],
         "remove_hydrogens": ["boolean"],
+        "n_jobs": [Integral, None],
     }
 
     def __init__(
         self,
         sanitize: bool = True,
         remove_hydrogens: bool = True,
+        n_jobs: int | None = None,
     ):
-        super().__init__()
+        super().__init__(n_jobs=n_jobs)
         self.sanitize = sanitize
         self.remove_hydrogens = remove_hydrogens
 
@@ -84,12 +94,9 @@ class MolFromSDFTransformer(BasePreprocessor):
             if not os.path.exists(X):
                 raise FileNotFoundError(f"SDF file at path '{X}' not found")
 
-            with open(X) as file:
-                X = file.read()
-
-        supplier = SDMolSupplier()
-        supplier.SetData(X, sanitize=self.sanitize, removeHs=self.remove_hydrogens)
-        mols = list(supplier)
+            mols = self._read_sdf_file(X)
+        else:
+            mols = self._read_sdf_text(X)
 
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
@@ -98,6 +105,52 @@ class MolFromSDFTransformer(BasePreprocessor):
 
     def _transform_batch(self, X):
         pass  # unused
+
+    def _read_sdf_file(self, filepath: str) -> list[Mol]:
+        n_jobs = effective_n_jobs(self.n_jobs)
+        if n_jobs > 1:
+            try:
+                from rdkit.Chem import MultithreadedSDMolSupplier
+            except ImportError:
+                warnings.warn(
+                    "Parallel SDF reading is not available in the installed RDKit. "
+                    "Falling back to sequential loading."
+                )
+            else:
+                with MultithreadedSDMolSupplier(
+                    filepath,
+                    sanitize=self.sanitize,
+                    removeHs=self.remove_hydrogens,
+                    numWriterThreads=n_jobs,
+                ) as supplier:
+                    mols_with_record_ids = [(supplier.GetLastRecordId(), mol) for mol in supplier]
+                # sorting molecules to maintain the order from the file
+                mols_with_record_ids.sort(key=lambda item: item[0])
+                return [mol for _, mol in mols_with_record_ids]
+        
+        # if problem with import or n_jobs == 1
+        return list(
+            SDMolSupplier(
+                filepath,
+                sanitize=self.sanitize,
+                removeHs=self.remove_hydrogens,
+            )
+        )
+
+    def _read_sdf_text(self, sdf_text: str) -> list[Mol]:
+        if effective_n_jobs(self.n_jobs) > 1:
+            warnings.warn(
+                "Parallel SDF reading requires a file path. Falling back to sequential "
+                "loading for raw SDF text input."
+            )
+
+        supplier = SDMolSupplier()
+        supplier.SetData(
+            sdf_text,
+            sanitize=self.sanitize,
+            removeHs=self.remove_hydrogens,
+        )
+        return list(supplier)
 
 
 class MolToSDFTransformer(BasePreprocessor):
