@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_equal
+from rdkit.Chem import MolFromSmiles
 from scipy.sparse import csr_array
 
-from rdkit.Chem import MolFromSmiles
 from skfp.fingerprints import MAPFingerprint
 
 
