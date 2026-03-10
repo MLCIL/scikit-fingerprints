@@ -2,6 +2,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from scipy.sparse import csr_array
 
+from rdkit.Chem import MolFromSmiles
 from skfp.fingerprints import MAPFingerprint
 
 
@@ -116,12 +117,7 @@ def test_map_chirality(smallest_mols_list):
 
 
 def test_map_chirality_uses_substructure():
-    """Chirality mode should use sub_molecule SMILES, not full molecule SMILES.
-
-    Regression test for https://github.com/scikit-fingerprints/scikit-fingerprints/issues/519
-    """
-    from rdkit.Chem import MolFromSmiles
-
+    """Chirality mode should use sub_molecule SMILES, not full molecule SMILES."""
     # L-alanine and D-alanine are enantiomers with different CIP labels
     l_ala = MolFromSmiles("N[C@@H](C)C(=O)O")
     d_ala = MolFromSmiles("N[C@H](C)C(=O)O")
@@ -130,5 +126,5 @@ def test_map_chirality_uses_substructure():
     fp_l = map_fp._calculate_single_mol_fingerprint(l_ala)
     fp_d = map_fp._calculate_single_mol_fingerprint(d_ala)
 
-    # With chirality enabled, enantiomers should produce different fingerprints
+    # with chirality enabled, enantiomers should produce different fingerprints
     assert not np.array_equal(fp_l, fp_d)
