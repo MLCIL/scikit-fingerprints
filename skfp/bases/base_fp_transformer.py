@@ -92,7 +92,7 @@ class BaseFingerprintTransformer(
         "n_jobs": [Integral, None],
         "batch_size": [Integral, None],
         "verbose": ["verbose", dict],
-        "random_state": ["random_state"],
+        "random_state": ["random_state", np.random.Generator],
     }
 
     def __init__(

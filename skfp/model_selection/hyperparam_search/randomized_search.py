@@ -141,7 +141,7 @@ class FingerprintEstimatorRandomizedSearch(BaseEstimator):
         "n_iter": [Interval(Integral, 1, None, closed="left")],
         "cache_best_fp_array": ["boolean"],
         "verbose": ["verbose", dict],
-        "random_state": ["random_state"],
+        "random_state": ["random_state", np.random.Generator],
     }
 
     def __init__(
