@@ -243,7 +243,12 @@ class MAPFingerprint(BaseFingerprintTransformer):
             return None
 
         if self.include_chirality:
-            smiles = MolToSmiles(mol, isomericSmiles=True, canonical=True)
+            smiles = MolToSmiles(
+                sub_molecule,
+                rootedAtAtom=atom_map[atom_identifier],
+                isomericSmiles=True,
+                canonical=True,
+            )
             # preserve E/Z isomerism, remove chirality
             smiles = smiles.replace("[C@H]", "C").replace("[C@@H]", "C")
         else:
