@@ -317,11 +317,13 @@ class MAPFingerprint(BaseFingerprintTransformer):
         if not shinglings:
             return np.empty(0, dtype=np.uint32)
 
+        hashed_values = (
+            struct.unpack("<I", sha256(shingling).digest()[:4])[0]
+            for shingling in shinglings
+        )
+
         return np.fromiter(
-            (
-                struct.unpack("<I", sha256(shingling).digest()[:4])[0]
-                for shingling in shinglings
-            ),
+            hashed_values,
             dtype=np.uint32,
             count=len(shinglings),
         )
@@ -345,8 +347,7 @@ class MAPFingerprint(BaseFingerprintTransformer):
         return folded
 
     def _minhash(self, hashed_shinglings: np.ndarray) -> np.ndarray:
-        # For empty shingle sets, return zeros for consistency with other sparse
-        # / degenerate fingerprints in the library.
+        # Return all-zero vector for empty shingle set
         if hashed_shinglings.size == 0:
             return np.zeros(self.fp_size, dtype=np.uint32)
 
@@ -369,8 +370,14 @@ class MAPFingerprint(BaseFingerprintTransformer):
 
         x = hashed_shinglings.astype(np.uint64)
 
-        permuted = (x[:, None] * a[None, :] + b[None, :]) % self._MINHASH_PRIME
+        # Apply all MinHash permutations to all hashed shingles at once.
+        # Broadcasting yields an array of shape (n_shingles, fp_size), where
+        # entry (j, i) is the value of permutation i applied to shingle j:
+        #     h_i(x_j) = (a_i * x_j + b_i) mod P
+        permuted = (
+            x[:, np.newaxis] * a[np.newaxis, :] + b[np.newaxis, :]
+        ) % self._MINHASH_PRIME
         mins = permuted.min(axis=0)
 
         # Store the sketch as uint32 to keep output compact and consistent.
-        return (mins & self._UINT32_MASK).astype(np.uint32)
+        return mins.astype(np.uint32)
