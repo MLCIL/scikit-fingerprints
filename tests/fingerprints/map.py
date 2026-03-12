@@ -7,7 +7,7 @@ from skfp.fingerprints import MAPFingerprint
 
 
 def test_map_bit_fingerprint(smallest_smiles_list, smallest_mols_list):
-    map_fp = MAPFingerprint(variant="binary", n_jobs=-1)
+    map_fp = MAPFingerprint(n_jobs=-1)
     X_skfp = map_fp.transform(smallest_smiles_list)
 
     X_map = np.stack(
@@ -144,6 +144,36 @@ def test_map_minhash_different_random_state_changes_output(smallest_smiles_list)
     X_2 = map_fp_2.transform(smallest_smiles_list)
 
     assert not np.array_equal(X_1, X_2)
+
+
+def test_map_minhash_is_independent_of_input_order_and_batch_size():
+    smiles = [
+        "CC(=O)Oc1ccccc1C(=O)O",
+        "CCO",
+        "c1ccccc1",
+        "CCN(CC)CC",
+    ]
+
+    map_fp = MAPFingerprint(variant="minhash", random_state=123, n_jobs=-1)
+
+    X_full = map_fp.transform(smiles)
+
+    # same molecules, different order
+    reordered_indices = [2, 0, 3, 1]
+    reordered_smiles = [smiles[i] for i in reordered_indices]
+    X_reordered = map_fp.transform(reordered_smiles)
+
+    # compare molecule-by-molecule, not row-by-row
+    for original_idx, reordered_idx in enumerate(reordered_indices):
+        assert_equal(X_full[reordered_idx], X_reordered[original_idx])
+
+    # same molecules, smaller subsets / singleton calls
+    for i, smi in enumerate(smiles):
+        X_single = map_fp.transform([smi])
+        assert_equal(X_full[i], X_single[0])
+
+    X_subset = map_fp.transform(smiles[:2])
+    assert_equal(X_full[:2], X_subset)
 
 
 def test_map_binary_ignores_random_state(smallest_smiles_list):
