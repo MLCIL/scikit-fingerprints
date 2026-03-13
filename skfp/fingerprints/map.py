@@ -10,6 +10,7 @@ from rdkit.Chem import Mol, MolToSmiles, PathToSubmol
 from rdkit.Chem.rdmolops import FindAtomEnvironmentOfRadiusN, GetDistanceMatrix
 from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval, StrOptions
+from sklearn.utils.validation import check_random_state
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.utils import ensure_mols
@@ -136,7 +137,6 @@ class MAPFingerprint(BaseFingerprintTransformer):
     }
 
     _MINHASH_PRIME = np.uint64((1 << 61) - 1)
-    _UINT32_MASK = np.uint64(0xFFFFFFFF)
 
     def __init__(
         self,
@@ -351,7 +351,7 @@ class MAPFingerprint(BaseFingerprintTransformer):
         if hashed_shinglings.size == 0:
             return np.zeros(self.fp_size, dtype=np.uint32)
 
-        rng = np.random.default_rng(self.random_state)
+        rng = np.random.default_rng(check_random_state(self.random_state))
 
         # Generate permutation parameters:
         # h_i(x) = (a_i * x + b_i) mod P
