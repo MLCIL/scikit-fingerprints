@@ -6,6 +6,7 @@ import numpy as np
 from numpy.random import Generator, RandomState
 from rdkit.Chem import Mol
 from sklearn.utils._param_validation import Interval, RealNotInt, validate_params
+from sklearn.utils.validation import check_random_state
 
 from skfp.model_selection.splitters.scaffold_split import _create_scaffold_sets
 from skfp.model_selection.splitters.utils import (
@@ -141,11 +142,7 @@ def randomized_scaffold_train_test_split(
     )
 
     scaffold_sets = _create_scaffold_sets(data, use_csk)
-    rng = (
-        random_state
-        if isinstance(random_state, RandomState)
-        else np.random.default_rng(random_state)
-    )
+    rng = np.random.default_rng(check_random_state(random_state))
     rng.shuffle(scaffold_sets)
 
     train_idxs: list[int] = []
@@ -315,11 +312,7 @@ def randomized_scaffold_train_valid_test_split(
     )
 
     scaffold_sets = _create_scaffold_sets(data, use_csk)
-    rng = (
-        random_state
-        if isinstance(random_state, RandomState)
-        else np.random.default_rng(random_state)
-    )
+    rng = np.random.default_rng(check_random_state(random_state))
     rng.shuffle(scaffold_sets)
 
     train_idxs: list[int] = []
