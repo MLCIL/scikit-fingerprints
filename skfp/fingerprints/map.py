@@ -9,7 +9,8 @@ import numpy as np
 from rdkit.Chem import Mol, MolToSmiles, PathToSubmol
 from rdkit.Chem.rdmolops import FindAtomEnvironmentOfRadiusN, GetDistanceMatrix
 from scipy.sparse import csr_array
-from sklearn.utils._param_validation import Interval
+from sklearn.utils._param_validation import Interval, StrOptions
+from sklearn.utils.validation import check_random_state
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.utils import ensure_mols
@@ -55,8 +56,11 @@ class MAPFingerprint(BaseFingerprintTransformer):
         Whether to include chirality information when computing atom types. This is
         also known as MAPC fingerprint [3]_ [4]_.
 
-    count : bool, default=False
-        Whether to return binary (bit) features, or their counts.
+    variant : {"binary", "count", "minhash"}, default="binary"
+        Output fingerprint variant:
+        - ``"binary"``: folded binary fingerprint,
+        - ``"count"``: folded count fingerprint,
+        - ``"minhash"``: MinHash sketch.
 
     sparse : bool, default=False
         Whether to return dense NumPy array, or sparse SciPy CSR array.
@@ -129,15 +133,18 @@ class MAPFingerprint(BaseFingerprintTransformer):
         "radius": [Interval(Integral, 0, None, closed="left")],
         "include_duplicated_shingles": ["boolean"],
         "include_chirality": ["boolean"],
+        "variant": [StrOptions({"binary", "count", "minhash"})],
     }
+
+    _MINHASH_PRIME = np.uint64((1 << 61) - 1)
 
     def __init__(
         self,
-        fp_size: int = 1024,
+        fp_size: int = 2048,
         radius: int = 2,
         include_duplicated_shingles: bool = False,
         include_chirality: bool = False,
-        count: bool = False,
+        variant: str = "binary",
         sparse: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
@@ -146,7 +153,7 @@ class MAPFingerprint(BaseFingerprintTransformer):
     ):
         super().__init__(
             n_features_out=fp_size,
-            count=count,
+            count=(variant == "count"),
             sparse=sparse,
             n_jobs=n_jobs,
             batch_size=batch_size,
@@ -157,6 +164,7 @@ class MAPFingerprint(BaseFingerprintTransformer):
         self.radius = radius
         self.include_duplicated_shingles = include_duplicated_shingles
         self.include_chirality = include_chirality
+        self.variant = variant
 
     def transform(
         self, X: Sequence[str | Mol], copy: bool = False
@@ -181,9 +189,15 @@ class MAPFingerprint(BaseFingerprintTransformer):
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
         X = ensure_mols(X)
+
+        if self.variant in {"minhash", "count"}:
+            dtype = np.uint32
+        else:
+            dtype = np.uint8
+
         X = np.stack(
             [self._calculate_single_mol_fingerprint(mol) for mol in X],
-            dtype=np.uint32 if self.count else np.uint8,
+            dtype=dtype,
         )
 
         return csr_array(X) if self.sparse else np.array(X)
@@ -196,15 +210,12 @@ class MAPFingerprint(BaseFingerprintTransformer):
 
         atoms_envs = self._get_atom_envs(mol)
         shinglings = self._get_atom_pair_shingles(mol, atoms_envs)
+        hashed_shinglings = self._hash_shingles(shinglings)
 
-        folded = np.zeros(self.fp_size, dtype=np.uint32 if self.count else np.uint8)
-        for shingling in shinglings:
-            hashed = struct.unpack("<I", sha256(shingling).digest()[:4])[0]
-            if self.count:
-                folded[hashed % self.fp_size] += 1
-            else:
-                folded[hashed % self.fp_size] = 1
-        return folded
+        if self.variant == "minhash":
+            return self._minhash(hashed_shinglings)
+
+        return self._fold(hashed_shinglings)
 
     def _get_atom_envs(self, mol: Mol) -> dict[int, list[str | None]]:
         from rdkit.Chem import FindMolChiralCenters
@@ -300,3 +311,73 @@ class MAPFingerprint(BaseFingerprintTransformer):
 
         shingle = f"{smaller_env}|{distance}|{larger_env}"
         return shingle
+
+    @staticmethod
+    def _hash_shingles(shinglings: set[bytes]) -> np.ndarray:
+        if not shinglings:
+            return np.empty(0, dtype=np.uint32)
+
+        hashed_values = (
+            struct.unpack("<I", sha256(shingling).digest()[:4])[0]
+            for shingling in shinglings
+        )
+
+        return np.fromiter(
+            hashed_values,
+            dtype=np.uint32,
+            count=len(shinglings),
+        )
+
+    def _fold(self, hashed_shinglings: np.ndarray) -> np.ndarray:
+        folded = np.zeros(
+            self.fp_size,
+            dtype=np.uint32 if self.variant == "count" else np.uint8,
+        )
+
+        if hashed_shinglings.size == 0:
+            return folded
+
+        indices = hashed_shinglings % self.fp_size
+
+        if self.variant == "count":
+            np.add.at(folded, indices, 1)
+        else:
+            folded[indices] = 1
+
+        return folded
+
+    def _minhash(self, hashed_shinglings: np.ndarray) -> np.ndarray:
+        # Return all-zero vector for empty shingle set
+        if hashed_shinglings.size == 0:
+            return np.zeros(self.fp_size, dtype=np.uint32)
+
+        rng = np.random.default_rng(check_random_state(self.random_state))
+
+        # Generate permutation parameters:
+        # h_i(x) = (a_i * x + b_i) mod P
+        a = rng.integers(
+            1,
+            self._MINHASH_PRIME,
+            size=self.fp_size,
+            dtype=np.uint64,
+        )
+        b = rng.integers(
+            0,
+            self._MINHASH_PRIME,
+            size=self.fp_size,
+            dtype=np.uint64,
+        )
+
+        x = hashed_shinglings.astype(np.uint64)
+
+        # Apply all MinHash permutations to all hashed shingles at once.
+        # Broadcasting yields an array of shape (n_shingles, fp_size), where
+        # entry (j, i) is the value of permutation i applied to shingle j:
+        #     h_i(x_j) = (a_i * x_j + b_i) mod P
+        permuted = (
+            x[:, np.newaxis] * a[np.newaxis, :] + b[np.newaxis, :]
+        ) % self._MINHASH_PRIME
+        mins = permuted.min(axis=0)
+
+        # Store the sketch as uint32 to keep output compact and consistent.
+        return mins.astype(np.uint32)
