@@ -141,7 +141,7 @@ class FingerprintEstimatorRandomizedSearch(BaseEstimator):
         "n_iter": [Interval(Integral, 1, None, closed="left")],
         "cache_best_fp_array": ["boolean"],
         "verbose": ["verbose", dict],
-        "random_state": ["random_state", np.random.Generator],
+        "random_state": ["random_state"],
     }
 
     def __init__(
@@ -153,7 +153,7 @@ class FingerprintEstimatorRandomizedSearch(BaseEstimator):
         n_iter: int = 10,
         cache_best_fp_array: bool = False,
         verbose: int | dict = 0,
-        random_state: int | np.random.RandomState | np.random.Generator | None = 0,
+        random_state: int | np.random.RandomState | None = 0,
     ):
         self.fingerprint = fingerprint
         self.fp_param_distributions = fp_param_distributions

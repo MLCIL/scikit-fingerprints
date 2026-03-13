@@ -34,7 +34,7 @@ from skfp.utils.functions import get_data_from_indices
         ],
         "use_csk": ["boolean"],
         "return_indices": ["boolean"],
-        "random_state": ["random_state", np.random.Generator],
+        "random_state": ["random_state"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -194,7 +194,7 @@ def randomized_scaffold_train_test_split(
         ],
         "use_csk": ["boolean"],
         "return_indices": ["boolean"],
-        "random_state": ["random_state", np.random.Generator],
+        "random_state": ["random_state"],
     },
     prefer_skip_nested_validation=True,
 )
