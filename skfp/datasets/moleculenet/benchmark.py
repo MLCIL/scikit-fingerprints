@@ -257,7 +257,7 @@ def load_ogb_splits(
     Parameters
     ----------
     dataset_name : {"ESOL", "FreeSolv", "Lipophilicity","BACE", "BBBP", "HIV", "ClinTox", "MUV", "SIDER", "Tox21", "ToxCast", "PCBA"}
-        Name of the dataset to loads splits for.
+        Name of the dataset to load splits for.
 
     data_dir : {None, str, path-like}, default=None
         Path to the root data directory. If ``None``, currently set scikit-learn directory

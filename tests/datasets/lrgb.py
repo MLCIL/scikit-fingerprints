@@ -77,14 +77,16 @@ def test_load_lrgb_splits_as_dict(dataset_name):
     only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
 )
 @pytest.mark.parametrize(
-    "dataset_name, dataset_length",
+    "dataset_name, valid_sequences_only, dataset_length",
     [
-        ("Peptides-func", 15535),
-        ("Peptides-struct", 15535),
+        ("Peptides-func", False, 15535),
+        ("Peptides-struct", False, 15535),
+        ("Peptides-func", True, 15424),
+        ("Peptides-struct", True, 15424),
     ],
 )
-def test_load_lrgb_splits_lengths(dataset_name, dataset_length):
-    train, valid, test = load_lrgb_mol_splits(dataset_name)
+def test_load_lrgb_splits_lengths(dataset_name, valid_sequences_only, dataset_length):
+    train, valid, test = load_lrgb_mol_splits(dataset_name, valid_sequences_only)
     loaded_length = len(train) + len(valid) + len(test)
     assert_equal(loaded_length, dataset_length)
 

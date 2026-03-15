@@ -203,6 +203,7 @@ array([1, 1, 1, ..., 1, 1, 1]))
 @validate_params(
     {
         "dataset_name": [StrOptions({"Peptides-func", "Peptides-struct"})],
+        "valid_sequences_only": ["boolean"],
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
@@ -211,6 +212,7 @@ array([1, 1, 1, ..., 1, 1, 1]))
 )
 def load_lrgb_mol_splits(
     dataset_name: str,
+    valid_sequences_only: bool = False,
     data_dir: str | os.PathLike | None = None,
     as_dict: bool = False,
     verbose: bool = False,
@@ -227,7 +229,12 @@ def load_lrgb_mol_splits(
     Parameters
     ----------
     dataset_name : {"Peptides-func", "Peptides-struct"}
-        Name of the dataset to loads splits for.
+        Name of the dataset to load splits for.
+
+    valid_sequences_only : bool, default=False
+        Whether to load only rows with valid amino acid sequences, which can be loaded
+        as RDKit ``Mol`` objects. This removes some sequences with valid SMILES, but custom
+        notation for chemical modifications.
 
     data_dir : {None, str, path-like}, default=None
         Path to the root data directory. If ``None``, currently set scikit-learn directory
@@ -255,10 +262,13 @@ def load_lrgb_mol_splits(
         Advances in Neural Information Processing Systems 35 (2022): 22326-22340
         <https://proceedings.neurips.cc/paper_files/paper/2022/hash/8c3c666820ea055a77726d66fc7d447f-Abstract-Datasets_and_Benchmarks.html>`_
     """
+    file_dataset_name = dataset_name.lower().replace("-", "_")
+    valid_only = "_valid_seqs" if valid_sequences_only else ""
+
     splits = fetch_splits(
         data_dir,
         dataset_name=f"LRGB_{dataset_name}",
-        filename=f"lrgb_splits_{dataset_name.lower().replace('-', '_')}.json",
+        filename=f"lrgb_splits_{file_dataset_name}{valid_only}.json",
         verbose=verbose,
     )
     if as_dict:
