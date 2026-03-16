@@ -6,12 +6,10 @@ import csv
 import os.path
 import time
 from collections.abc import Callable
-from importlib.metadata import version
 
 import joblib
 import numpy as np
 import pandas as pd
-import rdkit
 from matplotlib import pyplot as plt
 from rdkit import Chem
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
@@ -20,9 +18,7 @@ from skfp.datasets.moleculenet import load_hiv
 from skfp.distances.tanimoto import bulk_tanimoto_binary_similarity
 from skfp.fingerprints import ECFPFingerprint
 
-N_REPEATS = 10
-FP_SIZE = 2048  # Size of the fingerprint in bits
-FP_RADIUS = 2  # Radius of atom environment considered for Morgan fingerprint
+N_REPEATS = 5
 STEP = 500  # Step for increasing dataset size
 DATASET_CUTOFF = 5000  # Maximum number of molecules to benchmark
 USE_ERROR_BARS = True  # If True, use error bars instead of shaded fill_between
@@ -51,15 +47,12 @@ def run_benchmarks():
        required to compute pairwise Tanimoto similarity matrices.
     3. Save the timing results into a CSV file.
     """
-    print(f"scikit-fingerprints version: {version('scikit-fingerprints')}")
-    print(f"RDKit version: {rdkit.__version__}")
-
     X, _ = load_hiv()
-    length = len(X)
+    num_mols = len(X)
 
     # subset of dataset for testing
     if DATASET_CUTOFF:
-        length = DATASET_CUTOFF
+        num_mols = DATASET_CUTOFF
 
     header = [
         "n",
@@ -73,10 +66,10 @@ def run_benchmarks():
         writer = csv.writer(csvfile)
         writer.writerow(header)
 
-    steps = list(range(STEP, length, STEP))
-    # Top off the dataset in case the number of molecules isn't a multiple of STEP
-    if steps[-1] != length:
-        steps.append(length)
+    steps = list(range(STEP, num_mols, STEP))
+    # top off the dataset in case the number of molecules isn't a multiple of STEP
+    if steps[-1] != num_mols:
+        steps.append(num_mols)
 
     for n in steps:
         print(f"\nExperiment with {n} molecules:")
@@ -97,7 +90,7 @@ def benchmark_skfp(smiles: list[str]) -> tuple[float, float]:
     Compute pairwise Tanimoto similarity using scikit-fingerprints ECFP.
     """
     print("\nBenchmarking scikit-fingerprints...")
-    ecfp = ECFPFingerprint(fp_size=FP_SIZE, radius=FP_RADIUS, n_jobs=NUM_THREADS)
+    ecfp = ECFPFingerprint(fp_size=2048, radius=2, n_jobs=NUM_THREADS)
 
     fps = ecfp.transform(smiles)
 
@@ -113,10 +106,10 @@ def benchmark_skfp(smiles: list[str]) -> tuple[float, float]:
 
 def benchmark_rdkit(smiles: list[str]) -> tuple[float, float]:
     """
-    Compute pairwise Tanimoto similarity using RDKit Morgan fingerprints.
+    Compute pairwise Tanimoto similarity using RDKit.
     """
     print("Benchmarking RDKIT...")
-    morgan_gen = GetMorganGenerator(radius=FP_RADIUS, fpSize=FP_SIZE)
+    morgan_gen = GetMorganGenerator(radius=2, fpSize=2048)
 
     mols = [Chem.MolFromSmiles(s) for s in smiles]
     fps = morgan_gen.GetFingerprints(mols, numThreads=NUM_THREADS)
@@ -206,9 +199,9 @@ def plot_results() -> None:
             alpha=0.3,
         )
 
-    plt.title("Bulk Tanimoto similarity computation time")
+    plt.title("Pairwise Tanimoto similarity computation time")
     plt.xlabel("Number of molecules")
-    plt.ylabel("Mean time with standard deviation [s]")
+    plt.ylabel("Time [s]")
     plt.legend()
     plt.grid(True, linestyle="--", alpha=0.7)
     plt.tight_layout()
