@@ -351,7 +351,7 @@ def load_tdc_splits(
     Parameters
     ----------
     dataset_name : str
-        Name of the dataset to loads splits for.
+        Name of the dataset to load splits for.
 
     data_dir : {None, str, path-like}, default=None
         Path to the root data directory. If ``None``, currently set scikit-learn directory

@@ -323,7 +323,7 @@ def load_moleculeace_splits(
     Parameters
     ----------
     dataset_name : str
-        Name of the dataset to loads splits for.
+        Name of the dataset to load splits for.
 
     split_type: {"random", "activity_cliff"}
         Type of the split to load.
