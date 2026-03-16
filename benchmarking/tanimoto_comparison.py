@@ -108,7 +108,7 @@ def benchmark_rdkit(smiles: list[str]) -> tuple[float, float]:
     """
     Compute pairwise Tanimoto similarity using RDKit.
     """
-    print("Benchmarking RDKIT...")
+    print("Benchmarking RDKit...")
     morgan_gen = GetMorganGenerator(radius=2, fpSize=2048)
 
     mols = [Chem.MolFromSmiles(s) for s in smiles]
