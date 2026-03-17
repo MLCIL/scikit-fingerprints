@@ -67,6 +67,11 @@ class SECFPFingerprint(BaseFingerprintTransformer):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
+    random_state : int or None, default=0
+        Controls the seed used when initializing the MinHash encoder. Pass an
+        integer for reproducible results across multiple function calls.
+        ``None`` means that no fixed seed is used.
+
     Attributes
     ----------
     n_features_out : int
@@ -127,6 +132,7 @@ class SECFPFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
+        random_state: int | None = 0,
     ):
         super().__init__(
             n_features_out=fp_size,
@@ -134,6 +140,7 @@ class SECFPFingerprint(BaseFingerprintTransformer):
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
+            random_state=random_state,
         )
         self.fp_size = fp_size
         self.radius = radius

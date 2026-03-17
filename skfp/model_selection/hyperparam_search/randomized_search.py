@@ -83,6 +83,11 @@ class FingerprintEstimatorRandomizedSearch(BaseEstimator):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
+    random_state : int or None, default=0
+        Controls the random seed used when sampling fingerprint hyperparameter
+        combinations. Pass an integer for reproducible selections across multiple
+        function calls. ``None`` means that no fixed seed is used.
+
     Attributes
     ----------
     cv_results_ : list[dict]

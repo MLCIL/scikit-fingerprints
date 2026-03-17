@@ -80,6 +80,11 @@ class MAPFingerprint(BaseFingerprintTransformer):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
+    random_state : int or None, default=0
+        Controls the randomness of the MinHash computation. Pass an integer
+        for reproducible results across multiple function calls. ``None`` means
+        that no fixed seed is used.
+
     Attributes
     ----------
     n_features_out : int

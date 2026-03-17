@@ -213,3 +213,15 @@ def test_map_chirality_uses_substructure():
 
     # with chirality enabled, enantiomers should produce different fingerprints
     assert not np.array_equal(fp_l, fp_d)
+
+
+def test_map_random_state_parameter(smiles_list):
+    """Regression test for GitHub issue #531: random_state must be an explicit
+    constructor parameter so it appears in repr() and get_params()."""
+    fp_default = MAPFingerprint()
+
+    assert "random_state" in fp_default.get_params()
+    assert fp_default.get_params()["random_state"] == 0
+
+    fp_seeded = MAPFingerprint(random_state=42)
+    assert fp_seeded.get_params()["random_state"] == 42

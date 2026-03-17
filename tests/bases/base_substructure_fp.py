@@ -151,3 +151,15 @@ def test_empty_patterns_list(substructure_smiles_list: list[str]):
     assert str(error.value).startswith(
         "The 'patterns' parameter must be a non-empty list of SMARTS patterns."
     )
+
+
+def test_base_substructure_fp_no_random_state():
+    """Regression test for GitHub issue #531: BaseSubstructureFingerprint
+    does not use random_state internally, so it should not expose it as a
+    constructor parameter (to avoid misleading the user)."""
+    fp = BaseSubstructureFingerprint(["[OH]"])
+    params = fp.get_params()
+    assert "random_state" not in params, (
+        "BaseSubstructureFingerprint should not expose random_state since it "
+        "does not use any randomness. Got params: %s" % list(params.keys())
+    )
