@@ -159,7 +159,7 @@ def measure_time(
 
 def plot_results() -> None:
     """
-    Plot timing results for scikit-fingerprints vs RDKit and save as PNG.
+    Plot timing results for scikit-fingerprints vs RDKit and save as PNG or PDF.
     """
     try:
         df = pd.read_csv(RESULT_CSV_PATH)
