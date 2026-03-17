@@ -86,9 +86,6 @@ class E3FPFingerprint(BaseFingerprintTransformer):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
-    random_state : int, RandomState instance or None, default=0
-        Controls the randomness of conformer generation.
-
     Attributes
     ----------
     n_features_out : int
@@ -151,7 +148,7 @@ class E3FPFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-        random_state: int | None = 0,
+
     ):
         super().__init__(
             n_features_out=fp_size,
@@ -161,7 +158,6 @@ class E3FPFingerprint(BaseFingerprintTransformer):
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
-            random_state=random_state,
         )
         self.fp_size = fp_size
         self.n_bits_before_folding = n_bits_before_folding

@@ -80,6 +80,9 @@ class MAPFingerprint(BaseFingerprintTransformer):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
+    random_state : int, RandomState instance or None, default=0
+        Controls the randomness of the MinHash algorithm.
+
     Attributes
     ----------
     n_features_out : int
@@ -158,13 +161,13 @@ class MAPFingerprint(BaseFingerprintTransformer):
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
-            random_state=random_state,
         )
         self.fp_size = fp_size
         self.radius = radius
         self.include_duplicated_shingles = include_duplicated_shingles
         self.include_chirality = include_chirality
         self.variant = variant
+        self.random_state = random_state
 
     def transform(
         self, X: Sequence[str | Mol], copy: bool = False
