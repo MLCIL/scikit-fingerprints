@@ -63,6 +63,18 @@ def test_e3fp_sparse_count_fingerprint(mols_conformers_list):
     assert np.all(X_skfp.data > 0)
 
 
+@pytest.mark.parametrize(
+    "random_state",
+    [42, np.random.RandomState(42), None],
+    ids=["int", "RandomState", "None"],
+)
+def test_e3fp_random_state_types(mols_conformers_list, random_state):
+    """E3FPFingerprint should accept int, RandomState, or None."""
+    fp = E3FPFingerprint(random_state=random_state, n_jobs=-1)
+    X = fp.transform(mols_conformers_list)
+    assert X.shape[0] == len(mols_conformers_list)
+
+
 def test_wrong_n_bits_before_folding(mols_conformers_list):
     e3fp_fp = E3FPFingerprint(fp_size=2048, n_bits_before_folding=1024)
     with pytest.raises(InvalidParameterError):
