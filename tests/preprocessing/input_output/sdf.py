@@ -5,6 +5,7 @@ from numpy.testing import assert_equal
 from rdkit.Chem import Mol
 
 from skfp.preprocessing import MolFromSDFTransformer, MolToSDFTransformer
+from skfp.preprocessing.input_output import sdf as sdf_module
 
 
 @pytest.fixture
@@ -88,6 +89,20 @@ def test_mol_from_sdf_parallel_preserves_order(mols_list, tmp_path):
     parallel_names = [mol.GetProp("_Name") for mol in parallel_mols]
 
     assert parallel_names == sequential_names
+
+
+def test_mol_from_sdf_parallel_falls_back_for_older_rdkit(monkeypatch):
+    sentinel = object()
+    monkeypatch.setattr(sdf_module, "_get_rdkit_version", lambda: (2025, 3, 0))
+    monkeypatch.setattr(
+        sdf_module, "SDMolSupplier", lambda *_args, **_kwargs: [sentinel]
+    )
+
+    mol_from_sdf = MolFromSDFTransformer(n_jobs=2)
+    with pytest.warns(UserWarning, match="requires RDKit >= 2025.09.1"):
+        mols = mol_from_sdf._read_sdf_file("ignored.sdf")
+
+    assert mols == [sentinel]
 
 
 def test_error_nonexistent_sdf_file():

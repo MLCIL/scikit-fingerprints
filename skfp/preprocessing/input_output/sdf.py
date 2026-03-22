@@ -9,6 +9,9 @@ from rdkit.Chem.PropertyMol import PropertyMol
 
 from skfp.bases import BasePreprocessor
 from skfp.utils import require_mols
+from skfp.utils.functions import _get_rdkit_version
+
+_MIN_MULTITHREADED_SDF_VERSION = (2025, 9, 1)
 
 
 class MolFromSDFTransformer(BasePreprocessor):
@@ -33,9 +36,8 @@ class MolFromSDFTransformer(BasePreprocessor):
 
     n_jobs : int, default=None
         The number of jobs to use when reading molecules from an SDF file path.
-        If ``n_jobs > 1`` and the installed RDKit supports
-        ``MultithreadedSDMolSupplier``, the file is read in parallel. Raw SDF text
-        input is always processed sequentially.
+        If ``n_jobs > 1`` and the installed RDKit version is at least ``2025.09.1``
+        the file is read in parallel. Raw SDF text input is always processed sequentially.
 
     References
     ----------
@@ -108,29 +110,18 @@ class MolFromSDFTransformer(BasePreprocessor):
 
     def _read_sdf_file(self, filepath: str) -> list[Mol]:
         n_jobs = effective_n_jobs(self.n_jobs)
+
         if n_jobs > 1:
-            try:
-                from rdkit.Chem import MultithreadedSDMolSupplier
-            except ImportError:
+            rdkit_version = _get_rdkit_version()
+            if rdkit_version < _MIN_MULTITHREADED_SDF_VERSION:
                 warnings.warn(
-                    "Parallel SDF reading is not available in the installed RDKit. "
+                    "Parallel SDF reading requires RDKit >= 2025.09.1. "
+                    f"Installed version is {'.'.join(map(str, rdkit_version))}. "
                     "Falling back to sequential loading."
                 )
             else:
-                with MultithreadedSDMolSupplier(
-                    filepath,
-                    sanitize=self.sanitize,
-                    removeHs=self.remove_hydrogens,
-                    numWriterThreads=n_jobs,
-                ) as supplier:
-                    mols_with_record_ids = [
-                        (supplier.GetLastRecordId(), mol) for mol in supplier
-                    ]
-                # sorting molecules to maintain the order from the file
-                mols_with_record_ids.sort(key=lambda item: item[0])
-                return [mol for _, mol in mols_with_record_ids]
+                return self._read_sdf_file_parallel(filepath, n_jobs)
 
-        # if problem with import or n_jobs == 1
         return list(
             SDMolSupplier(
                 filepath,
@@ -138,6 +129,24 @@ class MolFromSDFTransformer(BasePreprocessor):
                 removeHs=self.remove_hydrogens,
             )
         )
+
+    def _read_sdf_file_parallel(self, filepath: str, n_jobs: int) -> list[Mol]:
+        from rdkit.Chem import MultithreadedSDMolSupplier
+
+        with MultithreadedSDMolSupplier(
+            filepath,
+            sanitize=self.sanitize,
+            removeHs=self.remove_hydrogens,
+            numWriterThreads=n_jobs,
+        ) as supplier:
+            mols_with_record_ids = [
+                (supplier.GetLastRecordId(), mol)
+                for mol in supplier
+                if mol is not None  # multithreaded supplier may yield None duplicates
+            ]
+
+        mols_with_record_ids.sort(key=lambda item: item[0])
+        return [mol for _, mol in mols_with_record_ids]
 
     def _read_sdf_text(self, sdf_text: str) -> list[Mol]:
         if effective_n_jobs(self.n_jobs) > 1:
