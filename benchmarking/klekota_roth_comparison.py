@@ -1,17 +1,15 @@
 """
-Klekota-Roth SKFP vs CDK benchmark.
+Klekota-Roth scikit-fingerprints vs CDK benchmark.
 """
 
 import csv
 import os
-import time
 import warnings
-from collections.abc import Callable
 
 import joblib
-import numpy as np
 import pandas as pd
 from benchmarking.naive_fp_klekota_roth import NaiveSkfpKlekotaRothFingerprint
+from benchmarking.utils.timing import measure_time
 from CDK_pywrapper import CDK, FPType
 from matplotlib import pyplot as plt
 from rdkit import Chem
@@ -47,41 +45,18 @@ def main():
     plot_results()
 
 
-def measure_fp_time(
-    func: Callable[[list[str]], None], smiles_list: list[str], label: str
-) -> tuple[float, float]:
-    """
-    Measure the average execution time of a function over N_REPEATS.
-    """
-    times: list[float] = []
-    print(f"Benchmarking {label} Klekota-Roth FP computation...")
-
-    for _ in range(N_REPEATS):
-        start = time.time()
-        func(smiles_list)
-        end = time.time()
-        times.append(end - start)
-
-    mean_time = np.mean(times)
-    std_time = np.std(times)
-
-    return mean_time, std_time
-
-
 def skfp_kr(smiles_list: list[str]) -> None:
     """
-    Klekota-Roth fingerprint (optimized SKFP implementation)
+    Klekota-Roth fingerprint (optimized scikit-fingerprints implementation)
     """
-    kr_fp = KlekotaRothFingerprint(n_jobs=NUM_THREADS)
-    _ = kr_fp.transform(smiles_list)
+    KlekotaRothFingerprint(n_jobs=NUM_THREADS).transform(smiles_list)
 
 
 def naive_skfp_kr(smiles_list: list[str]) -> None:
     """
-    Klekota-Roth fingerprint (naive SKFP implementation)
+    Klekota-Roth fingerprint (naive scikit-fingerprints implementation)
     """
-    kr_fp = NaiveSkfpKlekotaRothFingerprint(n_jobs=NUM_THREADS)
-    _ = kr_fp.transform(smiles_list)
+    NaiveSkfpKlekotaRothFingerprint(n_jobs=NUM_THREADS).transform(smiles_list)
 
 
 def cdk_kr(smiles_list: list[str]) -> None:
@@ -89,8 +64,7 @@ def cdk_kr(smiles_list: list[str]) -> None:
     Klekota-Roth fingerprint (CDK implementation)
     """
     mols = [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
-    cdk = CDK(fingerprint=FPType.KRFP)
-    _ = cdk.calculate(mols, show_banner=False, njobs=NUM_THREADS)
+    CDK(fingerprint=FPType.KRFP).calculate(mols, show_banner=False, njobs=NUM_THREADS)
 
 
 def run_benchmark():
@@ -140,11 +114,18 @@ def run_benchmark():
         print(f"Processing {n} molecules...")
         subset = smiles[:n]
 
-        skfp_mean, skfp_std = measure_fp_time(skfp_kr, subset, "scikit-fingerprints")
-        naive_skfp_mean, naive_skfp_std = measure_fp_time(
-            naive_skfp_kr, subset, "naive scikit-fingerprints"
+        skfp_mean, skfp_std = measure_time(
+            skfp_kr, subset, label="scikit-fingerprints", iterations=N_REPEATS
         )
-        cdk_mean, cdk_std = measure_fp_time(cdk_kr, subset, "CDK")
+        naive_skfp_mean, naive_skfp_std = measure_time(
+            naive_skfp_kr,
+            subset,
+            label="naive scikit-fingerprints",
+            iterations=N_REPEATS,
+        )
+        cdk_mean, cdk_std = measure_time(
+            cdk_kr, subset, label="CDK", iterations=N_REPEATS
+        )
 
         skfp_per_mol = (skfp_mean / n) * 1000
         naive_skfp_per_mol = (naive_skfp_mean / n) * 1000
