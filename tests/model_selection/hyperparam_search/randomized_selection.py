@@ -105,7 +105,7 @@ def test_best_fp_caching(smallest_mols_list):
 
 @pytest.mark.parametrize(
     "random_state",
-    [42, np.random.RandomState(42), None],
+    [0, np.random.RandomState(0), None],
     ids=["int", "RandomState", "None"],
 )
 def test_randomized_search_random_state_types(smallest_mols_list, random_state):

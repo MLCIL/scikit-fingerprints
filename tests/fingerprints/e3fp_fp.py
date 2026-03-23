@@ -65,7 +65,7 @@ def test_e3fp_sparse_count_fingerprint(mols_conformers_list):
 
 @pytest.mark.parametrize(
     "random_state",
-    [42, np.random.RandomState(42), None],
+    [0, np.random.RandomState(0), None],
     ids=["int", "RandomState", "None"],
 )
 def test_e3fp_random_state_types(mols_conformers_list, random_state):

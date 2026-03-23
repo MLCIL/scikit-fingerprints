@@ -231,7 +231,7 @@ def test_train_valid_test_split_with_additional_data(smiles_ten_scaffolds):
 
 @pytest.mark.parametrize(
     "random_state",
-    [42, np.random.RandomState(42), None],
+    [0, np.random.RandomState(0), None],
     ids=["int", "RandomState", "None"],
 )
 def test_randomized_scaffold_split_random_state_types(random_state):

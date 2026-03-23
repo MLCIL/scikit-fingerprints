@@ -96,7 +96,7 @@ def randomized_scaffold_train_test_split(
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
 
-    random_state: int or NumPy RandomState instance, default=0
+    random_state : int, RandomState instance or None, default=0
         Seed for random number generator or random state that would be used for
         shuffling the scaffolds.
 
@@ -266,7 +266,7 @@ def randomized_scaffold_train_valid_test_split(
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
 
-    random_state: int or NumPy RandomState instance, default=0
+    random_state : int, RandomState instance or None, default=0
         Seed for random number generator or random state that would be used for
         shuffling the scaffolds.
 
