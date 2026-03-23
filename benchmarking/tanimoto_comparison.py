@@ -4,12 +4,11 @@ Benchmark bulk Tanimoto similarity computation using skfp and RDKit.
 
 import csv
 import os.path
-import time
-from collections.abc import Callable
 
 import joblib
 import numpy as np
 import pandas as pd
+from benchmarking.utils import measure_time
 from matplotlib import pyplot as plt
 from rdkit import Chem
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
@@ -97,7 +96,7 @@ def benchmark_skfp(smiles: list[str]) -> tuple[float, float]:
     mean_tanimoto, std_tanimoto = measure_time(
         func=bulk_tanimoto_binary_similarity,
         data=fps,
-        desc="scikit-fingerprints Tanimoto",
+        label="scikit-fingerprints Tanimoto",
         iterations=N_REPEATS,
     )
 
@@ -126,40 +125,16 @@ def benchmark_rdkit(smiles: list[str]) -> tuple[float, float]:
     mean_tanimoto, std_tanimoto = measure_time(
         func=bulk_tanimoto_similarity_rdkit,
         data=fps,
-        desc="RDKit Tanimoto",
+        label="RDKit Tanimoto",
         iterations=N_REPEATS,
     )
 
     return mean_tanimoto, std_tanimoto
 
 
-def measure_time(
-    func: Callable,
-    data: list[str] | np.ndarray | list[object],
-    desc: str,
-    iterations: int,
-) -> tuple[float, float]:
-    """
-    Measure the average execution time of a function over N_REPEATS.
-    """
-    times: list[float] = []
-
-    print(f"\tBenchmarking {desc} calculation time...")
-    for _ in range(iterations):
-        start = time.time()
-        _ = func(data)
-        end = time.time()
-        times.append(end - start)
-
-    mean_time = np.mean(times)
-    std_time = np.std(times)
-
-    return mean_time, std_time
-
-
 def plot_results() -> None:
     """
-    Plot timing results for scikit-fingerprints vs RDKit and save as PNG.
+    Plot timing results for scikit-fingerprints vs RDKit and save as PNG or PDF.
     """
     try:
         df = pd.read_csv(RESULT_CSV_PATH)
