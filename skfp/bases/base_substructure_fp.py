@@ -70,7 +70,7 @@ class BaseSubstructureFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-        random_state: int | None = 0,
+        random_state: int | np.random.RandomState | None = 0,
     ):
         super().__init__(
             n_features_out=len(patterns),

@@ -3,7 +3,7 @@ from numbers import Integral
 from typing import Any
 
 import numpy as np
-from numpy.random import Generator, RandomState
+from numpy.random import RandomState
 from rdkit.Chem import Mol
 from sklearn.utils._param_validation import Interval, RealNotInt, validate_params
 from sklearn.utils.validation import check_random_state
@@ -45,7 +45,7 @@ def randomized_scaffold_train_test_split(
     test_size: float | None = None,
     use_csk: bool = False,
     return_indices: bool = False,
-    random_state: int | RandomState | Generator | None = None,
+    random_state: int | RandomState | None = None,
 ):
     """
     Split using randomized groups of Bemis-Murcko scaffolds.
@@ -96,7 +96,7 @@ def randomized_scaffold_train_test_split(
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
 
-    random_state: int or NumPy Random Generator instance, default=0
+    random_state : int, RandomState instance or None, default=0
         Seed for random number generator or random state that would be used for
         shuffling the scaffolds.
 
@@ -206,7 +206,7 @@ def randomized_scaffold_train_valid_test_split(
     test_size: float | None = None,
     use_csk: bool = False,
     return_indices: bool = False,
-    random_state: int | RandomState | Generator | None = None,
+    random_state: int | RandomState | None = None,
 ):
     """
     Split using randomized groups of Bemis-Murcko scaffolds.
@@ -266,7 +266,7 @@ def randomized_scaffold_train_valid_test_split(
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
 
-    random_state: int or NumPy Random Generator instance, default=0
+    random_state : int, RandomState instance or None, default=0
         Seed for random number generator or random state that would be used for
         shuffling the scaffolds.
 

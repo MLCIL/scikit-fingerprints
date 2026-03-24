@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose, assert_equal
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import GridSearchCV
@@ -100,3 +101,27 @@ def test_best_fp_caching(smallest_mols_list):
     assert fp_cv.best_fp_array_ is not None
     assert isinstance(fp_cv.best_fp_array_, np.ndarray)
     assert_equal(fp_cv.best_fp_array_.shape, (num_mols, fp.n_features_out))
+
+
+@pytest.mark.parametrize(
+    "random_state",
+    [0, np.random.RandomState(0), None],
+    ids=["int", "RandomState", "None"],
+)
+def test_randomized_search_random_state_types(smallest_mols_list, random_state):
+    """FingerprintEstimatorRandomizedSearch should accept int, RandomState, or None."""
+    num_mols = len(smallest_mols_list)
+    y = np.concatenate([np.ones(num_mols // 2), np.zeros(num_mols - num_mols // 2)])
+
+    fp = AtomPairFingerprint()
+    fp_params = {"max_distance": list(range(2, 6))}
+    estimator_cv = GridSearchCV(
+        estimator=DummyClassifier(strategy="constant", constant=1),
+        param_grid={"constant": [0, 1]},
+        scoring="accuracy",
+    )
+    fp_cv = FingerprintEstimatorRandomizedSearch(
+        fp, fp_params, estimator_cv, n_iter=2, random_state=random_state
+    )
+    fp_cv.fit(smallest_mols_list, y)
+    assert len(fp_cv.cv_results_) == 2
