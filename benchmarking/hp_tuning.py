@@ -6,6 +6,7 @@ scikit-fingerprints vs scikit-learn benchmark.
 import csv
 import os
 import warnings
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -25,33 +26,19 @@ STEP = 500
 DATASET_CUTOFF = 10000
 RANDOM_STATE = 0
 
-OUTPUTS_DIR = os.path.join("benchmark_times", "benchmark_times_saved")
-PLOTS_DIR = os.path.join("benchmark_times", "benchmark_times_plotted")
+OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
+PLOTS_DIR = Path("benchmark_times") / "benchmark_times_plotted"
 
 USE_PDF = True  # If True, save plot as PDF, otherwise save as PNG
 USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
 
 CSV_FILENAME = "hp_tuning_benchmark.csv"
 PLOT_TIME_FILENAME = "hp_tuning_benchmark_time"
-PLOT_SCORE_FILENAME = "hp_tuning_benchmark_score"
-PLOT_ABS_GAIN_FILENAME = "hp_tuning_benchmark_abs_gain"
-PLOT_REL_GAIN_FILENAME = "hp_tuning_benchmark_rel_gain"
 
-RESULT_CSV_PATH = os.path.join(OUTPUTS_DIR, CSV_FILENAME)
-RESULT_PLOT_TIME_PATH = os.path.join(
-    PLOTS_DIR, f"{PLOT_TIME_FILENAME}.pdf" if USE_PDF else f"{PLOT_TIME_FILENAME}.png"
-)
-RESULT_PLOT_SCORE_PATH = os.path.join(
-    PLOTS_DIR, f"{PLOT_SCORE_FILENAME}.pdf" if USE_PDF else f"{PLOT_SCORE_FILENAME}.png"
-)
-RESULT_PLOT_ABS_GAIN_PATH = os.path.join(
-    PLOTS_DIR,
-    f"{PLOT_ABS_GAIN_FILENAME}.pdf" if USE_PDF else f"{PLOT_ABS_GAIN_FILENAME}.png",
-)
-RESULT_PLOT_REL_GAIN_PATH = os.path.join(
-    PLOTS_DIR,
-    f"{PLOT_REL_GAIN_FILENAME}.pdf" if USE_PDF else f"{PLOT_REL_GAIN_FILENAME}.png",
-)
+file_ext = ".pdf" if USE_PDF else ".png"
+
+RESULT_CSV_PATH = OUTPUTS_DIR / CSV_FILENAME
+RESULT_PLOT_TIME_PATH = PLOTS_DIR / f"{PLOT_TIME_FILENAME}{file_ext}"
 
 CSV_HEADER = [
     "n",
@@ -288,15 +275,13 @@ def run_benchmark() -> None:
     smiles = np.asarray(smiles)[idx].tolist()
     labels = np.asarray(labels)[idx]
 
-    length = min(len(smiles), DATASET_CUTOFF) if DATASET_CUTOFF else len(smiles)
+    num_mols = min(len(smiles), DATASET_CUTOFF) if DATASET_CUTOFF else len(smiles)
 
-    # top off the dataset in case the number of molecules isn't a multiple of STEP
-    steps = list(range(STEP, length, STEP))
-    if not steps or steps[-1] != length:
-        steps.append(length)
+    # include the last value by using length + 1
+    steps = list(range(STEP, num_mols + 1, STEP))
 
-    with open(RESULT_CSV_PATH, "w", newline="") as f:
-        csv.writer(f).writerow(CSV_HEADER)
+    with open(RESULT_CSV_PATH, "w", newline="") as file:
+        csv.writer(file).writerow(CSV_HEADER)
 
     for n in steps:
         print(f"Benchmarking with {n} molecules (small grid)...")
@@ -319,8 +304,8 @@ def run_benchmark() -> None:
             large_clf_param_grid,
             n_repeats=N_REPEATS,
         )
-        with open(RESULT_CSV_PATH, "a", newline="") as f:
-            csv.writer(f).writerow(
+        with open(RESULT_CSV_PATH, "a", newline="") as file:
+            csv.writer(file).writerow(
                 [
                     n,
                     small_results["baseline_score"],
@@ -354,10 +339,7 @@ def plot_results() -> None:
     """
     Plot timing results for scikit-fingerprints vs scikit-learn and save as PNG or PDF.
     """
-    try:
-        df = pd.read_csv(RESULT_CSV_PATH)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"CSV file not found: {RESULT_CSV_PATH}")
+    df = pd.read_csv(RESULT_CSV_PATH)
 
     fig_time, ax_time = plt.subplots(figsize=(10, 6))
     if USE_ERROR_BARS:
@@ -387,6 +369,7 @@ def plot_results() -> None:
                 color=color,
                 alpha=0.3,
             )
+
     ax_time.set_xlabel("Number of molecules")
     ax_time.set_ylabel("Time [s]")
     ax_time.set_title("Hyperparameter tuning time vs dataset size")
