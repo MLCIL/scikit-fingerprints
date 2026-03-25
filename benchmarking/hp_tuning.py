@@ -46,23 +46,15 @@ CSV_HEADER = [
     "small_skfp_time",
     "small_skfp_time_std",
     "small_skfp_score",
-    "small_skfp_abs_gain",
-    "small_skfp_rel_gain",
     "small_sklearn_time",
     "small_sklearn_time_std",
     "small_sklearn_score",
-    "small_sklearn_abs_gain",
-    "small_sklearn_rel_gain",
     "large_skfp_time",
     "large_skfp_time_std",
     "large_skfp_score",
-    "large_skfp_abs_gain",
-    "large_skfp_rel_gain",
     "large_sklearn_time",
     "large_sklearn_time_std",
     "large_sklearn_score",
-    "large_sklearn_abs_gain",
-    "large_sklearn_rel_gain",
 ]
 
 PLOT_CONFIGS = [
@@ -205,23 +197,14 @@ def measure_tuning(
     skfp_scores = np.array(skfp_scores)
     sklearn_scores = np.array(sklearn_scores)
 
-    skfp_abs_gains = skfp_scores - baseline_scores
-    skfp_rel_gains = skfp_abs_gains / baseline_scores
-    sklearn_abs_gains = sklearn_scores - baseline_scores
-    sklearn_rel_gains = sklearn_abs_gains / baseline_scores
-
     return {
         "baseline_score": np.mean(baseline_scores),
         "skfp_time": np.mean(skfp_times),
         "skfp_time_std": np.mean(skfp_time_stds),
         "skfp_score": np.mean(skfp_scores),
-        "skfp_abs_gain": np.mean(skfp_abs_gains),
-        "skfp_rel_gain": np.mean(skfp_rel_gains),
         "sklearn_time": np.mean(sklearn_times),
         "sklearn_time_std": np.mean(sklearn_time_stds),
         "sklearn_score": np.mean(sklearn_scores),
-        "sklearn_abs_gain": np.mean(sklearn_abs_gains),
-        "sklearn_rel_gain": np.mean(sklearn_rel_gains),
     }
 
 
@@ -312,23 +295,15 @@ def run_benchmark() -> None:
                     small_results["skfp_time"],
                     small_results["skfp_time_std"],
                     small_results["skfp_score"],
-                    small_results["skfp_abs_gain"],
-                    small_results["skfp_rel_gain"],
                     small_results["sklearn_time"],
                     small_results["sklearn_time_std"],
                     small_results["sklearn_score"],
-                    small_results["sklearn_abs_gain"],
-                    small_results["sklearn_rel_gain"],
                     large_results["skfp_time"],
                     large_results["skfp_time_std"],
                     large_results["skfp_score"],
-                    large_results["skfp_abs_gain"],
-                    large_results["skfp_rel_gain"],
                     large_results["sklearn_time"],
                     large_results["sklearn_time_std"],
                     large_results["sklearn_score"],
-                    large_results["sklearn_abs_gain"],
-                    large_results["sklearn_rel_gain"],
                 ]
             )
 
@@ -362,13 +337,14 @@ def plot_results() -> None:
                 color=color,
                 label=label,
             )
-            ax_time.fill_between(
-                df["n"],
-                df[f"{col}_time"] - df[f"{col}_time_std"],
-                df[f"{col}_time"] + df[f"{col}_time_std"],
-                color=color,
-                alpha=0.3,
-            )
+            if f"{col}_time_std" in df:
+                ax_time.fill_between(
+                    df["n"],
+                    df[f"{col}_time"] - df[f"{col}_time_std"],
+                    df[f"{col}_time"] + df[f"{col}_time_std"],
+                    color=color,
+                    alpha=0.3,
+                )
 
     ax_time.set_xlabel("Number of molecules")
     ax_time.set_ylabel("Time [s]")
@@ -379,72 +355,6 @@ def plot_results() -> None:
     fig_time.savefig(RESULT_PLOT_TIME_PATH)
     plt.close(fig_time)
     print(f"Plot saved to {RESULT_PLOT_TIME_PATH}")
-
-    fig_score, ax_score = plt.subplots(figsize=(6, 5))
-    ax_score.plot(
-        df["n"],
-        df["baseline_score"],
-        marker="^",
-        color="steelblue",
-        label="Baseline",
-    )
-    for col, label, marker, color in PLOT_CONFIGS:
-        ax_score.plot(
-            df["n"],
-            df[f"{col}_score"],
-            marker=marker,
-            color=color,
-            label=label,
-        )
-    ax_score.set_xlabel("Number of molecules")
-    ax_score.set_ylabel("ROC-AUC")
-    ax_score.set_title("ROC-AUC: Baseline vs Tuned models")
-    ax_score.grid(True, linestyle="--", alpha=0.7)
-    ax_score.legend()
-    fig_score.tight_layout()
-    fig_score.savefig(RESULT_PLOT_SCORE_PATH)
-    plt.close(fig_score)
-    print(f"Plot saved to {RESULT_PLOT_SCORE_PATH}")
-
-    fig_abs, ax_abs = plt.subplots(figsize=(6, 5))
-    for col, label, marker, color in PLOT_CONFIGS:
-        ax_abs.plot(
-            df["n"],
-            df[f"{col}_abs_gain"],
-            marker=marker,
-            color=color,
-            label=label,
-        )
-    ax_abs.axhline(0, color="gray", linestyle="--", linewidth=0.8)
-    ax_abs.set_xlabel("Number of molecules")
-    ax_abs.set_ylabel("Absolute gain (ROC-AUC)")
-    ax_abs.set_title("Absolute gain vs dataset size")
-    ax_abs.grid(True, linestyle="--", alpha=0.7)
-    ax_abs.legend()
-    fig_abs.tight_layout()
-    fig_abs.savefig(RESULT_PLOT_ABS_GAIN_PATH)
-    plt.close(fig_abs)
-    print(f"Plot saved to {RESULT_PLOT_ABS_GAIN_PATH}")
-
-    fig_rel, ax_rel = plt.subplots(figsize=(6, 5))
-    for col, label, marker, color in PLOT_CONFIGS:
-        ax_rel.plot(
-            df["n"],
-            df[f"{col}_rel_gain"] * 100,
-            marker=marker,
-            color=color,
-            label=label,
-        )
-    ax_rel.axhline(0, color="gray", linestyle="--", linewidth=0.8)
-    ax_rel.set_xlabel("Number of molecules")
-    ax_rel.set_ylabel("Relative gain [%]")
-    ax_rel.set_title("Relative gain vs dataset size")
-    ax_rel.grid(True, linestyle="--", alpha=0.7)
-    ax_rel.legend()
-    fig_rel.tight_layout()
-    fig_rel.savefig(RESULT_PLOT_REL_GAIN_PATH)
-    plt.close(fig_rel)
-    print(f"Plot saved to {RESULT_PLOT_REL_GAIN_PATH}")
 
 
 if __name__ == "__main__":
