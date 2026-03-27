@@ -5,6 +5,7 @@ Klekota-Roth scikit-fingerprints vs CDK benchmark.
 import csv
 import os
 import warnings
+from pathlib import Path
 
 import joblib
 import pandas as pd
@@ -22,8 +23,8 @@ DATASET_CUTOFF = 1000  # Maximum number of molecules to benchmark
 
 NUM_THREADS = joblib.effective_n_jobs(n_jobs=-1)  # Use all available CPU cores
 
-OUTPUTS_DIR = os.path.join("benchmark_times", "benchmark_times_saved")
-PLOTS_DIR = os.path.join("benchmark_times", "benchmark_times_plotted")
+OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
+PLOTS_DIR = Path("benchmark_times") / "benchmark_times_plotted"
 
 USE_PDF = True  # If True, save plot as PDF, otherwise save as PNG
 USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
@@ -31,10 +32,10 @@ USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
 CSV_FILENAME = "skfp_cdk_kr_timings"
 PLOT_FILENAME = "skfp_cdk_kr_timings"
 
-RESULT_CSV_PATH = os.path.join(OUTPUTS_DIR, f"{CSV_FILENAME}.csv")
-RESULT_PLOT_PATH = os.path.join(
-    PLOTS_DIR, f"{PLOT_FILENAME}.pdf" if USE_PDF else f"{PLOT_FILENAME}.png"
-)
+file_ext = ".pdf" if USE_PDF else ".png"
+
+RESULT_CSV_PATH = OUTPUTS_DIR / f"{CSV_FILENAME}.csv"
+RESULT_PLOT_PATH = PLOTS_DIR / f"{PLOT_FILENAME}{file_ext}"
 
 
 def main():
@@ -88,13 +89,11 @@ def run_benchmark():
     if DATASET_CUTOFF:
         num_mols = min(num_mols, DATASET_CUTOFF)
 
+    # include the last value by using length + 1
     steps = list(range(STEP, num_mols + 1, STEP))
-    # top off the dataset in case the number of molecules isn't a multiple of STEP
-    if steps[-1] != num_mols:
-        steps.append(num_mols)
 
-    with open(RESULT_CSV_PATH, "w", newline="") as file_out:
-        writer = csv.writer(file_out)
+    with open(RESULT_CSV_PATH, "w", newline="") as file:
+        writer = csv.writer(file)
         writer.writerow(
             [
                 "n_molecules",
@@ -131,8 +130,8 @@ def run_benchmark():
         naive_skfp_per_mol = (naive_skfp_mean / n) * 1000
         cdk_per_mol = (cdk_mean / n) * 1000
 
-        with open(RESULT_CSV_PATH, "a", newline="") as file_out:
-            writer = csv.writer(file_out)
+        with open(RESULT_CSV_PATH, "a", newline="") as file:
+            writer = csv.writer(file)
             writer.writerow(
                 [
                     n,
@@ -155,10 +154,7 @@ def plot_results():
     """
     Plot timing results for scikit-fingerprints vs CDK and save as PNG or PDF.
     """
-    try:
-        df = pd.read_csv(RESULT_CSV_PATH)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"CSV file not found: {RESULT_CSV_PATH}")
+    df = pd.read_csv(RESULT_CSV_PATH)
 
     plt.figure(figsize=(10, 6))
 
