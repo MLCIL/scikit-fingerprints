@@ -92,7 +92,6 @@ class BaseFingerprintTransformer(
         "n_jobs": [Integral, None],
         "batch_size": [Integral, None],
         "verbose": ["verbose", dict],
-        "random_state": ["random_state"],
     }
 
     def __init__(
@@ -104,14 +103,12 @@ class BaseFingerprintTransformer(
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-        random_state: int | np.random.RandomState | None = 0,
     ):
         self.count = count
         self.sparse = sparse
         self.n_jobs = n_jobs
         self.batch_size = batch_size
         self.verbose = verbose
-        self.random_state = random_state
 
         # this, combined with ClassNamePrefixFeaturesOutMixin, automatically handles
         # set_output() API

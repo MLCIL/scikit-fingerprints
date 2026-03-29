@@ -74,6 +74,9 @@ class MHFPFingerprint(BaseFingerprintTransformer):
         If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
         and can be used to control the progress bar.
 
+    random_state : int, RandomState instance or None, default=0
+        Controls the randomness of the hashing algorithm.
+
     Attributes
     ----------
     n_features_out : int
@@ -136,6 +139,7 @@ class MHFPFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
+        random_state: int | None = 0,
     ):
         super().__init__(
             n_features_out=fp_size,
@@ -151,6 +155,7 @@ class MHFPFingerprint(BaseFingerprintTransformer):
         self.isomeric_smiles = isomeric_smiles
         self.kekulize = kekulize
         self.variant = variant
+        self.random_state = random_state
 
     def _validate_params(self) -> None:
         super()._validate_params()

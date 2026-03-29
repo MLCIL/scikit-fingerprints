@@ -70,7 +70,6 @@ class BaseSubstructureFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-        random_state: int | np.random.RandomState | None = 0,
     ):
         super().__init__(
             n_features_out=len(patterns),
@@ -79,7 +78,6 @@ class BaseSubstructureFingerprint(BaseFingerprintTransformer):
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
-            random_state=random_state,
         )
         self.patterns = self._compile_smarts_patterns(patterns)
 
