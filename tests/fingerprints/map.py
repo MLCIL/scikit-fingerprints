@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_equal
 from rdkit.Chem import MolFromSmiles
 from scipy.sparse import csr_array
@@ -213,3 +214,15 @@ def test_map_chirality_uses_substructure():
 
     # with chirality enabled, enantiomers should produce different fingerprints
     assert not np.array_equal(fp_l, fp_d)
+
+
+@pytest.mark.parametrize(
+    "random_state",
+    [0, np.random.RandomState(0), None],
+    ids=["int", "RandomState", "None"],
+)
+def test_map_fp_random_state_types(smallest_smiles_list, random_state):
+    """MAPFingerprint should accept int, RandomState, or None."""
+    fp = MAPFingerprint(random_state=random_state, n_jobs=-1)
+    X = fp.transform(smallest_smiles_list)
+    assert X.shape[0] == len(smallest_smiles_list)

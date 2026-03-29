@@ -3,13 +3,13 @@ Benchmark bulk Tanimoto similarity computation using skfp and RDKit.
 """
 
 import csv
-import os.path
-import time
-from collections.abc import Callable
+import os
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+from benchmarking.utils import measure_time
 from matplotlib import pyplot as plt
 from rdkit import Chem
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
@@ -25,16 +25,16 @@ USE_ERROR_BARS = True  # If True, use error bars instead of shaded fill_between
 
 NUM_THREADS = joblib.effective_n_jobs(n_jobs=-1)  # Use all available CPU cores
 
-OUTPUTS_DIR = os.path.join("benchmark_times", "benchmark_times_saved")
-PLOTS_DIR = os.path.join("benchmark_times", "benchmark_times_plotted")
+OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
+PLOTS_DIR = Path("benchmark_times") / "benchmark_times_plotted"
 CSV_FILENAME = "bulk_tanimoto_timings.csv"
 USE_PDF = True  # If True, save plot as PDF, otherwise save as PNG
 PLOT_FILENAME = "bulk_tanimoto"
 
-RESULT_CSV_PATH = os.path.join(OUTPUTS_DIR, CSV_FILENAME)
-RESULT_PLOT_PATH = os.path.join(
-    PLOTS_DIR, f"{PLOT_FILENAME}.pdf" if USE_PDF else f"{PLOT_FILENAME}.png"
-)
+file_ext = ".pdf" if USE_PDF else ".png"
+
+RESULT_CSV_PATH = OUTPUTS_DIR / CSV_FILENAME
+RESULT_PLOT_PATH = PLOTS_DIR / f"{PLOT_FILENAME}{file_ext}"
 
 
 def run_benchmarks():
@@ -66,10 +66,8 @@ def run_benchmarks():
         writer = csv.writer(csvfile)
         writer.writerow(header)
 
-    steps = list(range(STEP, num_mols, STEP))
-    # top off the dataset in case the number of molecules isn't a multiple of STEP
-    if steps[-1] != num_mols:
-        steps.append(num_mols)
+    # include the last value by using length + 1
+    steps = list(range(STEP, num_mols + 1, STEP))
 
     for n in steps:
         print(f"\nExperiment with {n} molecules:")
@@ -97,7 +95,7 @@ def benchmark_skfp(smiles: list[str]) -> tuple[float, float]:
     mean_tanimoto, std_tanimoto = measure_time(
         func=bulk_tanimoto_binary_similarity,
         data=fps,
-        desc="scikit-fingerprints Tanimoto",
+        label="scikit-fingerprints Tanimoto",
         iterations=N_REPEATS,
     )
 
@@ -126,46 +124,18 @@ def benchmark_rdkit(smiles: list[str]) -> tuple[float, float]:
     mean_tanimoto, std_tanimoto = measure_time(
         func=bulk_tanimoto_similarity_rdkit,
         data=fps,
-        desc="RDKit Tanimoto",
+        label="RDKit Tanimoto",
         iterations=N_REPEATS,
     )
 
     return mean_tanimoto, std_tanimoto
 
 
-def measure_time(
-    func: Callable,
-    data: list[str] | np.ndarray | list[object],
-    desc: str,
-    iterations: int,
-) -> tuple[float, float]:
-    """
-    Measure the average execution time of a function over N_REPEATS.
-    """
-    times: list[float] = []
-
-    print(f"\tBenchmarking {desc} calculation time...")
-    for _ in range(iterations):
-        start = time.time()
-        _ = func(data)
-        end = time.time()
-        times.append(end - start)
-
-    mean_time = np.mean(times)
-    std_time = np.std(times)
-
-    return mean_time, std_time
-
-
 def plot_results() -> None:
     """
-    Plot timing results for scikit-fingerprints vs RDKit and save as PNG.
+    Plot timing results for scikit-fingerprints vs RDKit and save as PNG or PDF.
     """
-    try:
-        df = pd.read_csv(RESULT_CSV_PATH)
-    except FileNotFoundError:
-        print("CSV file not found")
-        return
+    df = pd.read_csv(RESULT_CSV_PATH)
 
     plt.figure(figsize=(10, 6))
     if USE_ERROR_BARS:

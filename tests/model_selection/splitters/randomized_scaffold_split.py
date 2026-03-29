@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from numpy.testing import assert_equal
 from rdkit import Chem
@@ -226,3 +227,28 @@ def test_train_valid_test_split_with_additional_data(smiles_ten_scaffolds):
     assert_equal(len(train_data), 8)
     assert_equal(len(valid_data), 1)
     assert_equal(len(test_data), 1)
+
+
+@pytest.mark.parametrize(
+    "random_state",
+    [0, np.random.RandomState(0), None],
+    ids=["int", "RandomState", "None"],
+)
+def test_randomized_scaffold_split_random_state_types(random_state):
+    """randomized_scaffold_train_test_split should accept int, RandomState, or None."""
+    smiles = [
+        "C1CCCC(C2CC2)CC1",
+        "c1n[nH]cc1C1CCCCCC1",
+        "c1n[nH]cc1CC1CCCCCC1",
+        "C1CCCC(CC2CCOCC2)CC1",
+        "c1ccc2nc(OC3CCC3)ccc2c1",
+        "O=C(CCc1cscn1)NC1CCNCC1",
+        "c1ccc2nc(OC3CCOC3)ccc2c1",
+        "c1ccc2nc(NC3CCOCC3)ccc2c1",
+        "c1ccc2nc(N3CCCOCC3)ccc2c1",
+        "c1ccc2nc(N3CCn4ccnc4C3)ccc2c1",
+    ]
+    train, test = randomized_scaffold_train_test_split(
+        smiles, random_state=random_state
+    )
+    assert len(train) + len(test) == len(smiles)
