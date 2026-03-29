@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 import httpx
+import joblib
 import pandas as pd
 import requests
 from benchmarking.utils import measure_time
@@ -16,12 +17,15 @@ from matplotlib import pyplot as plt
 from skfp.datasets.moleculenet import load_hiv
 from skfp.fingerprints.pubchem import PubChemFingerprint
 
-N_REPEATS = 10
+N_REPEATS = 5
 STEP = 100
 DATASET_CUTOFF = 1000
-MAX_CONCURRENT_REQUESTS = 5
-RETRY_DELAY = 2
-MAX_RETRIES = 3
+MAX_CONCURRENT_REQUESTS = 3  # for fetching CIDs
+RETRY_DELAY = 10
+MAX_RETRIES = 5
+NUM_THREADS = joblib.effective_n_jobs(
+    n_jobs=-1
+)  # for computing fingerpritns and retrieving them via the API
 
 
 OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
@@ -37,7 +41,7 @@ PLOT_FILENAME = "pubchem_fp_timings"
 RESULT_CSV_PATH = OUTPUTS_DIR / CSV_FILENAME
 RESULT_PLOT_PATH = PLOTS_DIR / f"{PLOT_FILENAME}{file_ext}"
 
-USE_ERROR_BARS = True  # If True, use error bars instead of shaded fill_between
+USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
 
 
 async def fetch_cid(
@@ -70,7 +74,10 @@ async def fetch_cid(
 
 async def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
     """
-    Convert a list of SMILES strings to PubChem CIDs using PubhChem API.
+    Convert a list of SMILES strings to PubChem CIDs using the PubChem API.
+
+    This uses a different number of concurrent requests compared to the pubchem_api_fp method,
+    since it is intended for preparing the data and not for the actual benchmark.
     """
     sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     cids: list[int] = []
@@ -94,28 +101,36 @@ async def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
     return cids
 
 
-def pubchem_api_fp(cid_list: list[int]) -> None:
-    """
-    Retrieve PubChem fingerprints for a list of CIDs via the PubChem API.
-    """
-    for cid in cid_list:
-        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
-
-        for attempt in range(MAX_RETRIES):
-            try:
-                r = requests.get(url, timeout=10)
-                r.raise_for_status()
-                break
-            except requests.RequestException as e:
+def _fetch_fp_for_cid(cid: int) -> None:
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
+    for attempt in range(MAX_RETRIES):
+        try:
+            r = requests.get(url, timeout=10)
+            r.raise_for_status()
+            return r.text
+        except requests.RequestException as e:
+            if attempt + 1 == MAX_RETRIES:
+                print(f"FP failed for CID {cid}: {e}")
+            else:
                 print(f"FP retry {attempt + 1}/{MAX_RETRIES} for CID {cid}: {e}")
-                time.sleep(RETRY_DELAY)
+            time.sleep(RETRY_DELAY)
+    return None
 
 
-def skfp_pubchem_fp(smiles_list: list[str]) -> None:
+def pubchem_api_fp(cid_list: list[int], n_jobs: int = 1) -> None:
+    """
+    Retrieve PubChem fingerprints for a list of CIDs via the PubChem API using joblib.Parallel.
+    """
+    joblib.Parallel(n_jobs=n_jobs)(
+        joblib.delayed(_fetch_fp_for_cid)(cid) for cid in cid_list
+    )
+
+
+def skfp_pubchem_fp(smiles_list: list[str], n_jobs: int = 1) -> None:
     """
     PubChem fingerprint (scikit-fingerprints implementation).
     """
-    PubChemFingerprint(n_jobs=1).transform(smiles_list)
+    PubChemFingerprint(n_jobs=n_jobs).transform(smiles_list)
 
 
 def run_benchmark():
@@ -171,10 +186,16 @@ def run_benchmark():
         subset_cids = cids[:n]
 
         api_mean, api_std = measure_time(
-            pubchem_api_fp, subset_cids, "PubChem API", N_REPEATS
+            lambda cids: pubchem_api_fp(cids, n_jobs=NUM_THREADS),
+            subset_cids,
+            "PubChem API",
+            N_REPEATS,
         )
         skfp_mean, skfp_std = measure_time(
-            skfp_pubchem_fp, subset_smiles, "scikit-fingerprints", N_REPEATS
+            lambda smiles: skfp_pubchem_fp(smiles, n_jobs=NUM_THREADS),
+            subset_smiles,
+            "scikit-fingerprints",
+            N_REPEATS,
         )
 
         with open(RESULT_CSV_PATH, "a", newline="") as file_out:
