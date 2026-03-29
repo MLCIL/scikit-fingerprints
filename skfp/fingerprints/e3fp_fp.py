@@ -148,7 +148,6 @@ class E3FPFingerprint(BaseFingerprintTransformer):
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
-
     ):
         super().__init__(
             n_features_out=fp_size,
