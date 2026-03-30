@@ -2,13 +2,11 @@
 PubChem Fingerprint scikit-fingerprints (local) vs PubChem API benchmark.
 """
 
-import asyncio
 import csv
 import os
 import time
 from pathlib import Path
 
-import httpx
 import joblib
 import pandas as pd
 import requests
@@ -18,14 +16,11 @@ from skfp.datasets.moleculenet import load_hiv
 from skfp.fingerprints.pubchem import PubChemFingerprint
 
 N_REPEATS = 5
-STEP = 100
-DATASET_CUTOFF = 1000
-MAX_CONCURRENT_REQUESTS = 3  # for fetching CIDs
+STEP = 10
+DATASET_CUTOFF = 100
 RETRY_DELAY = 10
 MAX_RETRIES = 5
-NUM_THREADS = joblib.effective_n_jobs(
-    n_jobs=-1
-)  # for computing fingerpritns and retrieving them via the API
+NUM_THREADS = joblib.effective_n_jobs(n_jobs=-1)
 
 
 OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
@@ -44,65 +39,7 @@ RESULT_PLOT_PATH = PLOTS_DIR / f"{PLOT_FILENAME}{file_ext}"
 USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
 
 
-async def fetch_cid(
-    client: httpx.AsyncClient, smiles: str, sem: asyncio.Semaphore
-) -> int | None:
-    """
-    Fetch the PubChem CID for a single SMILES string using the PubChem API.
-    """
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{smiles}/cids/TXT"
-
-    async with sem:
-        for attempt in range(MAX_RETRIES):
-            try:
-                r = await client.get(url, timeout=10.0)
-                r.raise_for_status()
-                text = r.text.strip()
-
-                if text and text.split()[0].isdigit():
-                    cid = int(text.split()[0])
-                    if cid > 0:
-                        return cid
-
-            except Exception as e:
-                print(f"CID retry {attempt + 1}/{MAX_RETRIES} for {smiles}: {e}")
-
-            await asyncio.sleep(RETRY_DELAY)
-
-    return None
-
-
-async def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
-    """
-    Convert a list of SMILES strings to PubChem CIDs using the PubChem API.
-
-    This uses a different number of concurrent requests compared to the pubchem_api_fp method,
-    since it is intended for preparing the data and not for the actual benchmark.
-    """
-    sem = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
-    cids: list[int] = []
-
-    async with httpx.AsyncClient() as client:
-        i = 0
-        while len(cids) < needed and i < len(smiles_list):
-            batch = smiles_list[i : i + MAX_CONCURRENT_REQUESTS]
-            tasks = [fetch_cid(client, smi, sem) for smi in batch]
-            results = await asyncio.gather(*tasks)
-
-            for cid in results:
-                if cid is not None:
-                    cids.append(cid)
-                    if len(cids) == needed:
-                        break
-
-            i += MAX_CONCURRENT_REQUESTS
-
-    print(f"Collected {len(cids)} valid CIDs (needed {needed})")
-    return cids
-
-
-def _fetch_fp_for_cid(cid: int) -> None:
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
+def _retry_request(url: str) -> str | None:
     for attempt in range(MAX_RETRIES):
         try:
             r = requests.get(url, timeout=10)
@@ -110,19 +47,59 @@ def _fetch_fp_for_cid(cid: int) -> None:
             return r.text
         except requests.RequestException as e:
             if attempt + 1 == MAX_RETRIES:
-                print(f"FP failed for CID {cid}: {e}")
+                print(f"Request failed: {url}, {e}")
             else:
-                print(f"FP retry {attempt + 1}/{MAX_RETRIES} for CID {cid}: {e}")
+                print(f"Retry {attempt + 1}/{MAX_RETRIES} for URL: {url}")
             time.sleep(RETRY_DELAY)
+
     return None
 
 
-def pubchem_api_fp(cid_list: list[int], n_jobs: int = 1) -> None:
+def fetch_cid(smiles: str) -> int | None:
     """
-    Retrieve PubChem fingerprints for a list of CIDs via the PubChem API using joblib.Parallel.
+    Fetch the PubChem CID for a single SMILES string using the PubChem API.
     """
-    joblib.Parallel(n_jobs=n_jobs)(
-        joblib.delayed(_fetch_fp_for_cid)(cid) for cid in cid_list
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{smiles}/cids/TXT"
+    text = _retry_request(url)
+    if text:
+        first = text.strip().split()[0]
+        if first.isdigit():
+            return int(first)
+    return None
+
+
+def fetch_fp(cid: int) -> str | None:
+    """Fetch PubChem fingerprint for a CID."""
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
+    return _retry_request(url)
+
+
+def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
+    """
+    Convert a list of SMILES strings to PubChem CIDs using the PubChem API (joblib, requests).
+    """
+    cids: list[int] = []
+    i = 0
+    while len(cids) < needed and i < len(smiles_list):
+        batch = smiles_list[i : i + NUM_THREADS]
+        results = joblib.Parallel(n_jobs=NUM_THREADS)(
+            joblib.delayed(fetch_cid)(smi) for smi in batch
+        )
+        for cid in results:
+            if cid is not None:
+                cids.append(cid)
+                if len(cids) == needed:
+                    break
+        i += NUM_THREADS
+    print(f"Collected {len(cids)} valid CIDs (needed {needed})")
+    return cids
+
+
+def pubchem_api_pipeline(smiles_list: list[str]) -> list[str]:
+    """Fetch CIDs on-the-fly for the subset and retrieve fingerprints."""
+    cids = smiles_to_cid(smiles_list, len(smiles_list))
+    return joblib.Parallel(n_jobs=NUM_THREADS)(
+        joblib.delayed(fetch_fp)(cid) for cid in cids
     )
 
 
@@ -147,26 +124,14 @@ def run_benchmark():
     4. Compute per-molecule timing and write mean/std results to a CSV file.
     """
     X, _ = load_hiv()
-
-    # subset of dataset for testing
     X = X[:DATASET_CUTOFF]
-
-    cids = []
-    while len(cids) < DATASET_CUTOFF:
-        missing = DATASET_CUTOFF - len(cids)
-        print(f"Fetching {missing} more CIDs...")
-        new_cids = asyncio.run(smiles_to_cid(X, missing))
-        cids.extend(new_cids)
-
-        if not new_cids:
-            print("Failed to fetch additional CIDs. Stopping benchmark.")
-            return
 
     # include the last value by using length + 1
     steps = list(range(STEP, DATASET_CUTOFF + 1, STEP))
 
-    with open(RESULT_CSV_PATH, "w", newline="") as file_out:
-        writer = csv.writer(file_out)
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    with open(RESULT_CSV_PATH, "w", newline="") as f:
+        writer = csv.writer(f)
         writer.writerow(
             [
                 "n_molecules",
@@ -179,27 +144,24 @@ def run_benchmark():
             ]
         )
 
-    for n in steps:
-        print(f"Benchmarking {n} molecules")
+        for n in steps:
+            print(f"Benchmarking {n} molecules")
+            smiles_subset = X[:n]
 
-        subset_smiles = X[:n]
-        subset_cids = cids[:n]
+            api_mean, api_std = measure_time(
+                pubchem_api_pipeline,
+                smiles_subset,
+                "PubChem API",
+                N_REPEATS,
+            )
 
-        api_mean, api_std = measure_time(
-            lambda cids: pubchem_api_fp(cids, n_jobs=NUM_THREADS),
-            subset_cids,
-            "PubChem API",
-            N_REPEATS,
-        )
-        skfp_mean, skfp_std = measure_time(
-            lambda smiles: skfp_pubchem_fp(smiles, n_jobs=NUM_THREADS),
-            subset_smiles,
-            "scikit-fingerprints",
-            N_REPEATS,
-        )
+            skfp_mean, skfp_std = measure_time(
+                skfp_pubchem_fp,
+                smiles_subset,
+                "scikit-fingerprints",
+                N_REPEATS,
+            )
 
-        with open(RESULT_CSV_PATH, "a", newline="") as file_out:
-            writer = csv.writer(file_out)
             writer.writerow(
                 [
                     n,
