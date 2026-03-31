@@ -1,11 +1,3 @@
-r"""ABC Index descriptor.
-
-References
-----------
-    * http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
-
-"""
-
 import numpy as np
 from rdkit.Chem import Bond, Mol
 
@@ -53,6 +45,13 @@ def _calc_abcgg_index(mol: Mol, distance_matrix_regular: DistanceMatrix) -> floa
 
 
 def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarray:
+    r"""ABC Index descriptor.
+
+    References
+    ----------
+        * http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
+
+    """
     return np.array(
         [
             _calc_abc_index(mol_regular),

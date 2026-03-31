@@ -18,7 +18,7 @@ def get_feature_names(use_3d: bool) -> np.ndarray:
     )
 
 
-def compute(mol: Mol, use_3d: bool) -> np.ndarray:
+def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # dependencies
     n_frags = len(GetMolFrags(mol))
 

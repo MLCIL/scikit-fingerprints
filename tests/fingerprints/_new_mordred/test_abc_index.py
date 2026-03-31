@@ -1,5 +1,4 @@
-"""ABC index reference values from doi:10.2298/JSC150901093F."""
-
+import pytest
 from numpy.testing import assert_almost_equal
 from rdkit import Chem
 
@@ -17,10 +16,15 @@ REFERENCE_DATA = [
 ]
 
 
-def test_abc_index_reference_values():
-    for smi, expected_abc, expected_abcgg in REFERENCE_DATA:
-        mol = Chem.MolFromSmiles(smi)
-        dm = DistanceMatrix(mol)
+@pytest.mark.parametrize(
+    "smi,expected_abc,expected_abcgg",
+    REFERENCE_DATA,
+    ids=[row[0] for row in REFERENCE_DATA],
+)
+def test_abc_index_reference_values(smi, expected_abc, expected_abcgg):
+    """ABC index reference values from doi:10.2298/JSC150901093F."""
+    mol = Chem.MolFromSmiles(smi)
+    dm = DistanceMatrix(mol)
 
-        assert_almost_equal(_calc_abc_index(mol), expected_abc, decimal=2)
-        assert_almost_equal(_calc_abcgg_index(mol, dm), expected_abcgg, decimal=2)
+    assert_almost_equal(_calc_abc_index(mol), expected_abc, decimal=2)
+    assert_almost_equal(_calc_abcgg_index(mol, dm), expected_abcgg, decimal=2)

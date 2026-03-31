@@ -68,11 +68,11 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
 
     Examples
     --------
-    >>> from skfp.fingerprints import MordredFingerprint
+    >>> from skfp.fingerprints import NewMordredFingerprint
     >>> smiles = ["O", "CC", "[C-]#N", "CC=O"]
-    >>> fp = MordredFingerprint()
+    >>> fp = NewMordredFingerprint()
     >>> fp
-    MordredFingerprint()
+    NewMordredFingerprint()
 
     >>> fp.transform(smiles)
     array([[0.       , 0.       , 0.       , ..., 0.       ,       nan,
@@ -150,7 +150,7 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
         X = ensure_mols(X)
 
-        X = [compute(mol=mol, use_3d=self.use_3D) for mol in X]
+        X = [compute(mol=mol, use_3D=self.use_3D) for mol in X]
 
         return (
             csr_array(X, dtype=np.float32)

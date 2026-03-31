@@ -1,71 +1,58 @@
+from functools import cached_property
+
 import numpy as np
-from rdkit import Chem
-from rdkit.Chem import Mol
+from rdkit.Chem import GetAdjacencyMatrix, GetDistanceMatrix, Mol
 
 
 class DistanceMatrix:
-    def __init__(self, mol: Mol, useBO: bool = False, useAtomWts: bool = False):
+    def __init__(self, mol: Mol, use_bo: bool = False, use_atom_wts: bool = False):
         self.matrix: np.ndarray
-        self.matrix = Chem.GetDistanceMatrix(
-            mol, useBO=useBO, useAtomWts=useAtomWts, force=True
+        self.matrix = GetDistanceMatrix(
+            mol, useBO=use_bo, useAtomWts=use_atom_wts, force=True
         )
-        self._eccentricity: np.ndarray | None = None
-        self._radius: np.floating | None = None
-        self._diameter: np.floating | None = None
 
+    @cached_property
     def eccentricity(self) -> np.ndarray:
-        if self._eccentricity is None:
-            self._eccentricity = self.matrix.max(axis=0)
-        return self._eccentricity
+        return self.matrix.max(axis=0)
 
+    @cached_property
     def radius(self) -> np.floating:
-        if self._radius is None:
-            self._radius = self.eccentricity().min()
-        return self._radius
+        return self.eccentricity().min()
 
+    @cached_property
     def diameter(self) -> np.floating:
-        if self._diameter is None:
-            self._diameter = self.matrix.max()
-        return self._diameter
+        return self.matrix.max()
 
 
 class AdjacencyMatrix:
-    def __init__(self, mol: Mol, useBO: bool = False):
+    def __init__(self, mol: Mol, use_bo: bool = False):
         self._base: np.ndarray
-        self._base = Chem.GetAdjacencyMatrix(mol, useBO=useBO, force=True)
+        self._base = GetAdjacencyMatrix(mol, useBO=use_bo, force=True)
         self._orders = [self._base]
-        self._valence: np.ndarray | None = None
 
     def order(self, n: int = 1) -> np.ndarray:
         while len(self._orders) < n:
             self._orders.append(self._orders[-1].dot(self._base))
         return self._orders[n - 1]
 
+    @cached_property
     def valence(self) -> np.ndarray:
-        if self._valence is None:
-            self._valence = self._base.sum(axis=0)
-        return self._valence
+        return self._base.sum(axis=0)
 
 
 class DistanceMatrix3D:
-    def __init__(self, coords: np.ndarray, useAtomWts: bool = False):
+    def __init__(self, coords: np.ndarray, use_atom_wts: bool = False):
         self.matrix: np.ndarray
         self.matrix = np.sqrt(np.sum((coords[:, np.newaxis] - coords) ** 2, axis=2))
-        self._eccentricity: np.ndarray | None = None
-        self._radius: np.floating | None = None
-        self._diameter: np.floating | None = None
 
+    @cached_property
     def eccentricity(self) -> np.ndarray:
-        if self._eccentricity is None:
-            self._eccentricity = self.matrix.max(axis=0)
-        return self._eccentricity
+        return self.matrix.max(axis=0)
 
+    @cached_property
     def radius(self) -> np.floating:
-        if self._radius is None:
-            self._radius = self.eccentricity().min()
-        return self._radius
+        return self.eccentricity().min()
 
+    @cached_property
     def diameter(self) -> np.floating:
-        if self._diameter is None:
-            self._diameter = self.matrix.max()
-        return self._diameter
+        return self.matrix.max()
