@@ -28,7 +28,7 @@
 
   <p>
     <a href="https://scikit-fingerprints.readthedocs.io/latest/"><strong>Documentation</strong></a> &middot;
-    <a href="https://scikit-fingerprints.readthedocs.io/latest/examples.html"><strong>Tutorials</strong></a> &middot;
+    <a href="https://scikit-fingerprints.readthedocs.io/latest/examples.html"><strong>Examples & tutorials</strong></a> &middot;
     <a href="https://scikit-fingerprints.readthedocs.io/latest/api_reference.html"><strong>API Reference</strong></a> &middot;
     <a href="https://www.sciencedirect.com/science/article/pii/S2352711024003145"><strong>Publication</strong></a>
 </p>
