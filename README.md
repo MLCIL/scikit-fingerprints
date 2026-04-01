@@ -1,129 +1,94 @@
-# scikit-fingerprints
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logos/skfp-logo-horizontal-text-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/logos/skfp-logo-horizontal-text-black.png">
+    <img alt="scikit-fingerprints" src="docs/logos/skfp-logo-no-text.png">
+  </picture>
 
-[![PyPI version](https://badge.fury.io/py/scikit-fingerprints.svg)](https://badge.fury.io/py/scikit-fingerprints)
-[![](https://img.shields.io/pypi/dm/scikit-fingerprints)](https://pypi.org/project/scikit-fingerprints/)
-[![Downloads](https://static.pepy.tech/badge/scikit-fingerprints)](https://pepy.tech/project/scikit-fingerprints)
-[![Code style: ruff](https://img.shields.io/badge/style-ruff-41B5BE?style=flat)](https://github.com/astral-sh/ruff)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE.md)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/scikit-fingerprints.svg)](https://pypi.org/project/scikit-fingerprints/)
-[![Contributors](https://img.shields.io/github/contributors/scikit-fingerprints/scikit-fingerprints)](https://github.com/scikit-fingerprints/scikit-fingerprints/graphs/contributors)
+  <br/>
+  <br/>
 
---- 
+  <p>
+    <a href="https://badge.fury.io/py/scikit-fingerprints"><img src="https://badge.fury.io/py/scikit-fingerprints.svg" alt="PyPI version"></a>
+    <a href="https://pepy.tech/project/scikit-fingerprints"><img src="https://static.pepy.tech/badge/scikit-fingerprints" alt="Downloads"></a>
+    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/dm/scikit-fingerprints" alt="Monthly downloads"></a>
+    <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
+    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/pyversions/scikit-fingerprints.svg" alt="Python versions"></a>
+    <a href="https://github.com/scikit-fingerprints/scikit-fingerprints/graphs/contributors"><img src="https://img.shields.io/github/contributors/scikit-fingerprints/scikit-fingerprints" alt="Contributors"></a>
+  </p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/logos/skfp-logo-horizontal-text-white.png">
-  <source media="(prefers-color-scheme: light)" srcset="docs/logos/skfp-logo-horizontal-text-black.png">
-  <img alt="change image for different github color schemes" src="docs/logos/skfp-logo-no-text.png"> 
-</picture>
+  <p><strong>The scikit-learn compatible library for molecular fingerprints and chemoinformatics.</strong></p>
+
+  <p>
+    Easily and efficiently compute molecular fingerprints, molecular filters, distances &amp; similarity measures, and more.
+  </p>
+
+  <p>Go from SMILES to production-grade chemoinformatics ML pipelines in a few lines of code.</p>
+
+
+  <p>
+    <a href="https://scikit-fingerprints.readthedocs.io/latest/"><strong>Documentation</strong></a> &middot;
+    <a href="https://scikit-fingerprints.readthedocs.io/latest/examples.html"><strong>Examples & tutorials</strong></a> &middot;
+    <a href="https://scikit-fingerprints.readthedocs.io/latest/api_reference.html"><strong>API Reference</strong></a> &middot;
+    <a href="https://www.sciencedirect.com/science/article/pii/S2352711024003145"><strong>Publication</strong></a>
+</p>
+</div>
 
 ---
-
-[scikit-fingerprints](https://scikit-fingerprints.readthedocs.io/latest/) is a Python library for efficient
-computation of molecular fingerprints.
 
 ## Table of Contents
 
-- [Description](#description)
-- [Supported platforms](#supported-platforms)
-- [Installation](#installation)
-- [Quickstart](#quickstart)
-- [Project overview](#project-overview)
-- [Contributing](#contributing)
-- [License](#license)
+  - [Install](#install)
+  - [Quickstart](#quickstart)
+  - [Key features](#key-features)
+  - [Tutorials](#tutorials)
+  - [Publications and citing](#publications-and-citing)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ---
 
-## Description
+## Install
 
-Molecular fingerprints are crucial in various scientific fields, including drug discovery, materials science, and
-chemical analysis. However, existing Python libraries for computing molecular fingerprints often lack performance,
-user-friendliness, and support for modern programming standards. This project aims to address these shortcomings by
-creating an efficient and accessible Python library for molecular fingerprint computation.
-
-See [the documentation and API reference](https://scikit-fingerprints.readthedocs.io/latest/) for details.
-
-Main features:
-- scikit-learn compatible
-- feature-rich, with >30 fingerprints
-- parallelization
-- sparse matrix support
-- commercial-friendly MIT license
-
-## Supported platforms
-
-|             | `python3.10` | `python3.11` | `python3.12` | `python3.13` |
-|:-----------:|:------------:|:------------:|:------------:|:------------:|
-|  **Linux**  |       ✅      |       ✅      |       ✅      |      ✅       |
-| **Windows** |       ✅      |       ✅      |       ✅      |      ✅       |
-|  **macOS**  |       ✅      |       ✅      |       ✅      |      ✅       |
-
-Python 3.9 was supported up to scikit-fingerprints 1.13.0.
-
-Python 3.13 is officially supported, but underlying libraries may not be fully compatible yet.
-
-## Installation
-
-You can install the library using pip:
+You can install from PyPI, using `pip` or `uv`.
 
 ```bash
 pip install scikit-fingerprints
 ```
 
-If you need bleeding-edge features and don't mind potentially unstable or undocumented functionalities,
-you can also install directly from GitHub:
+If you need bleeding-edge features and don't mind potentially unstable or undocumented functionalities, you can also install directly from GitHub:
+
 ```bash
-pip install git+https://github.com/scikit-fingerprints/scikit-fingerprints.git
+pip install git+https://github.com/MLCIL/scikit-fingerprints.git
 ```
+
+Python versions from 3.10 to 3.13 are supported on all major operating systems.
+Tests are run on Linux Ubuntu, Windows, and macOS.
 
 ## Quickstart
 
-Most fingerprints are based on molecular graphs (topological, 2D-based), and you can use SMILES
-input directly:
+Simply input SMILES strings into the molecular fingerprint instance:
+
 ```python
-from skfp.fingerprints import AtomPairFingerprint
+from skfp.fingerprints import ECFPFingerprint
 
-smiles_list = ["O=S(=O)(O)CCS(=O)(=O)O", "O=C(O)c1ccccc1O"]
+smiles = ["O=S(=O)(O)CCS(=O)(=O)O", "O=C(O)c1ccccc1O"]
 
-atom_pair_fingerprint = AtomPairFingerprint()
-
-X = atom_pair_fingerprint.transform(smiles_list)
-print(X)
+fp = ECFPFingerprint()
+X = fp.transform(smiles)  # SMILES in, NumPy array out
 ```
 
-For fingerprints using conformers (conformational, 3D-based), you need to create molecules first
-and compute conformers. Those fingerprints have `requires_conformers` attribute set
-to `True`.
+Build a full molecular ML pipeline with scikit-learn:
+
 ```python
-from skfp.preprocessing import ConformerGenerator, MolFromSmilesTransformer
-from skfp.fingerprints import WHIMFingerprint
-
-smiles_list = ["O=S(=O)(O)CCS(=O)(=O)O", "O=C(O)c1ccccc1O"]
-
-mol_from_smiles = MolFromSmilesTransformer()
-conf_gen = ConformerGenerator()
-fp = WHIMFingerprint()
-print(fp.requires_conformers)  # True
-
-mols_list = mol_from_smiles.transform(smiles_list)
-mols_list = conf_gen.transform(mols_list)
-
-X = fp.transform(mols_list)
-print(X)
-```
-
-You can also use scikit-learn functionalities like pipelines, feature unions
-etc. to build complex workflows. Popular datasets, e.g. from MoleculeNet benchmark,
-can be loaded directly.
-```python
-from skfp.datasets.moleculenet import load_clintox
-from skfp.metrics import multioutput_auroc_score, extract_pos_proba
-from skfp.model_selection import scaffold_train_test_split
-from skfp.fingerprints import ECFPFingerprint, MACCSFingerprint
-from skfp.preprocessing import MolFromSmilesTransformer
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline, make_union
 
+from skfp.datasets.moleculenet import load_clintox
+from skfp.fingerprints import ECFPFingerprint, MACCSFingerprint
+from skfp.metrics import extract_pos_proba, multioutput_auroc_score
+from skfp.model_selection import scaffold_train_test_split
+from skfp.preprocessing import MolFromSmilesTransformer
 
 smiles, y = load_clintox()
 smiles_train, smiles_test, y_train, y_test = scaffold_train_test_split(
@@ -137,65 +102,80 @@ pipeline = make_pipeline(
 )
 pipeline.fit(smiles_train, y_train)
 
-y_pred_proba = pipeline.predict_proba(smiles_test)
-y_pred_proba = extract_pos_proba(y_pred_proba)
-auroc = multioutput_auroc_score(y_test, y_pred_proba)
-print(f"AUROC: {auroc:.2%}")
+y_pred_proba = extract_pos_proba(pipeline.predict_proba(smiles_test))
+print(f"AUROC: {multioutput_auroc_score(y_test, y_pred_proba):.2%}")
 ```
 
-## Examples
+---
 
-You can find Jupyter Notebooks with examples and tutorials [in documentation](https://scikit-fingerprints.readthedocs.io/latest/examples.html),
-as well as in the ["examples" directory](https://github.com/scikit-fingerprints/scikit-fingerprints/tree/master/examples).
+## Key features
 
-Examples and tutorials:
+- **[Molecular fingerprints](https://scikit-fingerprints.readthedocs.io/latest/modules/fingerprints.html)**
+  - over 30, e.g. ECFP, Avalon, MACCS, Mordred, PubChem
+  - all with a uniform `.transform()` API
+
+- **[Molecular filters](https://scikit-fingerprints.readthedocs.io/latest/modules/filters.html)**
+  - over 30, e.g. Lipinski Rule of 5, PAINS, REOS
+  - both substructural and physicochemical
+
+- **[Similarity & distance measures](https://scikit-fingerprints.readthedocs.io/latest/modules/distances.html)**
+  - 14 measures, e.g. Tanimoto, Dice, MCS
+  - compatible with kNN, UMAP, HDBSCAN, and other distance-based models
+  - efficient bulk similarity distribution computation
+
+- **[Applicability domain checks](https://scikit-fingerprints.readthedocs.io/latest/modules/applicability_domain.html)**
+  - 11 methods, e.g. kNN, centroid distance, TOPKAT
+  - evaluate the reliability of algorithms for new molecules
+
+- **[Benchmark datasets](https://scikit-fingerprints.readthedocs.io/latest/modules/datasets.html)**
+  - MoleculeNet, Therapeutics Data Commons, MoleculeACE, and LRGB
+  - train-test splits built-in
+
+- **Native scikit-learn integration**
+  - use `Pipeline`, `FeatureUnion`, `GridSearchCV`, and more
+  - build, save, and deploy ML pipelines for chemoinformatics
+
+- **Other features**
+  - fast and efficient: parallelized, sparse matrices support, C++ RDKit under the hood
+  - efficient hyperparameter tuning with fingerprints caching
+  - MIT licensed, permissive academic and commercial use
+
+---
+
+## Tutorials
+
+Step-by-step Jupyter notebooks, both for learning and deploying production-grade features:
+
 1. [Introduction to scikit-fingerprints](examples/01_skfp_introduction.ipynb)
 2. [Fingerprint types](examples/02_fingerprint_types.ipynb)
 3. [Molecular pipelines](examples/03_pipelines.ipynb)
-4. [Conformers and conformational fingerprints](examples/04_conformers.ipynb)
+4. [Conformers and 3D fingerprints](examples/04_conformers.ipynb)
 5. [Hyperparameter tuning](examples/05_hyperparameter_tuning.ipynb)
 6. [Dataset splits](examples/06_dataset_splits.ipynb)
 7. [Datasets and benchmarking](examples/07_datasets_and_benchmarking.ipynb)
 8. [Similarity and distance metrics](examples/08_similarity_and_distance_metrics.ipynb)
 9. [Molecular filters](examples/09_molecular_filters.ipynb)
+10. [Molecular clustering](examples/10_molecular_clustering.ipynb)
 
-## Project overview
+---
 
-`scikit-fingerprints` brings molecular fingerprints and related functionalities into
-the scikit-learn ecosystem. With familiar class-based design and `.transform()` method,
-fingerprints can be computed from SMILES strings or RDKit `Mol` objects. Resulting NumPy
-arrays or SciPy sparse arrays can be directly used in ML pipelines.
+## Publications and citing
 
-Main features:
+Publications using scikit-fingerprints:
+1. [J. Adamczyk, W. Czech "Molecular Topological Profile (MOLTOP) -- Simple and Strong Baseline for Molecular Graph Classification" ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
+2. [J. Adamczyk, P. Ludynia "Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python" SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
+3. [J. Adamczyk, P. Ludynia, W. Czech "Molecular Fingerprints Are Strong Models for Peptide Function Prediction" ArXiv preprint](https://arxiv.org/abs/2501.17901)
+4. [J. Adamczyk "Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology" CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
+5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski "MolPILE - large-scale, diverse dataset for molecular representation learning" ArXiv preprint](https://arxiv.org/abs/2509.18353)
+6. [J. Adamczyk, J. Poziemski, P. Siedlecki "Evaluating machine learning models for predicting pesticide toxicity to honey bees" Ecotoxicology and Environmental Safety 2026](https://www.sciencedirect.com/science/article/pii/S0147651326001983)
+7. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
+8. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
+9. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
 
-1. **Scikit-learn compatible:** `scikit-fingerprints` uses familiar scikit-learn
-   interface  and conforms to its API requirements. You can include molecular
-   fingerprints in pipelines, concatenate them with feature unions, and process with
-   ML algorithms.
+If you use scikit-fingerprints in your work, please cite our publication in
+[SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145):
 
-2. **Performance optimization:** both speed and memory usage are optimized, by
-   utilizing parallelism (with Joblib) and sparse CSR matrices (with SciPy). Heavy
-   computation is typically relegated to C++ code of RDKit.
-
-3. **Feature-rich:** in addition to computing fingerprints, you can load popular
-   benchmark  datasets (e.g. from MoleculeNet), perform splitting (e.g. scaffold
-   split), generate conformers, and optimize hyperparameters with optimized cross-validation.
-
-4. **Well-documented:** each public function and class has extensive documentation,
-   including relevant implementation details, caveats, and literature references.
-
-5. **Extensibility:** any functionality can be easily modified or extended by
-   inheriting from existing classes.
-
-6. **High code quality:** pre-commit hooks scan each commit for code quality (e.g. `black`,
-   `flake8`), typing (`mypy`), and security (e.g. `bandit`, `pip-audit`). CI/CD process with
-   GitHub Actions also includes over 250 unit and integration tests.
-
-## Citing
-
-If you use scikit-fingerprints in your work, please cite our main publication, 
-[available on SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145):
-```
+```bibtex
 @article{scikit_fingerprints,
    title = {Scikit-fingerprints: Easy and efficient computation of molecular fingerprints in Python},
    author = {Jakub Adamczyk and Piotr Ludynia},
@@ -206,29 +186,15 @@ If you use scikit-fingerprints in your work, please cite our main publication,
    issn = {2352-7110},
    doi = {https://doi.org/10.1016/j.softx.2024.101944},
    url = {https://www.sciencedirect.com/science/article/pii/S2352711024003145},
-   keywords = {Molecular fingerprints, Chemoinformatics, Molecular property prediction, Python, Machine learning, Scikit-learn},
 }
 ```
 
-Its preprint is also [available on ArXiv](https://arxiv.org/abs/2407.13291).
-
-## Publications and usage
-
-Publications using scikit-fingerprints:
-1. [J. Adamczyk, W. Czech "Molecular Topological Profile (MOLTOP) - Simple and Strong Baseline for Molecular Graph Classification" ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
-2. [J. Adamczyk, P. Ludynia "Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python" SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
-3. [J. Adamczyk, P. Ludynia, W. Czech "Molecular Fingerprints Are Strong Models for Peptide Function Prediction" ArXiv preprint](https://arxiv.org/abs/2501.17901)
-4. [J. Adamczyk "Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology" CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
-5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski "MolPILE - large-scale, diverse dataset for molecular representation learning" ArXiv preprint](https://arxiv.org/abs/2509.18353)
-6. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
-7. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
-8. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
+Also available as a [preprint on ArXiv](https://arxiv.org/abs/2407.13291).
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details on our code of
- conduct and the process for submitting pull requests.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+MIT -- see [LICENSE.md](LICENSE.md) for details.
