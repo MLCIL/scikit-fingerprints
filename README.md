@@ -7,6 +7,15 @@
 
   <br/>
 
+  <p>
+    <a href="https://badge.fury.io/py/scikit-fingerprints"><img src="https://badge.fury.io/py/scikit-fingerprints.svg" alt="PyPI version"></a>
+    <a href="https://pepy.tech/project/scikit-fingerprints"><img src="https://static.pepy.tech/badge/scikit-fingerprints" alt="Downloads"></a>
+    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/dm/scikit-fingerprints" alt="Monthly downloads"></a>
+    <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
+    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/pyversions/scikit-fingerprints.svg" alt="Python versions"></a>
+    <a href="https://github.com/scikit-fingerprints/scikit-fingerprints/graphs/contributors"><img src="https://img.shields.io/github/contributors/scikit-fingerprints/scikit-fingerprints" alt="Contributors"></a>
+  </p>
+
   <p><strong>The scikit-learn compatible library for molecular fingerprints and chemoinformatics.</strong></p>
 
   <p>
@@ -22,15 +31,6 @@
     <a href="https://scikit-fingerprints.readthedocs.io/latest/api_reference.html"><strong>API Reference</strong></a> &middot;
     <a href="https://www.sciencedirect.com/science/article/pii/S2352711024003145"><strong>Publication</strong></a>
 </p>
-
-  <p>
-    <a href="https://badge.fury.io/py/scikit-fingerprints"><img src="https://badge.fury.io/py/scikit-fingerprints.svg" alt="PyPI version"></a>
-    <a href="https://pepy.tech/project/scikit-fingerprints"><img src="https://static.pepy.tech/badge/scikit-fingerprints" alt="Downloads"></a>
-    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/dm/scikit-fingerprints" alt="Monthly downloads"></a>
-    <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
-    <a href="https://pypi.org/project/scikit-fingerprints/"><img src="https://img.shields.io/pypi/pyversions/scikit-fingerprints.svg" alt="Python versions"></a>
-    <a href="https://github.com/scikit-fingerprints/scikit-fingerprints/graphs/contributors"><img src="https://img.shields.io/github/contributors/scikit-fingerprints/scikit-fingerprints" alt="Contributors"></a>
-  </p>
 </div>
 
 ---
