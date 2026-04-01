@@ -6,6 +6,7 @@
   </picture>
 
   <br/>
+  <br/>
 
   <p>
     <a href="https://badge.fury.io/py/scikit-fingerprints"><img src="https://badge.fury.io/py/scikit-fingerprints.svg" alt="PyPI version"></a>
