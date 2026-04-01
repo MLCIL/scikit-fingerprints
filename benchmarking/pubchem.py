@@ -4,12 +4,12 @@ PubChem Fingerprint scikit-fingerprints (local) vs PubChem API benchmark.
 
 import csv
 import os
-import time
 from pathlib import Path
 
 import joblib
 import pandas as pd
 import requests
+import tenacity
 from benchmarking.utils import measure_time
 from matplotlib import pyplot as plt
 from skfp.datasets.moleculenet import load_hiv
@@ -38,76 +38,23 @@ RESULT_PLOT_PATH = PLOTS_DIR / f"{PLOT_FILENAME}{file_ext}"
 
 USE_ERROR_BARS = False  # If True, use error bars instead of shaded fill_between
 
-
-def _retry_request(url: str) -> str | None:
-    for attempt in range(MAX_RETRIES):
-        try:
-            r = requests.get(url, timeout=10)
-            r.raise_for_status()
-            return r.text
-        except requests.RequestException as e:
-            if attempt + 1 == MAX_RETRIES:
-                print(f"Request failed: {url}, {e}")
-            else:
-                print(f"Retry {attempt + 1}/{MAX_RETRIES} for URL: {url}")
-            time.sleep(RETRY_DELAY)
-
-    return None
+_RETRY = tenacity.retry(
+    retry=tenacity.retry_if_exception_type(requests.RequestException),
+    stop=tenacity.stop_after_attempt(MAX_RETRIES),
+    wait=tenacity.wait_fixed(RETRY_DELAY),
+    before_sleep=lambda rs: print(
+        f"Retry {rs.attempt_number}/{MAX_RETRIES}: {rs.outcome.exception()}"
+    ),
+    retry_error_callback=lambda rs: print(
+        f"Request failed after {MAX_RETRIES} attempts: {rs.outcome.exception()}"
+    ),
+)
 
 
-def fetch_cid(smiles: str) -> int | None:
-    """
-    Fetch the PubChem CID for a single SMILES string using the PubChem API.
-    """
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{smiles}/cids/TXT"
-    text = _retry_request(url)
-    if text:
-        first = text.strip().split()[0]
-        if first.isdigit():
-            return int(first)
-    return None
-
-
-def fetch_fp(cid: int) -> str | None:
-    """Fetch PubChem fingerprint for a CID."""
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
-    return _retry_request(url)
-
-
-def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
-    """
-    Convert a list of SMILES strings to PubChem CIDs using the PubChem API (joblib, requests).
-    """
-    cids: list[int] = []
-    i = 0
-    while len(cids) < needed and i < len(smiles_list):
-        batch = smiles_list[i : i + NUM_THREADS]
-        results = joblib.Parallel(n_jobs=NUM_THREADS)(
-            joblib.delayed(fetch_cid)(smi) for smi in batch
-        )
-        for cid in results:
-            if cid is not None:
-                cids.append(cid)
-                if len(cids) == needed:
-                    break
-        i += NUM_THREADS
-    print(f"Collected {len(cids)} valid CIDs (needed {needed})")
-    return cids
-
-
-def pubchem_api_pipeline(smiles_list: list[str]) -> list[str]:
-    """Fetch CIDs on-the-fly for the subset and retrieve fingerprints."""
-    cids = smiles_to_cid(smiles_list, len(smiles_list))
-    return joblib.Parallel(n_jobs=NUM_THREADS)(
-        joblib.delayed(fetch_fp)(cid) for cid in cids
-    )
-
-
-def skfp_pubchem_fp(smiles_list: list[str], n_jobs: int = 1) -> None:
-    """
-    PubChem fingerprint (scikit-fingerprints implementation).
-    """
-    PubChemFingerprint(n_jobs=n_jobs).transform(smiles_list)
+def main():
+    os.makedirs(OUTPUTS_DIR, exist_ok=True)
+    run_benchmark()
+    plot_results()
 
 
 def run_benchmark():
@@ -233,10 +180,64 @@ def plot_results():
     print(f"Plot saved to {RESULT_PLOT_PATH}")
 
 
-def main():
-    os.makedirs(OUTPUTS_DIR, exist_ok=True)
-    run_benchmark()
-    plot_results()
+def pubchem_api_pipeline(smiles_list: list[str]) -> list[str]:
+    """Fetch CIDs on-the-fly for the subset and retrieve fingerprints."""
+    cids = smiles_to_cid(smiles_list, len(smiles_list))
+    return joblib.Parallel(n_jobs=NUM_THREADS, prefer="threads")(
+        joblib.delayed(fetch_fp)(cid) for cid in cids
+    )
+
+
+def skfp_pubchem_fp(smiles_list: list[str], n_jobs: int = 1) -> None:
+    """
+    PubChem fingerprint (scikit-fingerprints implementation).
+    """
+    PubChemFingerprint(n_jobs=n_jobs).transform(smiles_list)
+
+
+def smiles_to_cid(smiles_list: list[str], needed: int) -> list[int]:
+    """
+    Convert a list of SMILES strings to PubChem CIDs using the PubChem API (joblib, requests).
+    """
+    cids: list[int] = []
+    i = 0
+    while len(cids) < needed and i < len(smiles_list):
+        batch = smiles_list[i : i + NUM_THREADS]
+        results = joblib.Parallel(n_jobs=NUM_THREADS, prefer="threads")(
+            joblib.delayed(fetch_cid)(smi) for smi in batch
+        )
+        for cid in results:
+            if cid is not None:
+                cids.append(cid)
+                if len(cids) == needed:
+                    break
+        i += NUM_THREADS
+    print(f"Collected {len(cids)} valid CIDs (needed {needed})")
+    return cids
+
+
+@_RETRY
+def fetch_fp(cid: int) -> str | None:
+    """Fetch PubChem fingerprint for a CID."""
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/Fingerprint2D/TXT"
+    r = requests.get(url, timeout=10)
+    r.raise_for_status()
+    return r.text
+
+
+@_RETRY
+def fetch_cid(smiles: str) -> int | None:
+    """
+    Fetch the PubChem CID for a single SMILES string using the PubChem API.
+    """
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/{smiles}/cids/TXT"
+    r = requests.get(url, timeout=10)
+    r.raise_for_status()
+    text = r.text
+    first = text.strip().split()[0]
+    if first.isdigit():
+        return int(first)
+    return None
 
 
 if __name__ == "__main__":
