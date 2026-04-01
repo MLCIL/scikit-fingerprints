@@ -42,9 +42,7 @@
   - [Quickstart](#quickstart)
   - [Key features](#key-features)
   - [Tutorials](#tutorials)
-  - [Supported platforms](#supported-platforms)
-  - [Citing](#citing)
-  - [Publications using scikit-fingerprints](#publications-using-scikit-fingerprints)
+  - [Publications and citing](#publications-and-citing)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -63,6 +61,9 @@ If you need bleeding-edge features and don't mind potentially unstable or undocu
 ```bash
 pip install git+https://github.com/MLCIL/scikit-fingerprints.git
 ```
+
+Python versions from 3.10 to 3.13 are supported on all major operating systems.
+Tests are run on Linux Ubuntu, Windows, and macOS.
 
 ## Quickstart
 
@@ -158,17 +159,18 @@ Step-by-step Jupyter notebooks, both for learning and deploying production-grade
 
 ---
 
-## Supported platforms
+## Publications and citing
 
-|             | Python 3.10 | Python 3.11 | Python 3.12 | Python 3.13 |
-|:-----------:|:-----------:|:-----------:|:-----------:|:-----------:|
-|  **Linux**  |      ✅      |      ✅      |      ✅      |      ✅      |
-| **Windows** |      ✅      |      ✅      |      ✅      |      ✅      |
-|  **macOS**  |      ✅      |      ✅      |      ✅      |      ✅      |
-
----
-
-## Citing
+Publications using scikit-fingerprints:
+1. [J. Adamczyk, W. Czech "Molecular Topological Profile (MOLTOP) -- Simple and Strong Baseline for Molecular Graph Classification" ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
+2. [J. Adamczyk, P. Ludynia "Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python" SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
+3. [J. Adamczyk, P. Ludynia, W. Czech "Molecular Fingerprints Are Strong Models for Peptide Function Prediction" ArXiv preprint](https://arxiv.org/abs/2501.17901)
+4. [J. Adamczyk "Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology" CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
+5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski "MolPILE - large-scale, diverse dataset for molecular representation learning" ArXiv preprint](https://arxiv.org/abs/2509.18353)
+6. [J. Adamczyk, J. Poziemski, P. Siedlecki "Evaluating machine learning models for predicting pesticide toxicity to honey bees" Ecotoxicology and Environmental Safety 2026](https://www.sciencedirect.com/science/article/pii/S0147651326001983)
+7. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
+8. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
+9. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
 
 If you use scikit-fingerprints in your work, please cite our publication in
 [SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145):
@@ -188,18 +190,6 @@ If you use scikit-fingerprints in your work, please cite our publication in
 ```
 
 Also available as a [preprint on ArXiv](https://arxiv.org/abs/2407.13291).
-
-## Publications using scikit-fingerprints
-
-1. [J. Adamczyk, W. Czech "Molecular Topological Profile (MOLTOP) -- Simple and Strong Baseline for Molecular Graph Classification" ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
-2. [J. Adamczyk, P. Ludynia "Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python" SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
-3. [J. Adamczyk, P. Ludynia, W. Czech "Molecular Fingerprints Are Strong Models for Peptide Function Prediction" ArXiv preprint](https://arxiv.org/abs/2501.17901)
-4. [J. Adamczyk "Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology" CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
-5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski "MolPILE - large-scale, diverse dataset for molecular representation learning" ArXiv preprint](https://arxiv.org/abs/2509.18353)
-6. [J. Adamczyk, J. Poziemski, P. Siedlecki "Evaluating machine learning models for predicting pesticide toxicity to honey bees" Ecotoxicology and Environmental Safety 2026](https://www.sciencedirect.com/science/article/pii/S0147651326001983)
-7. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
-8. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
-9. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
 
 ## Contributing
 
