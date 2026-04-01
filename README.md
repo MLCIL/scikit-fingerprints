@@ -36,6 +36,20 @@
 
 ---
 
+## Table of Contents
+
+  - [Install](#install)
+  - [Quickstart](#quickstart)
+  - [Key features](#key-features)
+  - [Tutorials](#tutorials)
+  - [Supported platforms](#supported-platforms)
+  - [Citing](#citing)
+  - [Publications using scikit-fingerprints](#publications-using-scikit-fingerprints)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+---
+
 ## Install
 
 You can install from PyPI, using `pip` or `uv`.
@@ -44,7 +58,13 @@ You can install from PyPI, using `pip` or `uv`.
 pip install scikit-fingerprints
 ```
 
-## Quick start
+If you need bleeding-edge features and don't mind potentially unstable or undocumented functionalities, you can also install directly from GitHub:
+
+```bash
+pip install git+https://github.com/MLCIL/scikit-fingerprints.git
+```
+
+## Quickstart
 
 Simply input SMILES strings into the molecular fingerprint instance:
 
