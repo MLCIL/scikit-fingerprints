@@ -2944,7 +2944,6 @@ dependencies = [
     { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scipy", version = "1.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "tenacity" },
     { name = "tqdm" },
 ]
 
@@ -2998,7 +2997,6 @@ requires-dist = [
     { name = "rdkit", specifier = ">=2023.9.6,<=2025.9.3" },
     { name = "scikit-learn", specifier = ">=1.6.0,<2" },
     { name = "scipy", specifier = ">=1.12.0,<2" },
-    { name = "tenacity", specifier = ">=9.1.4" },
     { name = "tqdm", specifier = ">=4.0.0,<5" },
 ]
 
