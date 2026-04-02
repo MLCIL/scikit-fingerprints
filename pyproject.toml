@@ -34,7 +34,7 @@ dependencies = [
     "rdkit>=2023.9.6,<=2025.9.3",
     "scikit-learn>=1.6.0,<2",
     "scipy>=1.12.0,<2",
-    "tqdm>=4.0.0,<5"
+    "tqdm>=4.0.0,<5",
 ]
 
 [project.urls]
@@ -76,6 +76,7 @@ docs = [
 eval = [
     "lightgbm",
     "matplotlib",
+    "tenacity",
 ]
 
 [tool.pytest.ini_options]
