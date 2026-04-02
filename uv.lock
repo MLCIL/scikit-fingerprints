@@ -2976,6 +2976,7 @@ docs = [
 eval = [
     { name = "lightgbm" },
     { name = "matplotlib" },
+    { name = "tenacity" },
 ]
 test = [
     { name = "mypy" },
@@ -3024,6 +3025,7 @@ docs = [
 eval = [
     { name = "lightgbm" },
     { name = "matplotlib" },
+    { name = "tenacity" },
 ]
 test = [
     { name = "mypy" },
