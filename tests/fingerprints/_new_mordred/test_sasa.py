@@ -5,6 +5,13 @@ from rdkit import Chem
 
 from skfp.fingerprints._new_mordred.utils.surface_area.sasa import SurfaceArea
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 # Reference values calculated by PyMOL
 REFERENCE_DATA = [
     ("Hexane", 296.910),

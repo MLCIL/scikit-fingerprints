@@ -1,3 +1,12 @@
+# This code has been adapted from mordred-community:
+# https://github.com/JacksonBurns/mordred-community
+#
+# Copyright (c) 2023, Jackson Burns and the mordredcommunity Team
+# All rights reserved.
+# Licensed under the BSD 3-Clause License.
+#
+# See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+
 from collections.abc import Sequence
 
 import numpy as np

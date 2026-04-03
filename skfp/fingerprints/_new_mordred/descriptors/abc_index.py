@@ -3,6 +3,13 @@ from rdkit.Chem import Bond, Mol
 
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 def _calc_abc_index(mol: Mol) -> float:
     r"""atom-bond connectivity index descriptor.

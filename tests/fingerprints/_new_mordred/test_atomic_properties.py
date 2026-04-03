@@ -8,6 +8,13 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_valence_electrons,
 )
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 SMILES_DATA = {
     ">C<": "CC(C)(C)C",
     ">CH-": "CC(C)C",

@@ -8,6 +8,13 @@ from skfp.fingerprints._new_mordred.utils.periodic_table import VDW_RADII
 
 from ._mesh import SphereMesh
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 class SurfaceArea:
     r"""Calculate solvent accessible surface area.

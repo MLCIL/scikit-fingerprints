@@ -5,6 +5,13 @@ from rdkit import Chem
 from rdkit.Chem import Mol
 from rdkit.Chem.rdchem import Atom, Conformer
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 def atoms_to_numpy(
     f: Callable[[Atom], float], mol: Mol, dtype: str = "float"

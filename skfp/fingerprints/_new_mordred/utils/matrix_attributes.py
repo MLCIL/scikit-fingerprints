@@ -3,6 +3,13 @@ from functools import cached_property
 import numpy as np
 from rdkit.Chem import Mol
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 class MatrixAttributes:
     """Spectral attributes derived from a graph matrix.

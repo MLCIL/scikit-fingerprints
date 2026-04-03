@@ -3,6 +3,13 @@ from functools import cached_property
 import numpy as np
 from rdkit.Chem import GetAdjacencyMatrix, GetDistanceMatrix, Mol
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 class DistanceMatrix:
     hermitian = True

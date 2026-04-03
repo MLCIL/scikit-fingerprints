@@ -8,6 +8,13 @@ from skfp.fingerprints._new_mordred.descriptors.abc_index import (
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 REFERENCE_DATA = [
     ("CC(C)CCCCCCC", 6.58, 6.49),
     ("CCC(C)CCCCCC", 6.47, 6.58),
