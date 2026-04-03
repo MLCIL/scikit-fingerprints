@@ -111,7 +111,7 @@ def assert_valid_dataframe(
     assert isinstance(df, pd.DataFrame)
 
     expected_num_cols = (
-        num_tasks + len(non_target_columns) + ("aminoseq" in df.columns) + 1  # SMILES
+        num_tasks + len(non_target_columns) + 1  # SMILES
     )
     if "aminoseq" in df.columns:
         expected_num_cols += 1
