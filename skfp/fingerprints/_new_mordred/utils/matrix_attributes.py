@@ -70,7 +70,8 @@ class MatrixAttributes:
     @cached_property
     def log_ee(self) -> np.floating:
         """Estrada-like index (log-sum-exp).
-        log sum exp: https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp
+
+        log sum exp: https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp.
         """
         a = np.maximum(self._vals[self._i_max], 0)
         sx = np.exp(self._vals - a).sum() + np.exp(-a)

@@ -47,8 +47,8 @@ class SurfaceArea:
 
             ns[i].append((j, d[i, j]))
 
-        for _, l in ns.items():
-            l.sort(key=lambda i: i[1])
+        for neighbors_list in ns.values():
+            neighbors_list.sort(key=lambda i: i[1])
 
         self.neighbors = ns
 

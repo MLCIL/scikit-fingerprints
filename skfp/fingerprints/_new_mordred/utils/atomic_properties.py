@@ -70,7 +70,7 @@ def get_sigma_electrons(atom: Atom) -> int:
 
 
 def get_valence_electrons(atom: Atom) -> float:
-    """http://dx.doi.org/10.1002%2Fjps.2600721016"""
+    """http://dx.doi.org/10.1002%2Fjps.2600721016."""
     N = atom.GetAtomicNum()
     if N == 1:
         return 0.0
@@ -83,7 +83,7 @@ def get_valence_electrons(atom: Atom) -> float:
 
 
 def get_intrinsic_state(atom: Atom) -> float:
-    """http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html p. 283"""
+    """http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html p. 283."""
     d = get_sigma_electrons(atom)
     if d == 0:
         return np.nan

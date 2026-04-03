@@ -48,6 +48,7 @@ class DistanceMatrix3D:
     def __init__(self, coords: np.ndarray, use_atom_wts: bool = False):
         self.matrix: np.ndarray
         self.matrix = np.sqrt(np.sum((coords[:, np.newaxis] - coords) ** 2, axis=2))
+        self.use_atom_wts = use_atom_wts
 
     @cached_property
     def eccentricity(self) -> np.ndarray:

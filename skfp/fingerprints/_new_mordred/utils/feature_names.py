@@ -3445,7 +3445,3 @@ FEATURE_NAMES_2D = [
     "mZagreb1",
     "mZagreb2",
 ]
-
-if __name__ == "__main__":
-    assert len(FEATURE_NAMES_2D) == 1613
-    assert len(ALL_FEATURE_NAMES) == 1826

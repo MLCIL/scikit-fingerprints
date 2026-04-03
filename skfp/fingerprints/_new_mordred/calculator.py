@@ -18,9 +18,9 @@ def get_feature_names(use_3d: bool) -> np.ndarray:
     )
 
 
-def compute(mol: Mol, use_3D: bool) -> np.ndarray:
+def compute(mol: Mol, use_3D: bool) -> np.ndarray:  # noqa: ARG001
     # dependencies
-    n_frags = len(GetMolFrags(mol))
+    n_frags = len(GetMolFrags(mol))  # noqa: F841
 
     mol_regular, _ = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
