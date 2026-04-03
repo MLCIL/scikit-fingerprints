@@ -74,7 +74,11 @@ def load_ames(
         filename="tdc_ames.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -147,7 +151,11 @@ def load_carcinogens_lagunin(
         filename="tdc_carcinogens_lagunin.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -217,7 +225,11 @@ def load_dili(
         filename="tdc_dili.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -287,7 +299,11 @@ def load_herg(
         filename="tdc_herg.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -359,7 +375,11 @@ def load_herg_central_at_1um(
         filename="tdc_herg_central_at_1um.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -431,7 +451,11 @@ def load_herg_central_at_10um(
         filename="tdc_herg_central_at_10um.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -504,7 +528,11 @@ def load_herg_central_inhib(
         filename="tdc_herg_central_inhib.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -577,7 +605,11 @@ def load_herg_karim(
         filename="tdc_herg_karim.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -647,7 +679,11 @@ def load_ld50_zhu(
         filename="tdc_ld50_zhu.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -717,4 +753,8 @@ def load_skin_reaction(
         filename="tdc_skin_reaction.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )

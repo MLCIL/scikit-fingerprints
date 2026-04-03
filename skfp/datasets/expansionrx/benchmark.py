@@ -91,7 +91,7 @@ def load_expansionrx_benchmark(
     """
     Load the ExpansionRx-OpenADMET challenge datasets.
 
-    Expansion Therapeutics - OpenADMET challenge [1]_ datasets come from real-work ADMET
+    Expansion Therapeutics - OpenADMET challenge [1]_ [2]_ datasets come from real-work ADMET
     experiments from a series of drug discovery campaigns by Expansion Therapeutics on
     RNA-mediated diseases. This data has been obtained during late-stage optimization and
     has time-ordering information - IDs in the "Molecule name" column reflect measurement

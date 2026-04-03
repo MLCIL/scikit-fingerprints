@@ -91,4 +91,8 @@ def load_freesolv(
         filename="freesolv.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )

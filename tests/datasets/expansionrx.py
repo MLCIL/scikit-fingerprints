@@ -108,16 +108,16 @@ def test_load_expansionrx_splits_as_dict(dataset_name):
 @pytest.mark.parametrize(
     "dataset_name, dataset_length",
     [
-        ("LogD", 7331),
-        ("KSOL", 7423),
-        ("HLM CLint", 4822),
+        ("LogD", 7309),
+        ("KSOL", 7298),
+        ("HLM CLint", 4541),
         ("RLM CLint", 633),
-        ("MLM CLint", 5805),
-        ("Caco-2 Permeability Papp A>B", 3806),
-        ("Caco-2 Permeability Efflux", 3803),
-        ("MPPB", 1770),
-        ("MBPB", 1430),
-        ("MGMB", 432),
+        ("MLM CLint", 5692),
+        ("Caco-2 Permeability Papp A>B", 3773),
+        ("Caco-2 Permeability Efflux", 3777),
+        ("MPPB", 1756),
+        ("MBPB", 1426),
+        ("MGMB", 431),
     ],
 )
 def test_load_expansionrx_splits_lengths(dataset_name, dataset_length):
@@ -148,28 +148,28 @@ def test_load_expansionrx_splits_nonexistent_dataset():
 @pytest.mark.parametrize(
     "dataset_name, load_func, expected_length, num_tasks, task_type",
     [
-        ("LogD", load_logd, 7331, 1, "regression"),
-        ("KSOL", load_ksol, 7423, 1, "regression"),
-        ("HLM CLint", load_hlm_clint, 4822, 1, "regression"),
+        ("LogD", load_logd, 7309, 1, "regression"),
+        ("KSOL", load_ksol, 7298, 1, "regression"),
+        ("HLM CLint", load_hlm_clint, 4541, 1, "regression"),
         ("RLM CLint", load_rlm_clint, 633, 1, "regression"),
-        ("MLM CLint", load_mlm_clint, 5805, 1, "regression"),
+        ("MLM CLint", load_mlm_clint, 5692, 1, "regression"),
         (
             "Caco-2 Permeability Papp A>B",
             load_caco2_perm_papp_a_b,
-            3806,
+            3773,
             1,
             "regression",
         ),
         (
             "Caco-2 Permeability Efflux",
             load_caco2_perm_efflux,
-            3803,
+            3777,
             1,
             "regression",
         ),
-        ("MPPB", load_mppb, 1770, 1, "regression"),
-        ("MBPB", load_mbpb, 1430, 1, "regression"),
-        ("MGMB", load_mgmb, 432, 1, "regression"),
+        ("MPPB", load_mppb, 1756, 1, "regression"),
+        ("MBPB", load_mbpb, 1426, 1, "regression"),
+        ("MGMB", load_mgmb, 431, 1, "regression"),
     ],
 )
 def test_load_dataset(dataset_name, load_func, expected_length, num_tasks, task_type):
@@ -183,6 +183,7 @@ def test_load_dataset(dataset_name, load_func, expected_length, num_tasks, task_
         expected_length=expected_length,
         num_tasks=num_tasks,
         task_type=task_type,
+        non_target_columns=["Molecule name"],
     )
 
 

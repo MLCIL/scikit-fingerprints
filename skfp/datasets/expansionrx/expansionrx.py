@@ -28,7 +28,7 @@ def load_logd(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  7331
+    Total samples                  7309
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -76,7 +76,11 @@ def load_logd(
         filename="logd.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -100,7 +104,7 @@ def load_ksol(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  7423
+    Total samples                  7298
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -148,7 +152,11 @@ def load_ksol(
         filename="ksol.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -172,7 +180,7 @@ def load_hlm_clint(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  4822
+    Total samples                  4541
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -220,7 +228,11 @@ def load_hlm_clint(
         filename="hlm_clint.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -242,7 +254,8 @@ def load_rlm_clint(
     The task is to predict the rat liver microsomal intrinsic clearance (RLM CLint) of molecules [1]_ [2]_.
 
     Note that this dataset was not part of the original challenge. It was provided by the
-    organizers afterward as an additional endpoint.
+    organizers afterward as an additional endpoint. Time train-test split indexes also do
+    not align with other datasets from this benchmark for this reason.
 
     ==================   ==============
     Tasks                             1
@@ -295,7 +308,11 @@ def load_rlm_clint(
         filename="rlm_clint.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -319,7 +336,7 @@ def load_mlm_clint(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  5805
+    Total samples                  5692
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -367,7 +384,11 @@ def load_mlm_clint(
         filename="mlm_clint.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -392,7 +413,7 @@ def load_caco2_perm_papp_a_b(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  3806
+    Total samples                  3773
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -440,7 +461,11 @@ def load_caco2_perm_papp_a_b(
         filename="caco_2_permeability_papp_a_b.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -464,7 +489,7 @@ def load_caco2_perm_efflux(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  3803
+    Total samples                  3777
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -512,7 +537,11 @@ def load_caco2_perm_efflux(
         filename="caco_2_permeability_efflux.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -536,7 +565,7 @@ def load_mppb(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  1770
+    Total samples                  1756
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -584,7 +613,11 @@ def load_mppb(
         filename="mppb.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -608,7 +641,7 @@ def load_mbpb(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                  1430
+    Total samples                  1426
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -656,7 +689,11 @@ def load_mbpb(
         filename="mbpb.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )
 
 
 @validate_params(
@@ -680,7 +717,7 @@ def load_mgmb(
     ==================   ==============
     Tasks                             1
     Task type                regression
-    Total samples                   432
+    Total samples                   431
     Recommended split              time
     Recommended metric              MAE
     ==================   ==============
@@ -728,4 +765,8 @@ def load_mgmb(
         filename="mgmb.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns="Molecule name")
+    )

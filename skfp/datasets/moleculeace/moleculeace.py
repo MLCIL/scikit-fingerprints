@@ -89,7 +89,11 @@ def load_chembl204_ki(
         filename="chembl204_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -175,7 +179,11 @@ def load_chembl214_ki(
         filename="chembl214_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -260,7 +268,11 @@ def load_chembl218_ec50(
         filename="chembl218_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -345,7 +357,11 @@ def load_chembl219_ki(
         filename="chembl219_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -430,7 +446,11 @@ def load_chembl228_ki(
         filename="chembl228_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -515,7 +535,11 @@ def load_chembl231_ki(
         filename="chembl231_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -600,7 +624,11 @@ def load_chembl233_ki(
         filename="chembl233_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -685,7 +713,11 @@ def load_chembl234_ki(
         filename="chembl234_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -770,7 +802,11 @@ def load_chembl235_ec50(
         filename="chembl235_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -855,7 +891,11 @@ def load_chembl236_ki(
         filename="chembl236_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -940,7 +980,11 @@ def load_chembl237_ec50(
         filename="chembl237_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1025,7 +1069,11 @@ def load_chembl237_ki(
         filename="chembl237_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1110,7 +1158,11 @@ def load_chembl238_ki(
         filename="chembl238_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1195,7 +1247,11 @@ def load_chembl239_ec50(
         filename="chembl239_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1280,7 +1336,11 @@ def load_chembl244_ki(
         filename="chembl244_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1365,7 +1425,11 @@ def load_chembl262_ki(
         filename="chembl262_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1450,7 +1514,11 @@ def load_chembl264_ki(
         filename="chembl264_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1535,7 +1603,11 @@ def load_chembl287_ki(
         filename="chembl287_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1620,7 +1692,11 @@ def load_chembl1862_ki(
         filename="chembl1862_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1705,7 +1781,11 @@ def load_chembl1871_ki(
         filename="chembl1871_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1790,7 +1870,11 @@ def load_chembl2034_ki(
         filename="chembl2034_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1875,7 +1959,11 @@ def load_chembl2047_ec50(
         filename="chembl2047_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -1960,7 +2048,11 @@ def load_chembl2147_ki(
         filename="chembl2147_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2045,7 +2137,11 @@ def load_chembl2835_ki(
         filename="chembl2835_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2130,7 +2226,11 @@ def load_chembl2971_ki(
         filename="chembl2971_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2215,7 +2315,11 @@ def load_chembl3979_ec50(
         filename="chembl3979_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2300,7 +2404,11 @@ def load_chembl4005_ki(
         filename="chembl4005_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2385,7 +2493,11 @@ def load_chembl4203_ki(
         filename="chembl4203_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2470,7 +2582,11 @@ def load_chembl4616_ec50(
         filename="chembl4616_ec50.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )
 
 
 @validate_params(
@@ -2555,4 +2671,8 @@ def load_chembl4792_ki(
         filename="chembl4792_ki.csv",
         verbose=verbose,
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )

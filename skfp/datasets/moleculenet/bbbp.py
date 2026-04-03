@@ -88,4 +88,8 @@ array([1, 1, 1, ..., 1, 1, 1]))
     df = fetch_dataset(
         data_dir, dataset_name="MoleculeNet_BBBP", filename="bbbp.csv", verbose=verbose
     )
-    return df if as_frame else get_mol_strings_and_labels(df)
+    return (
+        df
+        if as_frame
+        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
+    )

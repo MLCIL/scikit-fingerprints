@@ -17,7 +17,13 @@ def run_basic_dataset_checks(
     task_type: Literal[
         "binary_classification", "multiclass_classification", "regression"
     ],
+    non_target_columns: str | list[str] | None = None,
 ) -> None:
+    if not non_target_columns:
+        non_target_columns = []
+    elif isinstance(non_target_columns, str):
+        non_target_columns = [non_target_columns]
+
     assert_valid_smiles_list(smiles_list, expected_length=expected_length)
     assert_valid_mols_from_smiles(smiles_list)
     assert_valid_labels(
@@ -32,6 +38,7 @@ def run_basic_dataset_checks(
         y,
         expected_length=expected_length,
         num_tasks=num_tasks,
+        non_target_columns=non_target_columns,
     )
 
 
@@ -99,19 +106,21 @@ def assert_valid_dataframe(
     y: np.ndarray,
     expected_length: int,
     num_tasks: int,
+    non_target_columns: list[str],
 ) -> None:
     assert isinstance(df, pd.DataFrame)
+
+    expected_num_cols = (
+        num_tasks + len(non_target_columns) + ("aminoseq" in df.columns) + 1  # SMILES
+    )
     if "aminoseq" in df.columns:
-        # SMILES + aminoseq + labels
-        assert_equal(df.shape, (expected_length, num_tasks + 2))
-    else:
-        # SMILES + labels
-        assert_equal(df.shape, (expected_length, num_tasks + 1))
+        expected_num_cols += 1
+
+    assert_equal(df.shape, (expected_length, expected_num_cols))
 
     assert "SMILES" in df.columns
-
     df_smiles = df["SMILES"].tolist()
-    df_y = df.drop(columns=["SMILES", "aminoseq"], errors="ignore")
+    df_y = df.drop(columns=["SMILES", "aminoseq", *non_target_columns], errors="ignore")
     df_y = df_y.to_numpy()
     if num_tasks == 1:
         df_y = df_y.ravel()

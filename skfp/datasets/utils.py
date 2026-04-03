@@ -90,15 +90,19 @@ def hf_hub_download(data_home_dir: str, dataset_name: str, verbose: bool) -> str
 
 
 def get_mol_strings_and_labels(
-    df: pd.DataFrame, mol_type: str = "SMILES"
+    df: pd.DataFrame,
+    mol_type: str = "SMILES",
+    non_target_columns: str | list[str] | None = None,
 ) -> tuple[list[str], np.ndarray]:
     """
     Extract molecule strings (either SMILES or aminoacid sequences) and labels (one
     or more) from the given DataFrame.
 
-    If ``mol_type`` is ``"SMILES"``, assumes that
-    SMILES strings are in the "SMILES" column, another option is ``"aminoseq"``, which
-    works similarly, but for aminoacid sequences. All other columns are taken as labels.
+    If ``mol_type`` is ``"SMILES"``, assumes that SMILES strings are in the "SMILES"
+    column. Another option is ``"aminoseq"``, which works similarly, but for aminoacid
+    sequences.
+
+    All other columns are taken as labels, except for ``non_target_columns` if provided.
 
     If there is only a single task, labels are returned as a vector.
     """
@@ -109,8 +113,13 @@ def get_mol_strings_and_labels(
     else:
         raise ValueError(f"mol_type {mol_type} not recognized")
 
+    if not non_target_columns:
+        non_target_columns = []
+    elif isinstance(non_target_columns, str):
+        non_target_columns = [non_target_columns]
+
     # make sure we remove both columns if present
-    df = df.drop(columns=["SMILES", "aminoseq"], errors="ignore")
+    df = df.drop(columns=["SMILES", "aminoseq", *non_target_columns], errors="ignore")
 
     labels = df.to_numpy()
     if labels.shape[1] == 1:
