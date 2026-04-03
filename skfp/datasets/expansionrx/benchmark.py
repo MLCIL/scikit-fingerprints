@@ -46,6 +46,32 @@ EXPANSIONRX_DATASET_NAME_TO_LOADER_FUNC = {
     "MGMB": load_mgmb,
 }
 
+_EXPANSIONRX_DATASET_NAME_TO_HF_NAME = {
+    "LogD": "ExpansionRx_OpenADMET_LogD",
+    "KSOL": "ExpansionRx_OpenADMET_KSOL",
+    "HLM CLint": "ExpansionRx_OpenADMET_HLM_CLint",
+    "RLM CLint": "ExpansionRx_OpenADMET_RLM_CLint",
+    "MLM CLint": "ExpansionRx_OpenADMET_MLM_CLint",
+    "Caco-2 Permeability Papp A>B": "ExpansionRx_OpenADMET_Caco-2_Permeability_Papp_AB",
+    "Caco-2 Permeability Efflux": "ExpansionRx_OpenADMET_Caco-2_Permeability_Efflux",
+    "MPPB": "ExpansionRx_OpenADMET_MPPB",
+    "MBPB": "ExpansionRx_OpenADMET_MBPB",
+    "MGMB": "ExpansionRx_OpenADMET_MGMB",
+}
+
+_EXPANSIONRX_DATASET_NAME_TO_SPLIT_FILENAME = {
+    "LogD": "time_split_logd.json",
+    "KSOL": "time_split_ksol.json",
+    "HLM CLint": "time_split_hlm_clint.json",
+    "RLM CLint": "time_split_rlm_clint.json",
+    "MLM CLint": "time_split_mlm_clint.json",
+    "Caco-2 Permeability Papp A>B": "time_split_caco_2_permeability_papp_a_b.json",
+    "Caco-2 Permeability Efflux": "time_split_caco_2_permeability_efflux.json",
+    "MPPB": "time_split_mppb.json",
+    "MBPB": "time_split_mbpb.json",
+    "MGMB": "time_split_mgmb.json",
+}
+
 
 @validate_params(
     {
@@ -268,8 +294,8 @@ def load_expansionrx_splits(
     """
     splits = fetch_splits(
         data_dir,
-        dataset_name=f"ExpansionRx_OpenADMET_{dataset_name}",
-        filename=f"time_split_{dataset_name.lower()}.json",
+        dataset_name=_EXPANSIONRX_DATASET_NAME_TO_HF_NAME[dataset_name],
+        filename=_EXPANSIONRX_DATASET_NAME_TO_SPLIT_FILENAME[dataset_name],
         verbose=verbose,
     )
     if as_dict:

@@ -437,7 +437,7 @@ def load_caco2_perm_papp_a_b(
     df = fetch_dataset(
         data_dir,
         dataset_name="ExpansionRx_OpenADMET_Caco-2_Permeability_Papp_AB",
-        filename="caco2_perm_a_b.csv",
+        filename="caco_2_permeability_papp_a_b.csv",
         verbose=verbose,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
@@ -509,7 +509,7 @@ def load_caco2_perm_efflux(
     df = fetch_dataset(
         data_dir,
         dataset_name="ExpansionRx_OpenADMET_Caco-2_Permeability_Efflux",
-        filename="caco2_perm_efflux.csv",
+        filename="caco_2_permeability_efflux.csv",
         verbose=verbose,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
