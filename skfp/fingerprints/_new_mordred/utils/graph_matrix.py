@@ -5,6 +5,8 @@ from rdkit.Chem import GetAdjacencyMatrix, GetDistanceMatrix, Mol
 
 
 class DistanceMatrix:
+    hermitian = True
+
     def __init__(self, mol: Mol, use_bo: bool = False, use_atom_wts: bool = False):
         self.matrix: np.ndarray
         self.matrix = GetDistanceMatrix(
@@ -25,6 +27,8 @@ class DistanceMatrix:
 
 
 class AdjacencyMatrix:
+    hermitian = True
+
     def __init__(self, mol: Mol, use_bo: bool = False):
         self._base: np.ndarray
         self._base = GetAdjacencyMatrix(mol, useBO=use_bo, force=True)
