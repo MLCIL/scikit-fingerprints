@@ -1,14 +1,19 @@
 .idea
-dataset
 .ipynb_checkpoints
 .pytest_cache
-__pycache__
 .coverage
+.python-version
+.DS_Store
+.vscode
+
 *.png
 *.svg
 *.pdf
 *.csv
 benchmarking/**/*.npy
+
+__pycache__
+dataset
 dist/
 !docs/logos/*
 
@@ -18,9 +23,3 @@ docs/examples/
 
 .tmp_coverage_files/
 tests/preprocessing/input_output/data/mol_out.sdf
-
-.pip_audit_cache
-.python-version
-
-.DS_Store
-.vscode
