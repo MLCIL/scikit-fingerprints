@@ -89,8 +89,4 @@ array([1, 1, 1, ..., 0, 0, 0]))
     df = fetch_dataset(
         data_dir, dataset_name="MoleculeNet_BACE", filename="bace.csv", verbose=verbose
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)

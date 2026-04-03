@@ -71,11 +71,7 @@ def load_sarscov2_3clpro_diamond(
         filename="tdc_sarscov2_3clpro_diamond.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -144,8 +140,4 @@ def load_sarscov2_vitro_touret(
         filename="tdc_sarscov2_vitro_touret.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)

@@ -109,8 +109,4 @@ array([[ 0.,  0.,  1., ...,  0.,  0.,  0.],
         filename="tox21.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)

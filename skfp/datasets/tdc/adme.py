@@ -86,11 +86,7 @@ def load_b3db_classification(
         filename="tdc_b3db_classification.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -170,11 +166,7 @@ def load_b3db_regression(
         filename="tdc_b3db_regression.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -247,11 +239,7 @@ def load_bioavailability_ma(
         filename="tdc_bioavailability_ma.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -323,11 +311,7 @@ def load_caco2_wang(
         filename="tdc_caco2_wang.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -409,11 +393,7 @@ def load_clearance_microsome_az(
         filename="tdc_clearance_microsome_az.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -497,11 +477,7 @@ def load_cyp1a2_veith(
         filename="tdc_cyp1a2_veith.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -585,11 +561,7 @@ def load_cyp2c9_substrate_carbonmangels(
         filename="tdc_cyp2c9_substrate_carbonmangels.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -670,11 +642,7 @@ def load_cyp2c9_veith(
         filename="tdc_cyp2c9_veith.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -756,11 +724,7 @@ def load_cyp2c19_veith(
         filename="tdc_cyp2c19_veith.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -845,11 +809,7 @@ def load_cyp2d6_substrate_carbonmangels(
         filename="tdc_cyp2d6_substrate_carbonmangels.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -931,11 +891,7 @@ def load_cyp2d6_veith(
         filename="tdc_cyp2d6_veith.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1021,11 +977,7 @@ def load_cyp3a4_substrate_carbonmangels(
         filename="tdc_cyp3a4_substrate_carbonmangels.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1108,11 +1060,7 @@ def load_cyp3a4_veith(
         filename="tdc_cyp3a4_veith.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1184,11 +1132,7 @@ def load_half_life_obach(
         filename="tdc_half_life_obach.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1259,11 +1203,7 @@ def load_hia_hou(
         filename="tdc_hia_hou.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1336,11 +1276,7 @@ def load_hlm(
         filename="tdc_hlm.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1413,11 +1349,7 @@ def load_pampa_approved_drugs(
         filename="tdc_pampa_approved_drugs.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1490,11 +1422,7 @@ def load_pampa_ncats(
         filename="tdc_pampa_ncats.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1566,11 +1494,7 @@ def load_pgp_broccatelli(
         filename="tdc_pgp_broccatelli.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1643,11 +1567,7 @@ def load_ppbr_az(
         filename="tdc_ppbr_az.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1720,11 +1640,7 @@ def load_rlm(
         filename="tdc_rlm.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1796,11 +1712,7 @@ def load_solubility_aqsoldb(
         filename="tdc_solubility_aqsoldb.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
 
 
 @validate_params(
@@ -1873,8 +1785,4 @@ def load_vdss_lombardo(
         filename="tdc_vdss_lombardo.csv",
         verbose=verbose,
     )
-    return (
-        df
-        if as_frame
-        else get_mol_strings_and_labels(df, non_target_columns=["Molecule name"])
-    )
+    return df if as_frame else get_mol_strings_and_labels(df)
