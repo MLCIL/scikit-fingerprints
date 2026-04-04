@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_hlm_clint(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the HLM CLint dataset from the Biogen ADME benchmark.
@@ -46,6 +48,11 @@ def load_hlm_clint(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -75,6 +82,7 @@ def load_hlm_clint(
         dataset_name="Biogen_ADME_HLM_CLint",
         filename="hlm_clint.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -88,6 +96,7 @@ def load_hlm_clint(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -95,6 +104,7 @@ def load_mdr1_mdck_er(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MDR1-MDCK ER dataset from the Biogen ADME benchmark.
@@ -122,6 +132,11 @@ def load_mdr1_mdck_er(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -151,6 +166,7 @@ def load_mdr1_mdck_er(
         dataset_name="Biogen_ADME_MDR1-MDCK_ER",
         filename="mdr1_mdck_er.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -164,6 +180,7 @@ def load_mdr1_mdck_er(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -171,6 +188,7 @@ def load_solubility(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the Solubility dataset from the Biogen ADME benchmark.
@@ -198,6 +216,11 @@ def load_solubility(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -227,6 +250,7 @@ def load_solubility(
         dataset_name="Biogen_ADME_Solubility",
         filename="solubility.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -240,6 +264,7 @@ def load_solubility(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -247,6 +272,7 @@ def load_hppb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the hPPB dataset from the Biogen ADME benchmark.
@@ -274,6 +300,11 @@ def load_hppb(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -303,6 +334,7 @@ def load_hppb(
         dataset_name="Biogen_ADME_hPPB",
         filename="hppb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -316,6 +348,7 @@ def load_hppb(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -323,6 +356,7 @@ def load_rppb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the rPPB dataset from the Biogen ADME benchmark.
@@ -350,6 +384,11 @@ def load_rppb(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -379,6 +418,7 @@ def load_rppb(
         dataset_name="Biogen_ADME_rPPB",
         filename="rppb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -392,6 +432,7 @@ def load_rppb(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -399,6 +440,7 @@ def load_rlm_clint(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the RLM CLint dataset from the Biogen ADME benchmark.
@@ -426,6 +468,11 @@ def load_rlm_clint(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -455,6 +502,7 @@ def load_rlm_clint(
         dataset_name="Biogen_ADME_RLM_CLint",
         filename="rlm_clint.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df

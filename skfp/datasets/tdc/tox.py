@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_ames(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the AMES dataset.
@@ -49,6 +51,11 @@ def load_ames(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -73,6 +80,7 @@ def load_ames(
         dataset_name="TDC_ames",
         filename="tdc_ames.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -82,6 +90,7 @@ def load_ames(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -89,6 +98,7 @@ def load_carcinogens_lagunin(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Carcinogens dataset.
@@ -116,6 +126,11 @@ def load_carcinogens_lagunin(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -146,6 +161,7 @@ def load_carcinogens_lagunin(
         dataset_name="TDC_carcinogens_lagunin",
         filename="tdc_carcinogens_lagunin.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -155,6 +171,7 @@ def load_carcinogens_lagunin(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -162,6 +179,7 @@ def load_dili(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the DILI (Drug Induced Liver Injury) dataset.
@@ -192,6 +210,11 @@ def load_dili(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -216,6 +239,7 @@ def load_dili(
         dataset_name="TDC_dili",
         filename="tdc_dili.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -225,6 +249,7 @@ def load_dili(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -232,6 +257,7 @@ def load_herg(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the hERG blockers dataset.
@@ -261,6 +287,11 @@ def load_herg(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -286,6 +317,7 @@ def load_herg(
         dataset_name="TDC_herg",
         filename="tdc_herg.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -295,6 +327,7 @@ def load_herg(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -302,6 +335,7 @@ def load_herg_central_at_1um(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the 1 µM subset of hERG Central dataset.
@@ -333,6 +367,11 @@ def load_herg_central_at_1um(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -358,6 +397,7 @@ def load_herg_central_at_1um(
         dataset_name="TDC_herg_central_at_1um",
         filename="tdc_herg_central_at_1um.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -367,6 +407,7 @@ def load_herg_central_at_1um(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -374,6 +415,7 @@ def load_herg_central_at_10um(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the 10 µM subset of hERG Central dataset.
@@ -405,6 +447,11 @@ def load_herg_central_at_10um(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -430,6 +477,7 @@ def load_herg_central_at_10um(
         dataset_name="TDC_herg_central_at_10um",
         filename="tdc_herg_central_at_10um.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -439,6 +487,7 @@ def load_herg_central_at_10um(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -446,6 +495,7 @@ def load_herg_central_inhib(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the inhibition subset of hERG Central dataset.
@@ -478,6 +528,11 @@ def load_herg_central_inhib(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -503,6 +558,7 @@ def load_herg_central_inhib(
         dataset_name="TDC_herg_central_inhib",
         filename="tdc_herg_central_inhib.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -512,6 +568,7 @@ def load_herg_central_inhib(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -519,6 +576,7 @@ def load_herg_karim(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the hERG Karim dataset.
@@ -551,6 +609,11 @@ def load_herg_karim(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -576,6 +639,7 @@ def load_herg_karim(
         dataset_name="TDC_herg_karim",
         filename="tdc_herg_karim.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -585,6 +649,7 @@ def load_herg_karim(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -592,6 +657,7 @@ def load_ld50_zhu(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Acute Toxicity LD50 dataset.
@@ -622,6 +688,11 @@ def load_ld50_zhu(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -646,6 +717,7 @@ def load_ld50_zhu(
         dataset_name="TDC_ld50_zhu",
         filename="tdc_ld50_zhu.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -655,6 +727,7 @@ def load_ld50_zhu(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -662,6 +735,7 @@ def load_skin_reaction(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Skin Reaction dataset.
@@ -691,6 +765,11 @@ def load_skin_reaction(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -716,5 +795,6 @@ def load_skin_reaction(
         dataset_name="TDC_skin_reaction",
         filename="tdc_skin_reaction.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)

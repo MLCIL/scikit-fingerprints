@@ -18,6 +18,7 @@ from skfp.datasets.utils import fetch_splits
         "standardize_labels": ["boolean"],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -27,6 +28,7 @@ def load_lrgb_mol_benchmark(
     standardize_labels: bool = True,
     as_frames: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> Iterator[tuple[str, pd.DataFrame]] | Iterator[tuple[str, list[str], np.ndarray]]:
     """
     Load the LRGB molecular datasets.
@@ -60,6 +62,11 @@ def load_lrgb_mol_benchmark(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : generator of pd.DataFrame or tuples (list[str], np.ndarray)
@@ -90,6 +97,7 @@ def load_lrgb_mol_benchmark(
         "mol_type": mol_type,
         "as_frame": as_frames,
         "verbose": verbose,
+        "force_update": force_update,
     }
 
     if as_frames:
@@ -116,6 +124,7 @@ def load_lrgb_mol_benchmark(
         "standardize_labels": ["boolean"],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -126,6 +135,7 @@ def load_lrgb_mol_dataset(
     standardize_labels: bool = True,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load LRGB molecular dataset by name.
@@ -161,6 +171,11 @@ def load_lrgb_mol_dataset(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -193,10 +208,10 @@ array([1, 1, 1, ..., 1, 1, 1]))
     4  Cc1onc(c2ccccc2Cl)c1C(=O)N[C@H]3[C@H]4SC(C)(C)...      1
     """
     if dataset_name == "Peptides-func":
-        return load_peptides_func(data_dir, mol_type, as_frame, verbose)
+        return load_peptides_func(data_dir, mol_type, as_frame, verbose, force_update)
     else:
         return load_peptides_struct(
-            data_dir, mol_type, standardize_labels, as_frame, verbose
+            data_dir, mol_type, standardize_labels, as_frame, verbose, force_update
         )
 
 
@@ -207,6 +222,7 @@ array([1, 1, 1, ..., 1, 1, 1]))
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -216,6 +232,7 @@ def load_lrgb_mol_splits(
     data_dir: str | os.PathLike | None = None,
     as_dict: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> tuple[list[int], list[int], list[int]] | dict[str, list[int]]:
     """
     Load the official LRGB splits for molecular datasets.
@@ -247,6 +264,11 @@ def load_lrgb_mol_splits(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : tuple(list[int], list[int], list[int]) or dict
@@ -270,6 +292,7 @@ def load_lrgb_mol_splits(
         dataset_name=f"LRGB_{dataset_name}",
         filename=f"lrgb_splits_{file_dataset_name}{valid_only}.json",
         verbose=verbose,
+        force_update=force_update,
     )
     if as_dict:
         return splits

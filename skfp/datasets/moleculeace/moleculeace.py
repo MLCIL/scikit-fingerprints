@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_chembl204_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL204 Ki dataset.
@@ -46,6 +48,11 @@ def load_chembl204_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -88,6 +95,7 @@ def load_chembl204_ki(
         dataset_name="MoleculeACE_chembl204_ki",
         filename="chembl204_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -97,6 +105,7 @@ def load_chembl204_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -104,6 +113,7 @@ def load_chembl214_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL214 Ki dataset.
@@ -131,6 +141,11 @@ def load_chembl214_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -174,6 +189,7 @@ def load_chembl214_ki(
         dataset_name="MoleculeACE_chembl214_ki",
         filename="chembl214_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -183,6 +199,7 @@ def load_chembl214_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -190,6 +207,7 @@ def load_chembl218_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL218 EC50 dataset.
@@ -217,6 +235,11 @@ def load_chembl218_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -259,6 +282,7 @@ def load_chembl218_ec50(
         dataset_name="MoleculeACE_chembl218_ec50",
         filename="chembl218_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -268,6 +292,7 @@ def load_chembl218_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -275,6 +300,7 @@ def load_chembl219_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL219 Ki dataset.
@@ -302,6 +328,11 @@ def load_chembl219_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -344,6 +375,7 @@ def load_chembl219_ki(
         dataset_name="MoleculeACE_chembl219_ki",
         filename="chembl219_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -353,6 +385,7 @@ def load_chembl219_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -360,6 +393,7 @@ def load_chembl228_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL228 Ki dataset.
@@ -387,6 +421,11 @@ def load_chembl228_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -429,6 +468,7 @@ def load_chembl228_ki(
         dataset_name="MoleculeACE_chembl228_ki",
         filename="chembl228_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -438,6 +478,7 @@ def load_chembl228_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -445,6 +486,7 @@ def load_chembl231_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL231 Ki dataset.
@@ -472,6 +514,11 @@ def load_chembl231_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -514,6 +561,7 @@ def load_chembl231_ki(
         dataset_name="MoleculeACE_chembl231_ki",
         filename="chembl231_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -523,6 +571,7 @@ def load_chembl231_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -530,6 +579,7 @@ def load_chembl233_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL233 Ki dataset.
@@ -557,6 +607,11 @@ def load_chembl233_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -599,6 +654,7 @@ def load_chembl233_ki(
         dataset_name="MoleculeACE_chembl233_ki",
         filename="chembl233_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -608,6 +664,7 @@ def load_chembl233_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -615,6 +672,7 @@ def load_chembl234_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL234 Ki dataset.
@@ -642,6 +700,11 @@ def load_chembl234_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -684,6 +747,7 @@ def load_chembl234_ki(
         dataset_name="MoleculeACE_chembl234_ki",
         filename="chembl234_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -693,6 +757,7 @@ def load_chembl234_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -700,6 +765,7 @@ def load_chembl235_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL235 EC50 dataset.
@@ -727,6 +793,11 @@ def load_chembl235_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -769,6 +840,7 @@ def load_chembl235_ec50(
         dataset_name="MoleculeACE_chembl235_ec50",
         filename="chembl235_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -778,6 +850,7 @@ def load_chembl235_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -785,6 +858,7 @@ def load_chembl236_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL236 Ki dataset.
@@ -812,6 +886,11 @@ def load_chembl236_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -854,6 +933,7 @@ def load_chembl236_ki(
         dataset_name="MoleculeACE_chembl236_ki",
         filename="chembl236_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -863,6 +943,7 @@ def load_chembl236_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -870,6 +951,7 @@ def load_chembl237_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL237 EC50 dataset.
@@ -897,6 +979,11 @@ def load_chembl237_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -939,6 +1026,7 @@ def load_chembl237_ec50(
         dataset_name="MoleculeACE_chembl237_ec50",
         filename="chembl237_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -948,6 +1036,7 @@ def load_chembl237_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -955,6 +1044,7 @@ def load_chembl237_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL237 Ki dataset.
@@ -982,6 +1072,11 @@ def load_chembl237_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1024,6 +1119,7 @@ def load_chembl237_ki(
         dataset_name="MoleculeACE_chembl237_ki",
         filename="chembl237_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1033,6 +1129,7 @@ def load_chembl237_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1040,6 +1137,7 @@ def load_chembl238_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL238 Ki dataset.
@@ -1067,6 +1165,11 @@ def load_chembl238_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1109,6 +1212,7 @@ def load_chembl238_ki(
         dataset_name="MoleculeACE_chembl238_ki",
         filename="chembl238_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1118,6 +1222,7 @@ def load_chembl238_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1125,6 +1230,7 @@ def load_chembl239_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL239 EC50 dataset.
@@ -1152,6 +1258,11 @@ def load_chembl239_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1194,6 +1305,7 @@ def load_chembl239_ec50(
         dataset_name="MoleculeACE_chembl239_ec50",
         filename="chembl239_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1203,6 +1315,7 @@ def load_chembl239_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1210,6 +1323,7 @@ def load_chembl244_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL244 Ki dataset.
@@ -1237,6 +1351,11 @@ def load_chembl244_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1279,6 +1398,7 @@ def load_chembl244_ki(
         dataset_name="MoleculeACE_chembl244_ki",
         filename="chembl244_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1288,6 +1408,7 @@ def load_chembl244_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1295,6 +1416,7 @@ def load_chembl262_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL262 Ki dataset.
@@ -1322,6 +1444,11 @@ def load_chembl262_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1364,6 +1491,7 @@ def load_chembl262_ki(
         dataset_name="MoleculeACE_chembl262_ki",
         filename="chembl262_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1373,6 +1501,7 @@ def load_chembl262_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1380,6 +1509,7 @@ def load_chembl264_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL264 Ki dataset.
@@ -1407,6 +1537,11 @@ def load_chembl264_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1449,6 +1584,7 @@ def load_chembl264_ki(
         dataset_name="MoleculeACE_chembl264_ki",
         filename="chembl264_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1458,6 +1594,7 @@ def load_chembl264_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1465,6 +1602,7 @@ def load_chembl287_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL287 Ki dataset.
@@ -1492,6 +1630,11 @@ def load_chembl287_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1534,6 +1677,7 @@ def load_chembl287_ki(
         dataset_name="MoleculeACE_chembl287_ki",
         filename="chembl287_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1543,6 +1687,7 @@ def load_chembl287_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1550,6 +1695,7 @@ def load_chembl1862_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL1862 Ki dataset.
@@ -1577,6 +1723,11 @@ def load_chembl1862_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1619,6 +1770,7 @@ def load_chembl1862_ki(
         dataset_name="MoleculeACE_chembl1862_ki",
         filename="chembl1862_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1628,6 +1780,7 @@ def load_chembl1862_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1635,6 +1788,7 @@ def load_chembl1871_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL1871 Ki dataset.
@@ -1662,6 +1816,11 @@ def load_chembl1871_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1704,6 +1863,7 @@ def load_chembl1871_ki(
         dataset_name="MoleculeACE_chembl1871_ki",
         filename="chembl1871_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1713,6 +1873,7 @@ def load_chembl1871_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1720,6 +1881,7 @@ def load_chembl2034_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL2034 Ki dataset.
@@ -1747,6 +1909,11 @@ def load_chembl2034_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1789,6 +1956,7 @@ def load_chembl2034_ki(
         dataset_name="MoleculeACE_chembl2034_ki",
         filename="chembl2034_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1798,6 +1966,7 @@ def load_chembl2034_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1805,6 +1974,7 @@ def load_chembl2047_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL2047 EC50 dataset.
@@ -1832,6 +2002,11 @@ def load_chembl2047_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1874,6 +2049,7 @@ def load_chembl2047_ec50(
         dataset_name="MoleculeACE_chembl2047_ec50",
         filename="chembl2047_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1883,6 +2059,7 @@ def load_chembl2047_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1890,6 +2067,7 @@ def load_chembl2147_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL2147 Ki dataset.
@@ -1917,6 +2095,11 @@ def load_chembl2147_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -1959,6 +2142,7 @@ def load_chembl2147_ki(
         dataset_name="MoleculeACE_chembl2147_ki",
         filename="chembl2147_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1968,6 +2152,7 @@ def load_chembl2147_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1975,6 +2160,7 @@ def load_chembl2835_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL2835 Ki dataset.
@@ -2002,6 +2188,11 @@ def load_chembl2835_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2044,6 +2235,7 @@ def load_chembl2835_ki(
         dataset_name="MoleculeACE_chembl2835_ki",
         filename="chembl2835_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2053,6 +2245,7 @@ def load_chembl2835_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2060,6 +2253,7 @@ def load_chembl2971_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL2971 Ki dataset.
@@ -2087,6 +2281,11 @@ def load_chembl2971_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2129,6 +2328,7 @@ def load_chembl2971_ki(
         dataset_name="MoleculeACE_chembl2971_ki",
         filename="chembl2971_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2138,6 +2338,7 @@ def load_chembl2971_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2145,6 +2346,7 @@ def load_chembl3979_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL3979 EC50 dataset.
@@ -2172,6 +2374,11 @@ def load_chembl3979_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2214,6 +2421,7 @@ def load_chembl3979_ec50(
         dataset_name="MoleculeACE_chembl3979_ec50",
         filename="chembl3979_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2223,6 +2431,7 @@ def load_chembl3979_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2230,6 +2439,7 @@ def load_chembl4005_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL4005 Ki dataset.
@@ -2257,6 +2467,11 @@ def load_chembl4005_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2299,6 +2514,7 @@ def load_chembl4005_ki(
         dataset_name="MoleculeACE_chembl4005_ki",
         filename="chembl4005_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2308,6 +2524,7 @@ def load_chembl4005_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2315,6 +2532,7 @@ def load_chembl4203_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL4203 Ki dataset.
@@ -2342,6 +2560,11 @@ def load_chembl4203_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2384,6 +2607,7 @@ def load_chembl4203_ki(
         dataset_name="MoleculeACE_chembl4203_ki",
         filename="chembl4203_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2393,6 +2617,7 @@ def load_chembl4203_ki(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2400,6 +2625,7 @@ def load_chembl4616_ec50(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL4616 EC50 dataset.
@@ -2427,6 +2653,11 @@ def load_chembl4616_ec50(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2469,6 +2700,7 @@ def load_chembl4616_ec50(
         dataset_name="MoleculeACE_chembl4616_ec50",
         filename="chembl4616_ec50.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -2478,6 +2710,7 @@ def load_chembl4616_ec50(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -2485,6 +2718,7 @@ def load_chembl4792_ki(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the ChEMBL4792 Ki dataset.
@@ -2512,6 +2746,11 @@ def load_chembl4792_ki(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -2554,5 +2793,6 @@ def load_chembl4792_ki(
         dataset_name="MoleculeACE_chembl4792_ki",
         filename="chembl4792_ki.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
