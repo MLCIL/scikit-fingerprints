@@ -8,6 +8,7 @@ Functions for loading benchmark molecular datasets.
     :maxdepth: 2
 
     datasets/asap
+    datasets/biogen_adme
     datasets/expansionrx
     datasets/lrgb
     datasets/moleculeace
