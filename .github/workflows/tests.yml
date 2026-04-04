@@ -53,3 +53,6 @@ jobs:
 
       - name: Run tests with pytest
         run: uv run make test
+
+      - name: Run docstring tests
+        run: uv run make -C docs doctest
