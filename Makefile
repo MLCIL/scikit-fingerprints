@@ -21,7 +21,7 @@ doctest: docs ## Run documentation tests
 # detect if datasets directory changed for tests
 define DATASETS_CHANGED
 { \
-	git diff --name-only master...HEAD ;\
+	git diff --name-only origin/master...HEAD ;\
 	git diff --name-only --cached ;\
 	git diff --name-only ;\
 } | grep -q '^skfp/datasets/'
