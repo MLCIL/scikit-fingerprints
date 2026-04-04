@@ -32,6 +32,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      - name: Install pandoc
+        uses: pandoc/actions/setup@v1
+
       # make sure cache directory exists at this stage, otherwise cache
       # will always be ignored
       - name: Create dataset cache directory
