@@ -1,6 +1,6 @@
-====================
+=====================
 Biogen ADME benchmark
-====================
+=====================
 
 .. automodule:: skfp.datasets.biogen_adme
     :exclude-members: load_biogen_adme_benchmark, load_biogen_adme_dataset
