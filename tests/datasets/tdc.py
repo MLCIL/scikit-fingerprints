@@ -324,8 +324,8 @@ def test_load_dataset(dataset_name, load_func, expected_length, num_tasks, task_
 @pytest.mark.parametrize(
     "subset_name, expected_num_datasets",
     [
-        (None, 36),
-        ("ADME", 24),
+        (None, 35),
+        ("ADME", 23),
         ("HTS", 2),
         ("Toxicity", 10),
     ],
