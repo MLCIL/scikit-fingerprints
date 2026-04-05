@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          # fetch origin/master to be able to compare it to current branch
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -29,19 +32,30 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      - name: Install pandoc
+        uses: pandoc/actions/setup@v1
+
+      # make sure cache directory exists at this stage, otherwise cache
+      # will always be ignored
+      - name: Create dataset cache directory
+        run: mkdir -p ~/scikit_learn_data
+
       - name: Cache datasets
         uses: actions/cache@v5
         with:
           # GitHub Actions can't create a cache key on dataset contents, so we use
           # dataset loader .py files instead
           path: ~/scikit_learn_data
-          key: ${{ hashFiles('skfp/datasets/**/*.py') }}
+          key: datasets-${{ runner.os }}-${{ hashFiles('skfp/datasets/**/*.py') }}
 
       - name: Install the project dependencies
-        run: uv sync --group test
+        run: uv sync --group test --group docs
 
       - name: Check pre-commit
         run: uv run pre-commit run --all-files
 
       - name: Run tests with pytest
         run: uv run make test
+
+      - name: Run docstring tests
+        run: uv run make -C docs doctest

@@ -126,10 +126,10 @@ def butina_train_test_split(
     Examples
     --------
     >>> from skfp.model_selection.splitters import butina_train_test_split
-    >>> smiles = ['CCO', 'CCN', 'CCC', 'CCCl', 'CCBr', 'CCI', 'CCF', 'CC=O']
+    >>> smiles = ['c1ccccc1', 'c1cccnc1', 'c1ccncc1', 'CC(=O)O', 'CC(N)=O', 'CCCCCC', 'CCCCCN', 'c1ccc(O)cc1']
     >>> train_smiles, test_smiles = butina_train_test_split(smiles, train_size=0.75, test_size=0.25)
     >>> train_smiles
-    ['CCBr', 'CCI', 'CCF', 'CC=O', 'CCO', 'CCC']
+    ['CCCCCN', 'CCCCCC', 'CC(N)=O', 'CC(=O)O', 'c1ccncc1', 'c1cccnc1']
     """
     train_size, test_size = validate_train_test_split_sizes(
         train_size, test_size, len(data)
@@ -293,12 +293,12 @@ def butina_train_valid_test_split(
     Examples
     --------
     >>> from skfp.model_selection.splitters import butina_train_valid_test_split
-    >>> smiles = ['CCO', 'CCN', 'CCC', 'CCCl', 'CCBr', 'CCI', 'CCF', 'CC=O']
+    >>> smiles = ['c1ccccc1', 'c1cccnc1', 'c1ccncc1', 'CC(=O)O', 'CC(N)=O', 'CCCCCC', 'CCCCCN', 'c1ccc(O)cc1']
     >>> train_smiles, valid_smiles, test_smiles = butina_train_valid_test_split(
     ...     smiles, train_size=0.5, valid_size=0.25, test_size=0.25
     ... )
     >>> train_smiles
-    ['CCF', 'CC=O', 'CCO', 'CCC']
+    ['CC(N)=O', 'CC(=O)O', 'c1ccncc1', 'c1cccnc1']
     """
     train_size, valid_size, test_size = validate_train_valid_test_split_sizes(
         train_size, valid_size, test_size, len(data)
