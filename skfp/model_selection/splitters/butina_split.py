@@ -1,15 +1,12 @@
-from collections import defaultdict
 from collections.abc import Sequence
 from numbers import Integral
 from typing import Any
 
-import numpy as np
 from rdkit.Chem import Mol
-from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
-from rdkit.SimDivFilters.rdSimDivPickers import LeaderPicker
-from sklearn.neighbors import NearestNeighbors
+from rdkit.ML.Cluster import Butina
 from sklearn.utils._param_validation import Interval, RealNotInt, validate_params
 
+from skfp.distances import bulk_tanimoto_binary_distance
 from skfp.fingerprints import ECFPFingerprint
 from skfp.model_selection.splitters.utils import (
     ensure_nonempty_subset,
@@ -36,9 +33,7 @@ from skfp.utils.validators import ensure_mols
             None,
         ],
         "threshold": [Interval(RealNotInt, 0, 1, closed="both")],
-        "approximate": ["boolean"],
         "return_indices": ["boolean"],
-        "n_jobs": [Integral, None],
     },
     prefer_skip_nested_validation=True,
 )
@@ -48,9 +43,7 @@ def butina_train_test_split(
     train_size: float | None = None,
     test_size: float | None = None,
     threshold: float = 0.65,
-    approximate: bool = False,
     return_indices: bool = False,
-    n_jobs: int | None = None,
 ) -> (
     tuple[Sequence[str | Mol], Sequence[str | Mol], Sequence[Sequence[Any]]]
     | tuple[Sequence, ...]
@@ -96,21 +89,9 @@ def butina_train_test_split(
         centroids. Default value is based on ECFP4 activity threshold as determined
         by Roger Sayle [4]_.
 
-    approximate : bool, default=False
-        Whether to use approximate similarity calculation to speed up computation on
-        large datasets. It uses NNDescent algorithm [5]_ [6]_ and requires `PyNNDescent`
-        library to be installed. However, it is much slower on small datasets, and
-        exact version is always used for data with less than 5000 molecules.
-
     return_indices : bool, default=False
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
-
-    n_jobs : int, default=None
-        The number of jobs to run in parallel. :meth:`transform` is parallelized
-        over the input molecules. ``None`` means 1 unless in a
-        :obj:`joblib.parallel_backend` context. ``-1`` means using all processors.
-        See scikit-learn documentation on ``n_jobs`` for more details.
 
     Returns
     -------
@@ -142,16 +123,6 @@ def butina_train_test_split(
         RDKit UGM 2019
         <https://www.nextmovesoftware.com/talks/Sayle_2DSimilarityDiversityAndClusteringInRdkit_RDKITUGM_201909.pdf>`_
 
-    .. [5] `W. Dong et al.
-        "Efficient k-nearest neighbor graph construction for generic similarity measures"
-        Proceedings of the 20th International World Wide Web Conference (WWW '11).
-        Association for Computing Machinery, New York, NY, USA, 577-586
-        <https://doi.org/10.1145/1963405.1963487>`_
-
-    .. [6] `Leland McInnes
-        "PyNNDescent for fast Approximate Nearest Neighbors"
-        <https://pynndescent.readthedocs.io/en/latest/>`_
-
     Examples
     --------
     >>> from skfp.model_selection.splitters import butina_train_test_split
@@ -164,7 +135,7 @@ def butina_train_test_split(
         train_size, test_size, len(data)
     )
 
-    clusters = _create_clusters(data, threshold, approximate, n_jobs)
+    clusters = _create_clusters(data, threshold)
     clusters.sort(key=len)
 
     train_idxs: list[int] = []
@@ -215,9 +186,7 @@ def butina_train_test_split(
             None,
         ],
         "threshold": [Interval(RealNotInt, 0, 1, closed="both")],
-        "approximate": ["boolean"],
         "return_indices": ["boolean"],
-        "n_jobs": [Integral, None],
     },
     prefer_skip_nested_validation=True,
 )
@@ -228,9 +197,7 @@ def butina_train_valid_test_split(
     valid_size: float | None = None,
     test_size: float | None = None,
     threshold: float = 0.65,
-    approximate: bool = False,
     return_indices: bool = False,
-    n_jobs: int | None = None,
 ) -> (
     tuple[
         Sequence[str | Mol],
@@ -290,21 +257,9 @@ def butina_train_valid_test_split(
         centroids. Default value is based on ECFP4 activity threshold as determined
         by Roger Sayle [4]_.
 
-    approximate : bool, default=False
-        Whether to use approximate similarity calculation to speed up computation on
-        large datasets. It uses NNDescent algorithm [5]_ [6]_ and requires `PyNNDescent`
-        library to be installed. However, it is much slower on small datasets, and
-        exact version is always used for data with less than 5000 molecules.
-
     return_indices : bool, default=False
         Whether the method should return the input object subsets, i.e. SMILES strings
         or RDKit ``Mol`` objects, or only the indices of the subsets instead of the data.
-
-    n_jobs : int, default=None
-        The number of jobs to run in parallel. :meth:`transform` is parallelized
-        over the input molecules. ``None`` means 1 unless in a
-        :obj:`joblib.parallel_backend` context. ``-1`` means using all processors.
-        See scikit-learn documentation on ``n_jobs`` for more details.
 
     Returns
     -------
@@ -335,16 +290,6 @@ def butina_train_valid_test_split(
         RDKit UGM 2019
         <https://www.nextmovesoftware.com/talks/Sayle_2DSimilarityDiversityAndClusteringInRdkit_RDKITUGM_201909.pdf>`_
 
-    .. [5] `W. Dong et al.
-        "Efficient k-nearest neighbor graph construction for generic similarity measures"
-        Proceedings of the 20th International World Wide Web Conference (WWW '11).
-        Association for Computing Machinery, New York, NY, USA, 577-586
-        <https://doi.org/10.1145/1963405.1963487>`_
-
-    .. [6] `Leland McInnes
-        "PyNNDescent for fast Approximate Nearest Neighbors"
-        <https://pynndescent.readthedocs.io/en/latest/>`_
-
     Examples
     --------
     >>> from skfp.model_selection.splitters import butina_train_valid_test_split
@@ -359,7 +304,7 @@ def butina_train_valid_test_split(
         train_size, valid_size, test_size, len(data)
     )
 
-    clusters = _create_clusters(data, threshold, approximate, n_jobs)
+    clusters = _create_clusters(data, threshold)
     clusters.sort(key=len)
 
     train_idxs: list[int] = []
@@ -397,70 +342,25 @@ def butina_train_valid_test_split(
 
 
 def _create_clusters(
-    data: Sequence[str | Mol],
-    threshold: float = 0.65,
-    approximate: bool = False,
-    n_jobs: int | None = None,
-) -> list[list[int]]:
+    data: Sequence[str | Mol], threshold: float = 0.65
+) -> list[tuple[int]]:
     """
     Generate Taylor-Butina clusters for a list of SMILES strings or RDKit ``Mol`` objects.
     This function groups molecules by using clustering, where cluster centers must have
-    Tanimoto (Jaccard) distance greater or equal to given threshold. Binary ECFP4 (Morgan)
+    Tanimoto (Jaccard) distance greater or equal to a given threshold. Binary ECFP4 (Morgan)
     fingerprints with 2048 bits are used as features.
     """
     mols = ensure_mols(data)
 
-    fps_rdkit = GetMorganGenerator().GetFingerprints(mols)
-    centroid_idxs = LeaderPicker().LazyBitVectorPick(
-        fps_rdkit, poolSize=len(mols), threshold=threshold
+    fps = ECFPFingerprint().transform(mols)
+    dists = bulk_tanimoto_binary_distance(fps)
+
+    clusters = Butina.ClusterData(
+        dists,
+        nPts=len(fps),
+        distThresh=threshold,
+        isDistData=True,
+        reordering=True,
     )
-    centroid_idxs = list(centroid_idxs)
-    non_centroid_idxs = sorted(set(range(len(mols))) - set(centroid_idxs))
 
-    # initially, each cluster is only its centroid
-    clustering = {centroid_idx: [centroid_idx] for centroid_idx in centroid_idxs}
-    clustering = defaultdict(list, clustering)
-
-    # we don't use n_jobs here, since ECFP is too fast to benefit from that
-    fps = ECFPFingerprint().transform(mols).astype(bool)
-    fps_centroids = fps[centroid_idxs]
-    fps_non_centroids = fps[non_centroid_idxs]
-
-    # check nearest neighbors for the rest of the data and assign it to clusters
-    # note that this is much faster, since Taylor-Butina results in a large number of
-    # clusters, so we avoid a lot of nearest neighbor computations this way
-    if not len(fps_non_centroids):
-        # all points are their own centroids
-        nearest_cluster_idxs = np.array([])
-    elif not approximate or len(data) < 5000:
-        nn = NearestNeighbors(n_neighbors=1, metric="jaccard", n_jobs=n_jobs)
-        nn.fit(fps_centroids)
-        nearest_cluster_idxs = nn.kneighbors(fps_non_centroids, return_distance=False)
-    else:
-        try:
-            from pynndescent import NNDescent
-        except ImportError as err:
-            msg = (
-                "PyNNDescent not detected, which is needed for approximate"
-                "Butina split. You can install it with: pip install pynndescent"
-            )
-            raise ImportError(msg) from err
-
-        index = NNDescent(
-            fps_centroids,
-            metric="jaccard",
-            random_state=0,
-            parallel_batch_queries=True,
-            n_jobs=n_jobs,
-        )
-        nearest_cluster_idxs, _ = index.query(fps_non_centroids, k=1)
-
-    # assign rest of points to nearest neighbor clusters
-    nearest_cluster_idxs = nearest_cluster_idxs.ravel()
-    for mol_idx, cluster_idx in zip(
-        non_centroid_idxs, nearest_cluster_idxs, strict=False
-    ):
-        clustering[cluster_idx].append(mol_idx)
-
-    clusters = list(clustering.values())
-    return clusters
+    return list(clusters)
