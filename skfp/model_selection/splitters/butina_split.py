@@ -123,12 +123,6 @@ def butina_train_test_split(
         RDKit UGM 2019
         <https://www.nextmovesoftware.com/talks/Sayle_2DSimilarityDiversityAndClusteringInRdkit_RDKITUGM_201909.pdf>`_
 
-    .. [5] `W. Dong et al.
-        "Efficient k-nearest neighbor graph construction for generic similarity measures"
-        Proceedings of the 20th International World Wide Web Conference (WWW '11).
-        Association for Computing Machinery, New York, NY, USA, 577-586
-        <https://doi.org/10.1145/1963405.1963487>`_
-
     Examples
     --------
     >>> from skfp.model_selection.splitters import butina_train_test_split
@@ -295,12 +289,6 @@ def butina_train_valid_test_split(
         "2D similarity, diversity and clustering in RDKit"
         RDKit UGM 2019
         <https://www.nextmovesoftware.com/talks/Sayle_2DSimilarityDiversityAndClusteringInRdkit_RDKITUGM_201909.pdf>`_
-
-    .. [5] `W. Dong et al.
-        "Efficient k-nearest neighbor graph construction for generic similarity measures"
-        Proceedings of the 20th International World Wide Web Conference (WWW '11).
-        Association for Computing Machinery, New York, NY, USA, 577-586
-        <https://doi.org/10.1145/1963405.1963487>`_
 
     Examples
     --------
