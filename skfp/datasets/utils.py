@@ -18,13 +18,18 @@ def fetch_dataset(
     dataset_name: str,
     filename: str,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame:
     """
     Fetch the dataset from HuggingFace Hub. Returns loaded DataFrame.
+
+    If the dataset file is already present locally, the download is skipped
+    unless ``force_update`` is True.
     """
     data_home_dir = get_data_home_dir(data_dir, dataset_name)
-    dataset_dir = hf_hub_download(data_home_dir, dataset_name, verbose)
-    filepath = Path(dataset_dir) / filename
+    filepath = Path(data_home_dir) / filename
+    if force_update or not filepath.exists():
+        hf_hub_download(data_home_dir, dataset_name, verbose)
     return pd.read_csv(filepath)
 
 
@@ -33,14 +38,19 @@ def fetch_splits(
     dataset_name: str,
     filename: str,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> dict[str, list[int]]:
     """
     Fetch the dataset splits from HuggingFace Hub. Returns loaded JSON with split
     names as keys (e.g. train, valid, test), and lists of indexes as values.
+
+    If the splits file is already present locally, the download is skipped
+    unless ``force_update`` is True.
     """
     data_home_dir = get_data_home_dir(data_dir, dataset_name)
-    dataset_dir = hf_hub_download(data_home_dir, dataset_name, verbose)
-    filepath = Path(dataset_dir) / filename
+    filepath = Path(data_home_dir) / filename
+    if force_update or not filepath.exists():
+        hf_hub_download(data_home_dir, dataset_name, verbose)
     if verbose:
         print(filepath)
     with open(filepath) as file:

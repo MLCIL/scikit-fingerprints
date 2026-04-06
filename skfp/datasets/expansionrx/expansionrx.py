@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_logd(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the LogD dataset from the ExpansionRx-OpenADMET challenge.
@@ -45,6 +47,11 @@ def load_logd(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -75,6 +82,7 @@ def load_logd(
         dataset_name="ExpansionRx_OpenADMET_LogD",
         filename="logd.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -88,6 +96,7 @@ def load_logd(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -95,6 +104,7 @@ def load_ksol(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the KSOL dataset from the ExpansionRx-OpenADMET challenge.
@@ -121,6 +131,11 @@ def load_ksol(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -151,6 +166,7 @@ def load_ksol(
         dataset_name="ExpansionRx_OpenADMET_KSOL",
         filename="ksol.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -164,6 +180,7 @@ def load_ksol(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -171,6 +188,7 @@ def load_hlm_clint(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the HLM CLint dataset from the ExpansionRx-OpenADMET challenge.
@@ -197,6 +215,11 @@ def load_hlm_clint(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -227,6 +250,7 @@ def load_hlm_clint(
         dataset_name="ExpansionRx_OpenADMET_HLM_CLint",
         filename="hlm_clint.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -240,6 +264,7 @@ def load_hlm_clint(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -247,6 +272,7 @@ def load_rlm_clint(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the RLM CLint dataset from the ExpansionRx-OpenADMET challenge.
@@ -278,6 +304,11 @@ def load_rlm_clint(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -307,6 +338,7 @@ def load_rlm_clint(
         dataset_name="ExpansionRx_OpenADMET_RLM_CLint",
         filename="rlm_clint.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -320,6 +352,7 @@ def load_rlm_clint(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -327,6 +360,7 @@ def load_mlm_clint(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MLM CLint dataset from the ExpansionRx-OpenADMET challenge.
@@ -353,6 +387,11 @@ def load_mlm_clint(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -383,6 +422,7 @@ def load_mlm_clint(
         dataset_name="ExpansionRx_OpenADMET_MLM_CLint",
         filename="mlm_clint.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -396,6 +436,7 @@ def load_mlm_clint(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -403,6 +444,7 @@ def load_caco2_perm_papp_a_b(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the Caco-2 Permeability Papp A>B dataset from the ExpansionRx-OpenADMET challenge.
@@ -430,6 +472,11 @@ def load_caco2_perm_papp_a_b(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -460,6 +507,7 @@ def load_caco2_perm_papp_a_b(
         dataset_name="ExpansionRx_OpenADMET_Caco-2_Permeability_Papp_AB",
         filename="caco_2_permeability_papp_a_b.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -473,6 +521,7 @@ def load_caco2_perm_papp_a_b(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -480,6 +529,7 @@ def load_caco2_perm_efflux(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the Caco-2 Permeability Efflux dataset from the ExpansionRx-OpenADMET challenge.
@@ -506,6 +556,11 @@ def load_caco2_perm_efflux(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -536,6 +591,7 @@ def load_caco2_perm_efflux(
         dataset_name="ExpansionRx_OpenADMET_Caco-2_Permeability_Efflux",
         filename="caco_2_permeability_efflux.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -549,6 +605,7 @@ def load_caco2_perm_efflux(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -556,6 +613,7 @@ def load_mppb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MPPB dataset from the ExpansionRx-OpenADMET challenge.
@@ -582,6 +640,11 @@ def load_mppb(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -612,6 +675,7 @@ def load_mppb(
         dataset_name="ExpansionRx_OpenADMET_MPPB",
         filename="mppb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -625,6 +689,7 @@ def load_mppb(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -632,6 +697,7 @@ def load_mbpb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MBPB dataset from the ExpansionRx-OpenADMET challenge.
@@ -658,6 +724,11 @@ def load_mbpb(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -688,6 +759,7 @@ def load_mbpb(
         dataset_name="ExpansionRx_OpenADMET_MBPB",
         filename="mbpb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -701,6 +773,7 @@ def load_mbpb(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -708,6 +781,7 @@ def load_mgmb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MGMB dataset from the ExpansionRx-OpenADMET challenge.
@@ -734,6 +808,11 @@ def load_mgmb(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -764,6 +843,7 @@ def load_mgmb(
         dataset_name="ExpansionRx_OpenADMET_MGMB",
         filename="mgmb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df

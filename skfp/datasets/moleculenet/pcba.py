@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_pcba(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the PCBA (PubChem BioAssay) dataset.
@@ -58,6 +60,11 @@ def load_pcba(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -104,6 +111,10 @@ array([[ 0.,  0., nan, ..., nan, nan, nan],
 
     """
     df = fetch_dataset(
-        data_dir, dataset_name="MoleculeNet_PCBA", filename="pcba.csv", verbose=verbose
+        data_dir,
+        dataset_name="MoleculeNet_PCBA",
+        filename="pcba.csv",
+        verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)

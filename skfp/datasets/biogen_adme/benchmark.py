@@ -39,6 +39,7 @@ BIOGEN_ADME_DATASET_NAME_TO_LOADER_FUNC = {
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -47,6 +48,7 @@ def load_biogen_adme_benchmark(
     data_dir: str | os.PathLike | None = None,
     as_frames: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> Iterator[tuple[str, pd.DataFrame]] | Iterator[tuple[str, list[str], np.ndarray]]:
     """
     Load the Biogen ADME benchmark datasets.
@@ -82,6 +84,11 @@ def load_biogen_adme_benchmark(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : generator of pd.DataFrame or tuples (list[str], np.ndarray)
@@ -106,14 +113,24 @@ def load_biogen_adme_benchmark(
 
     if as_frames:
         datasets = (
-            (dataset_name, load_function(data_dir, as_frame=True, verbose=verbose))
+            (
+                dataset_name,
+                load_function(
+                    data_dir, as_frame=True, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
         )
     else:
         datasets = (
-            (dataset_name, *load_function(data_dir, as_frame=False, verbose=verbose))
+            (
+                dataset_name,
+                *load_function(
+                    data_dir, as_frame=False, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
@@ -127,6 +144,7 @@ def load_biogen_adme_benchmark(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -135,6 +153,7 @@ def load_biogen_adme_dataset(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load Biogen ADME benchmark dataset by name.
@@ -162,6 +181,11 @@ def load_biogen_adme_dataset(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -185,7 +209,7 @@ def load_biogen_adme_dataset(
     (['CNc1cc(Nc2cccn(-c3ccccn3)c2=O)nn2c(C(=O)N[C@@H]3C[C@@H]3F)cnc12', ..., '])
     """
     loader_func = BIOGEN_ADME_DATASET_NAME_TO_LOADER_FUNC[dataset_name]
-    return loader_func(data_dir, as_frame, verbose)
+    return loader_func(data_dir, as_frame, verbose, force_update)
 
 
 def _subset_to_dataset_names(subset: list[str] | None) -> list[str]:

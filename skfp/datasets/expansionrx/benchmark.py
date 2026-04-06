@@ -79,6 +79,7 @@ _EXPANSIONRX_DATASET_NAME_TO_SPLIT_FILENAME = {
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -87,6 +88,7 @@ def load_expansionrx_benchmark(
     data_dir: str | os.PathLike | None = None,
     as_frames: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> Iterator[tuple[str, pd.DataFrame]] | Iterator[tuple[str, list[str], np.ndarray]]:
     """
     Load the ExpansionRx-OpenADMET challenge datasets.
@@ -130,6 +132,11 @@ def load_expansionrx_benchmark(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : generator of pd.DataFrame or tuples (list[str], np.ndarray)
@@ -155,14 +162,24 @@ def load_expansionrx_benchmark(
 
     if as_frames:
         datasets = (
-            (dataset_name, load_function(data_dir, as_frame=True, verbose=verbose))
+            (
+                dataset_name,
+                load_function(
+                    data_dir, as_frame=True, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
         )
     else:
         datasets = (
-            (dataset_name, *load_function(data_dir, as_frame=False, verbose=verbose))
+            (
+                dataset_name,
+                *load_function(
+                    data_dir, as_frame=False, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
@@ -176,6 +193,7 @@ def load_expansionrx_benchmark(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -184,6 +202,7 @@ def load_expansionrx_dataset(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load ExpansionRx-OpenADMET challenge dataset by name.
@@ -211,6 +230,11 @@ def load_expansionrx_dataset(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -232,7 +256,7 @@ def load_expansionrx_dataset(
     (['CN1CCC[C@H]1COc1ccc(-c2nc3cc(-c4ccc5[nH]c(-c6ccc(O)cc6)nc5c4)ccc3[nH]2)cc1', ..., '])
     """
     loader_func = EXPANSIONRX_DATASET_NAME_TO_LOADER_FUNC[dataset_name]
-    return loader_func(data_dir, as_frame, verbose)
+    return loader_func(data_dir, as_frame, verbose, force_update)
 
 
 @validate_params(
@@ -241,6 +265,7 @@ def load_expansionrx_dataset(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -249,6 +274,7 @@ def load_expansionrx_splits(
     data_dir: str | os.PathLike | None = None,
     as_dict: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> tuple[list[int], list[int]] | dict[str, list[int]]:
     """
     Load pre-generated dataset splits for the ExpansionRx-OpenADMET challenge.
@@ -278,6 +304,11 @@ def load_expansionrx_splits(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : tuple(list[int], list[int]) or dict
@@ -297,6 +328,7 @@ def load_expansionrx_splits(
         dataset_name=_EXPANSIONRX_DATASET_NAME_TO_HF_NAME[dataset_name],
         filename=_EXPANSIONRX_DATASET_NAME_TO_SPLIT_FILENAME[dataset_name],
         verbose=verbose,
+        force_update=force_update,
     )
     if as_dict:
         return splits

@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_hlm(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the HLM dataset from the ASAP Discovery-OpenADMET challenge.
@@ -47,6 +49,11 @@ def load_hlm(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -83,6 +90,7 @@ def load_hlm(
         dataset_name="ASAP_OpenADMET_HLM",
         filename="hlm.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -96,6 +104,7 @@ def load_hlm(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -103,6 +112,7 @@ def load_ksol(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the KSOL dataset from the ASAP Discovery-OpenADMET challenge.
@@ -130,6 +140,11 @@ def load_ksol(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -166,6 +181,7 @@ def load_ksol(
         dataset_name="ASAP_OpenADMET_KSOL",
         filename="ksol.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -179,6 +195,7 @@ def load_ksol(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -186,6 +203,7 @@ def load_logd(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the LogD dataset from the ASAP Discovery-OpenADMET challenge.
@@ -213,6 +231,11 @@ def load_logd(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -249,6 +272,7 @@ def load_logd(
         dataset_name="ASAP_OpenADMET_LogD",
         filename="logd.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -262,6 +286,7 @@ def load_logd(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -269,6 +294,7 @@ def load_mdr1_mdckii(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MDR1-MDCKII dataset from the ASAP Discovery-OpenADMET challenge.
@@ -297,6 +323,11 @@ def load_mdr1_mdckii(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -333,6 +364,7 @@ def load_mdr1_mdckii(
         dataset_name="ASAP_OpenADMET_MDR1-MDCKII",
         filename="mdr1_mdckii.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -346,6 +378,7 @@ def load_mdr1_mdckii(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -353,6 +386,7 @@ def load_mlm(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the MLM dataset from the ASAP Discovery-OpenADMET challenge.
@@ -381,6 +415,11 @@ def load_mlm(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -417,6 +456,7 @@ def load_mlm(
         dataset_name="ASAP_OpenADMET_MLM",
         filename="mlm.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -430,6 +470,7 @@ def load_mlm(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -437,6 +478,7 @@ def load_pic50_sars_cov_2(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the pIC50 SARS-CoV-2 dataset from the ASAP Discovery-OpenADMET challenge.
@@ -465,6 +507,11 @@ def load_pic50_sars_cov_2(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -501,6 +548,7 @@ def load_pic50_sars_cov_2(
         dataset_name="ASAP_OpenADMET_pIC50_SARS-CoV-2",
         filename="pic50_sars_cov_2.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df
@@ -514,6 +562,7 @@ def load_pic50_sars_cov_2(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -521,6 +570,7 @@ def load_pic50_mers_cov(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the pIC50 MERS-CoV dataset from the ASAP Discovery-OpenADMET challenge.
@@ -549,6 +599,11 @@ def load_pic50_mers_cov(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -585,6 +640,7 @@ def load_pic50_mers_cov(
         dataset_name="ASAP_OpenADMET_pIC50_MERS-CoV",
         filename="pic50_mers_cov.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return (
         df

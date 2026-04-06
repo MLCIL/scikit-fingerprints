@@ -68,6 +68,7 @@ MOLECULENET_DATASET_NAME_TO_LOADER_FUNC = {
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -76,6 +77,7 @@ def load_moleculenet_benchmark(
     data_dir: str | os.PathLike | None = None,
     as_frames: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> Iterator[tuple[str, pd.DataFrame]] | Iterator[tuple[str, list[str], np.ndarray]]:
     """
     Load the MoleculeNet benchmark datasets.
@@ -112,6 +114,11 @@ def load_moleculenet_benchmark(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : generator of pd.DataFrame or tuples (list[str], np.ndarray)
@@ -136,7 +143,12 @@ def load_moleculenet_benchmark(
     if as_frames:
         # generator of tuples (dataset_name, DataFrame)
         datasets = (
-            (dataset_name, load_function(data_dir, as_frame=True, verbose=verbose))
+            (
+                dataset_name,
+                load_function(
+                    data_dir, as_frame=True, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
@@ -144,7 +156,12 @@ def load_moleculenet_benchmark(
     else:
         # generator of tuples (dataset_name, SMILES, y)
         datasets = (
-            (dataset_name, *load_function(data_dir, as_frame=False, verbose=verbose))
+            (
+                dataset_name,
+                *load_function(
+                    data_dir, as_frame=False, verbose=verbose, force_update=force_update
+                ),
+            )
             for dataset_name, load_function in zip(
                 dataset_names, dataset_functions, strict=False
             )
@@ -159,6 +176,7 @@ def load_moleculenet_benchmark(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -167,6 +185,7 @@ def load_moleculenet_dataset(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load MoleculeNet dataset by name.
@@ -193,6 +212,11 @@ def load_moleculenet_dataset(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -226,7 +250,7 @@ array([1, 1, 1, ..., 1, 1, 1]))
     4  Cc1onc(c2ccccc2Cl)c1C(=O)N[C@H]3[C@H]4SC(C)(C)...      1
     """
     loader_func = MOLECULENET_DATASET_NAME_TO_LOADER_FUNC[dataset_name]
-    return loader_func(data_dir, as_frame, verbose)
+    return loader_func(data_dir, as_frame, verbose, force_update)
 
 
 @validate_params(
@@ -235,6 +259,7 @@ array([1, 1, 1, ..., 1, 1, 1]))
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -243,6 +268,7 @@ def load_ogb_splits(
     data_dir: str | os.PathLike | None = None,
     as_dict: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> tuple[list[int], list[int], list[int]] | dict[str, list[int]]:
     """
     Load the MoleculeNet dataset splits from Open Graph Benchmark (OGB).
@@ -270,6 +296,11 @@ def load_ogb_splits(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : tuple(list[int], list[int], list[int]) or dict
@@ -295,6 +326,7 @@ def load_ogb_splits(
         dataset_name=f"MoleculeNet_{dataset_name}",
         filename=f"ogb_splits_{dataset_name.lower()}.json",
         verbose=verbose,
+        force_update=force_update,
     )
     if as_dict:
         return splits
