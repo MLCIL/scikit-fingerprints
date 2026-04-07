@@ -1,39 +1,24 @@
 from collections.abc import Sequence
-from pathlib import Path
-from urllib.request import (
-    HTTPSHandler,
-    build_opener,
-)
 
 import numpy as np
+from huggingface_hub import hf_hub_download
 from rdkit.Chem import Mol
-from sklearn.datasets import get_data_home
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.utils import ensure_mols
 
-_CLAMP_WEIGHTS_URL = (
-    "https://cloud.ml.jku.at/s/7nxgpAQrTr69Rp2/download/checkpoint.pt"
-)
+_CLAMP_HF_REPO = "scikit-fingerprints/clamp"
+_CLAMP_HF_FILENAME = "compound_encoder.pt"
 
 
 def _get_weights_path() -> str:
-    """Download CLAMP weights if needed and return the local path."""
-    data_home = Path(get_data_home()) / "clamp"
-    data_home.mkdir(parents=True, exist_ok=True)
-    weights_path = data_home / "checkpoint.pt"
-    if not weights_path.exists():
-        import ssl
-
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        opener = build_opener(HTTPSHandler(context=ctx))
-        with opener.open(_CLAMP_WEIGHTS_URL) as response, open(
-            weights_path, "wb"
-        ) as out_file:
-            out_file.write(response.read())
-    return str(weights_path)
+    """Download CLAMP compound encoder weights from HuggingFace Hub if needed,
+    returning the local cached path.
+    """
+    return hf_hub_download(
+        repo_id=_CLAMP_HF_REPO,
+        filename=_CLAMP_HF_FILENAME,
+    )
 
 
 class CLAMPFingerprint(BaseFingerprintTransformer):

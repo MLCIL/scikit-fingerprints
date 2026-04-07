@@ -59,11 +59,8 @@ def _load_clamp_compound_encoder(checkpoint_path: str) -> CLAMPCompoundEncoder:
     """Load pretrained CLAMP compound encoder from a checkpoint file."""
     model = CLAMPCompoundEncoder()
 
-    # weights_only=False is needed because the checkpoint contains numpy
-    # scalars in metadata fields (value, epoch); only tensor weights are
-    # actually used below
     checkpoint = torch.load(
-        checkpoint_path, map_location="cpu", weights_only=False
+        checkpoint_path, map_location="cpu", weights_only=True
     )
 
     full_state_dict = checkpoint["model_state_dict"]
