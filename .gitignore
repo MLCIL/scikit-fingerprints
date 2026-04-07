@@ -1,14 +1,19 @@
 .idea
-dataset
 .ipynb_checkpoints
 .pytest_cache
-__pycache__
 .coverage
+.python-version
+.DS_Store
+.vscode
+
 *.png
 *.svg
 *.pdf
 *.csv
 benchmarking/**/*.npy
+
+__pycache__
+dataset
 dist/
 !docs/logos/*
 
