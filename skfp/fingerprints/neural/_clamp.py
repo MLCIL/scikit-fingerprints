@@ -35,8 +35,10 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     ----------
     weights_path : str or None, default=None
         Path to a local pretrained checkpoint file (``.pt``). If ``None``,
-        weights are downloaded automatically from the CLAMP repository and
-        cached in the scikit-learn data home directory (``~/.sklearn_data/clamp/``).
+        weights are downloaded automatically from the
+        ``scikit-fingerprints/clamp`` HuggingFace Hub repository and cached
+        in the standard HuggingFace cache directory
+        (``~/.cache/huggingface/hub/`` by default).
 
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform` is parallelized
