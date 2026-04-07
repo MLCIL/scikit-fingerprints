@@ -1,3 +1,5 @@
+import contextlib
+
 from .atom_pair import AtomPairFingerprint
 from .autocorr import AutocorrFingerprint
 from .avalon import AvalonFingerprint
@@ -33,3 +35,6 @@ from .usr import USRFingerprint
 from .usrcat import USRCATFingerprint
 from .vsa import VSAFingerprint
 from .whim import WHIMFingerprint
+
+with contextlib.suppress(ImportError):
+    from .neural import CLAMPFingerprint

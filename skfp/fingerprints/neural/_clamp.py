@@ -1,0 +1,183 @@
+from collections.abc import Sequence
+from pathlib import Path
+from urllib.request import (
+    HTTPSHandler,
+    build_opener,
+)
+
+import numpy as np
+from rdkit.Chem import Mol
+from sklearn.datasets import get_data_home
+
+from skfp.bases import BaseFingerprintTransformer
+from skfp.utils import ensure_mols
+
+_CLAMP_WEIGHTS_URL = (
+    "https://cloud.ml.jku.at/s/7nxgpAQrTr69Rp2/download/checkpoint.pt"
+)
+
+
+def _get_weights_path() -> str:
+    """Download CLAMP weights if needed and return the local path."""
+    data_home = Path(get_data_home()) / "clamp"
+    data_home.mkdir(parents=True, exist_ok=True)
+    weights_path = data_home / "checkpoint.pt"
+    if not weights_path.exists():
+        import ssl
+
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        opener = build_opener(HTTPSHandler(context=ctx))
+        with opener.open(_CLAMP_WEIGHTS_URL) as response, open(
+            weights_path, "wb"
+        ) as out_file:
+            out_file.write(response.read())
+    return str(weights_path)
+
+
+class CLAMPFingerprint(BaseFingerprintTransformer):
+    """
+    CLAMP (Contrastive Language And Molecule Pre-training) fingerprint.
+
+    Uses a pretrained two-layer MLP compound encoder from CLAMP [1]_ to
+    transform concatenated Morgan count (4096 bits) and RDKit count (4096 bits)
+    fingerprints into 768-dimensional learned embeddings.
+
+    Requires PyTorch (``torch``) as an additional dependency.
+
+    Parameters
+    ----------
+    weights_path : str or None, default=None
+        Path to a local pretrained checkpoint file (``.pt``). If ``None``,
+        weights are downloaded automatically from the CLAMP repository and
+        cached in the scikit-learn data home directory (``~/.sklearn_data/clamp/``).
+
+    n_jobs : int, default=None
+        The number of jobs to run in parallel. :meth:`transform` is parallelized
+        over the input molecules. ``None`` means 1 unless in a
+        :obj:`joblib.parallel_backend` context. ``-1`` means using all processors.
+        See scikit-learn documentation on ``n_jobs`` for more details.
+
+    batch_size : int, default=None
+        Number of inputs processed in each batch. ``None`` divides input data into
+        equal-sized parts, as many as ``n_jobs``.
+
+    verbose : int or dict, default=0
+        Controls the verbosity when computing fingerprints.
+        If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
+        and can be used to control the progress bar.
+
+    Attributes
+    ----------
+    n_features_out : int = 768
+        Number of output features, i.e. the CLAMP embedding dimension.
+
+    requires_conformers : bool = False
+        This fingerprint uses only 2D molecular graphs and does not require
+        conformers.
+
+    References
+    ----------
+    .. [1] `Seidl et al.
+        "Enhancing Activity Prediction Models in Drug Discovery with the
+        Ability to Understand Human Language"
+        ICML 2023
+        <https://arxiv.org/abs/2303.03363>`_
+
+    Examples
+    --------
+    >>> from skfp.fingerprints.neural import CLAMPFingerprint
+    >>> smiles = ["O", "CC", "[C-]#N", "CC=O"]
+    >>> fp = CLAMPFingerprint()
+    >>> fp.transform(smiles)  # doctest: +SKIP
+    array([...], shape=(4, 768), dtype=float32)
+    """
+
+    _parameter_constraints: dict = {
+        **BaseFingerprintTransformer._parameter_constraints,
+        "weights_path": [str, None],
+    }
+
+    def __init__(
+        self,
+        weights_path: str | None = None,
+        n_jobs: int | None = None,
+        batch_size: int | None = None,
+        verbose: int | dict = 0,
+    ):
+        super().__init__(
+            n_features_out=768,
+            count=False,
+            sparse=False,
+            n_jobs=n_jobs,
+            batch_size=batch_size,
+            verbose=verbose,
+        )
+        self.weights_path = weights_path
+
+    def transform(
+        self, X: Sequence[str | Mol], copy: bool = False
+    ) -> np.ndarray:
+        """
+        Compute CLAMP fingerprints.
+
+        Parameters
+        ----------
+        X : {sequence of str or Mol}
+            Sequence containing SMILES strings or RDKit ``Mol`` objects.
+
+        copy : bool, default=False
+            Whether to copy input data.
+
+        Returns
+        -------
+        X : ndarray of shape (n_samples, 768)
+            Array with CLAMP embeddings as float32.
+        """
+        return super().transform(X, copy=copy)
+
+    def _calculate_fingerprint(
+        self, X: Sequence[str | Mol]
+    ) -> np.ndarray:
+        import torch
+
+        from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
+
+        from ._clamp_model import get_clamp_model
+
+        X = ensure_mols(X)
+
+        if len(X) == 0:
+            return np.empty((0, 768), dtype=np.float32)
+
+        # compute the "Mc+RDKc" input fingerprint as defined in the CLAMP
+        # paper: element-wise sum of folded count fingerprints
+        # from FCFP-style Morgan (useFeatures=True, useChirality=True) and
+        # RDKit FP (maxPath=6, 1 bit per feature), then log(1+x) scaled
+        ecfp = ECFPFingerprint(
+            fp_size=8192,
+            radius=2,
+            use_pharmacophoric_invariants=True,
+            include_chirality=True,
+            count=True,
+        )
+        rdkit_fp = RDKitFingerprint(
+            fp_size=8192,
+            max_path=6,
+            num_bits_per_feature=1,
+            count=True,
+        )
+        morganc = ecfp.transform(X).astype(np.float64)
+        rdkc = rdkit_fp.transform(X).astype(np.float64)
+        features = np.log(1.0 + morganc + rdkc).astype(np.float32)
+
+        # load model and run inference
+        path = self.weights_path or _get_weights_path()
+        model = get_clamp_model(path)
+
+        with torch.no_grad():
+            features_tensor = torch.from_numpy(features)
+            embeddings = model(features_tensor).numpy()
+
+        return embeddings
