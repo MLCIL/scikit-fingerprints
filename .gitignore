@@ -24,3 +24,6 @@ tests/preprocessing/input_output/data/mol_out.sdf
 
 .DS_Store
 .vscode
+
+*.tsv
+*.gz
