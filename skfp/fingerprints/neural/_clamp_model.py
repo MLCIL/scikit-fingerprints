@@ -59,9 +59,7 @@ def _load_clamp_compound_encoder(checkpoint_path: str) -> CLAMPCompoundEncoder:
     """Load pretrained CLAMP compound encoder from a checkpoint file."""
     model = CLAMPCompoundEncoder()
 
-    checkpoint = torch.load(
-        checkpoint_path, map_location="cpu", weights_only=True
-    )
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
     full_state_dict = checkpoint["model_state_dict"]
     encoder_state_dict = {

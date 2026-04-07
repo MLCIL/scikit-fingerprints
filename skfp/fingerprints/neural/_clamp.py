@@ -103,9 +103,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         )
         self.weights_path = weights_path
 
-    def transform(
-        self, X: Sequence[str | Mol], copy: bool = False
-    ) -> np.ndarray:
+    def transform(self, X: Sequence[str | Mol], copy: bool = False) -> np.ndarray:
         """
         Compute CLAMP fingerprints.
 
@@ -124,9 +122,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         """
         return super().transform(X, copy=copy)
 
-    def _calculate_fingerprint(
-        self, X: Sequence[str | Mol]
-    ) -> np.ndarray:
+    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
         import torch
 
         from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
