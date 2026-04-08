@@ -1,8 +1,6 @@
 import os
 from shutil import rmtree
 
-import polars as pl
-
 from utils.pipelines.base_pipeline import BasePipeline
 
 
@@ -26,19 +24,3 @@ class COCONUTPipeline(BasePipeline):
                 os.path.join(self.output_dir, self.filename),
             )
             rmtree(os.path.join(self.output_dir, "__MACOSX"))
-
-    def preprocess(self) -> None:
-        input_file_path = os.path.join(self.output_dir, self.filename)
-        output_file_path = os.path.join(self.output_dir, self.preprocessed_filename)
-
-        # check if preprocessed file already exists
-        if os.path.exists(output_file_path):
-            print("Found preprocessed dataset, skipping")
-            return
-
-        (
-            pl.read_csv(input_file_path, columns=["identifier", "standard_inchi"])
-            .rename({"identifier": "id", "standard_inchi": "InChI"})
-            .unique("InChI")
-            .write_parquet(output_file_path)
-        )

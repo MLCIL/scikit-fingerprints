@@ -2,13 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-import numpy as np
-import polars as pl
-from skfp.utils import run_in_parallel
-
 from utils.downloading import download_single_file, unpack_archive
-from utils.filtering import feasibility_filter_batch
-from utils.standardization import inchi_to_inchi_standardize
 
 INPUTS_DIR = "inputs"
 OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
@@ -80,76 +74,3 @@ class BasePipeline(ABC):
         return not force_download and os.path.exists(
             os.path.join(self.output_dir, self.filename)
         )
-
-    @abstractmethod
-    def preprocess(self) -> None:
-        """
-        Initial preprocessing of the dataset. Transforms it into parquet files
-        with columns: id, InChI. Column `id` is the original identifier of the
-        molecule per dataset.
-        """
-
-    def standardize(self) -> None:
-        """
-        Standardize molecules in the dataset. Performs the cleanup, standardization
-        and canonicalization of InChI, and removes the duplicates.
-        The output file consists of columns: id, InChI.
-        """
-        input_file_path = os.path.join(self.output_dir, self.preprocessed_filename)
-        output_file_path = os.path.join(self.output_dir, self.standardized_filename)
-
-        # check if standardized file already exists
-        if os.path.exists(output_file_path):
-            print("Found standardized dataset, skipping")
-            return
-
-        df = pl.read_parquet(input_file_path)
-
-        inchis = run_in_parallel(
-            inchi_to_inchi_standardize,
-            data=df["InChI"],
-            n_jobs=-1,
-            batch_size=1000,
-            flatten_results=True,
-            verbose=True,
-        )
-        df = df.with_columns(pl.Series("InChI", values=inchis))
-
-        df = df.filter(pl.col("InChI").is_not_null())
-        df = df.unique("InChI")
-
-        df.write_parquet(output_file_path)
-
-    def filter(self) -> None:
-        """
-        Filter molecules in the dataset. Performs feasibility filtering, removing
-        compounds that are simply nonsensical physically or that cannot be
-        interpreted as small molecules.
-        Input and output files have columns: id, InChI.
-        """
-        input_file_path = os.path.join(self.output_dir, self.standardized_filename)
-        output_file_path = os.path.join(self.output_dir, self.filtered_filename)
-
-        # check if standardized file already exists
-        if os.path.exists(output_file_path):
-            print("Found filtered dataset, skipping")
-            return
-
-        df = pl.read_parquet(input_file_path)
-
-        pass_filter = run_in_parallel(
-            feasibility_filter_batch,
-            data=df["InChI"],
-            n_jobs=-1,
-            batch_size=1000,
-            verbose=True,
-        )
-        pass_filter = np.concatenate(pass_filter)
-
-        initial_length = len(df)
-        df = df.filter(pass_filter)
-        filtered_length = len(df)
-
-        print(f"Filtering reduced molecules from {initial_length} to {filtered_length}")
-
-        df.write_parquet(output_file_path)
