@@ -13,18 +13,11 @@ class BasePipeline(ABC):
         self,
         source_name: str,
         filename: str,
-        verbose: int | bool = False,
-        input_dir: str = INPUTS_DIR,
         output_dir: str = OUTPUTS_DIR,
         archive_name: str | None = None,
     ):
         self.source_name = source_name
         self.filename = filename
-        self.preprocessed_filename = f"{self.source_name.lower()}_preprocessed.parquet"
-        self.standardized_filename = f"{self.source_name.lower()}_standardized.parquet"
-        self.filtered_filename = f"{self.source_name.lower()}_filtered.parquet"
-        self.verbose = verbose
-        self.input_dir = input_dir
         self.output_dir = output_dir
         self.archive_name = archive_name
 
