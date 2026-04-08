@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_b3db_classification(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the classification subset of Blood-Brain-Barrier dataset.
@@ -61,6 +63,11 @@ def load_b3db_classification(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -85,6 +92,7 @@ def load_b3db_classification(
         dataset_name="TDC_b3db_classification",
         filename="tdc_b3db_classification.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -94,6 +102,7 @@ def load_b3db_classification(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -101,6 +110,7 @@ def load_b3db_regression(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     r"""
     Load the regression subset of Blood-Brain-Barrier dataset.
@@ -141,6 +151,11 @@ def load_b3db_regression(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -165,6 +180,7 @@ def load_b3db_regression(
         dataset_name="TDC_b3db_regression",
         filename="tdc_b3db_regression.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -174,6 +190,7 @@ def load_b3db_regression(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -181,6 +198,7 @@ def load_bioavailability_ma(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Bioavailability dataset.
@@ -213,6 +231,11 @@ def load_bioavailability_ma(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -238,6 +261,7 @@ def load_bioavailability_ma(
         dataset_name="TDC_bioavailability_ma",
         filename="tdc_bioavailability_ma.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -247,6 +271,7 @@ def load_bioavailability_ma(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -254,6 +279,7 @@ def load_caco2_wang(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Caco-2 dataset.
@@ -286,6 +312,11 @@ def load_caco2_wang(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -310,6 +341,7 @@ def load_caco2_wang(
         dataset_name="TDC_caco2_wang",
         filename="tdc_caco2_wang.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -319,6 +351,7 @@ def load_caco2_wang(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -326,6 +359,7 @@ def load_clearance_microsome_az(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the microsome subset of Clearance AstraZeneca dataset.
@@ -362,6 +396,11 @@ def load_clearance_microsome_az(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -392,6 +431,7 @@ def load_clearance_microsome_az(
         dataset_name="TDC_clearance_microsome_az",
         filename="tdc_clearance_microsome_az.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -401,6 +441,7 @@ def load_clearance_microsome_az(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -408,6 +449,7 @@ def load_cyp1a2_veith(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP1A2 subset of CYP P450 Veith dataset.
@@ -452,6 +494,11 @@ def load_cyp1a2_veith(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -476,6 +523,7 @@ def load_cyp1a2_veith(
         dataset_name="TDC_cyp1a2_veith",
         filename="tdc_cyp1a2_veith.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -485,6 +533,7 @@ def load_cyp1a2_veith(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -492,6 +541,7 @@ def load_cyp2c9_substrate_carbonmangels(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP2C9 subset of Substrate Carbon-Mangels dataset.
@@ -530,6 +580,11 @@ def load_cyp2c9_substrate_carbonmangels(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -560,6 +615,7 @@ def load_cyp2c9_substrate_carbonmangels(
         dataset_name="TDC_cyp2c9_substrate_carbonmangels",
         filename="tdc_cyp2c9_substrate_carbonmangels.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -569,6 +625,7 @@ def load_cyp2c9_substrate_carbonmangels(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -576,6 +633,7 @@ def load_cyp2c9_veith(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP2C9 subset of CYP P450 Veith dataset.
@@ -617,6 +675,11 @@ def load_cyp2c9_veith(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -641,6 +704,7 @@ def load_cyp2c9_veith(
         dataset_name="TDC_cyp2c9_veith",
         filename="tdc_cyp2c9_veith.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -650,6 +714,7 @@ def load_cyp2c9_veith(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -657,6 +722,7 @@ def load_cyp2c19_veith(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP2C19 subset of CYP P450 Veith dataset.
@@ -699,6 +765,11 @@ def load_cyp2c19_veith(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -723,6 +794,7 @@ def load_cyp2c19_veith(
         dataset_name="TDC_cyp2c19_veith",
         filename="tdc_cyp2c19_veith.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -732,6 +804,7 @@ def load_cyp2c19_veith(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -739,6 +812,7 @@ def load_cyp2d6_substrate_carbonmangels(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP2D6 subset of Substrate Carbon-Mangels dataset.
@@ -778,6 +852,11 @@ def load_cyp2d6_substrate_carbonmangels(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -808,6 +887,7 @@ def load_cyp2d6_substrate_carbonmangels(
         dataset_name="TDC_cyp2d6_substrate_carbonmangels",
         filename="tdc_cyp2d6_substrate_carbonmangels.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -817,6 +897,7 @@ def load_cyp2d6_substrate_carbonmangels(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -824,6 +905,7 @@ def load_cyp2d6_veith(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP2D6 subset of CYP P450 Veith dataset.
@@ -866,6 +948,11 @@ def load_cyp2d6_veith(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -890,6 +977,7 @@ def load_cyp2d6_veith(
         dataset_name="TDC_cyp2d6_veith",
         filename="tdc_cyp2d6_veith.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -899,6 +987,7 @@ def load_cyp2d6_veith(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -906,6 +995,7 @@ def load_cyp3a4_substrate_carbonmangels(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP3A4 subset of Substrate Carbon-Mangels dataset.
@@ -946,6 +1036,11 @@ def load_cyp3a4_substrate_carbonmangels(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -976,6 +1071,7 @@ def load_cyp3a4_substrate_carbonmangels(
         dataset_name="TDC_cyp3a4_substrate_carbonmangels",
         filename="tdc_cyp3a4_substrate_carbonmangels.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -985,6 +1081,7 @@ def load_cyp3a4_substrate_carbonmangels(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -992,6 +1089,7 @@ def load_cyp3a4_veith(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the CYP3A4 subset of CYP P450 Veith dataset.
@@ -1035,6 +1133,11 @@ def load_cyp3a4_veith(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1059,6 +1162,7 @@ def load_cyp3a4_veith(
         dataset_name="TDC_cyp3a4_veith",
         filename="tdc_cyp3a4_veith.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1068,6 +1172,7 @@ def load_cyp3a4_veith(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1075,6 +1180,7 @@ def load_half_life_obach(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Half Life Obach dataset.
@@ -1107,6 +1213,11 @@ def load_half_life_obach(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1131,6 +1242,7 @@ def load_half_life_obach(
         dataset_name="TDC_half_life_obach",
         filename="tdc_half_life_obach.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1140,6 +1252,7 @@ def load_half_life_obach(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1147,6 +1260,7 @@ def load_hia_hou(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Human Intestinal Absorption dataset.
@@ -1178,6 +1292,11 @@ def load_hia_hou(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1202,6 +1321,7 @@ def load_hia_hou(
         dataset_name="TDC_hia_hou",
         filename="tdc_hia_hou.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1211,6 +1331,7 @@ def load_hia_hou(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1218,6 +1339,7 @@ def load_hlm(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the human subset of Human/Rat Liver Microsomal Stability dataset.
@@ -1251,6 +1373,11 @@ def load_hlm(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1275,6 +1402,7 @@ def load_hlm(
         dataset_name="TDC_hlm",
         filename="tdc_hlm.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1284,6 +1412,7 @@ def load_hlm(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1291,6 +1420,7 @@ def load_pampa_approved_drugs(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the approved drugs subset of PAMPA dataset.
@@ -1324,6 +1454,11 @@ def load_pampa_approved_drugs(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1348,6 +1483,7 @@ def load_pampa_approved_drugs(
         dataset_name="TDC_pampa_approved_drugs",
         filename="tdc_pampa_approved_drugs.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1357,6 +1493,7 @@ def load_pampa_approved_drugs(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1364,6 +1501,7 @@ def load_pampa_ncats(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the NCATS subset of PAMPA dataset.
@@ -1397,6 +1535,11 @@ def load_pampa_ncats(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1421,6 +1564,7 @@ def load_pampa_ncats(
         dataset_name="TDC_pampa_ncats",
         filename="tdc_pampa_ncats.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1430,6 +1574,7 @@ def load_pampa_ncats(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1437,6 +1582,7 @@ def load_pgp_broccatelli(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the P-gp (P-glycoprotein) Inhibition dataset.
@@ -1469,6 +1615,11 @@ def load_pgp_broccatelli(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1493,6 +1644,7 @@ def load_pgp_broccatelli(
         dataset_name="TDC_pgp_broccatelli",
         filename="tdc_pgp_broccatelli.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1502,6 +1654,7 @@ def load_pgp_broccatelli(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1509,6 +1662,7 @@ def load_ppbr_az(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the PPBR (Plasma Protein Binding Rate) AstraZeneca dataset.
@@ -1542,6 +1696,11 @@ def load_ppbr_az(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1566,6 +1725,7 @@ def load_ppbr_az(
         dataset_name="TDC_ppbr_az",
         filename="tdc_ppbr_az.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1575,6 +1735,7 @@ def load_ppbr_az(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1582,6 +1743,7 @@ def load_rlm(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the rat subset of Human/Rat Liver Microsomal Stability dataset.
@@ -1615,6 +1777,11 @@ def load_rlm(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1639,6 +1806,7 @@ def load_rlm(
         dataset_name="TDC_rlm",
         filename="tdc_rlm.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1648,6 +1816,7 @@ def load_rlm(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1655,6 +1824,7 @@ def load_solubility_aqsoldb(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Solubility AqSolDB dataset.
@@ -1687,6 +1857,11 @@ def load_solubility_aqsoldb(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1711,6 +1886,7 @@ def load_solubility_aqsoldb(
         dataset_name="TDC_solubility_aqsoldb",
         filename="tdc_solubility_aqsoldb.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
 
@@ -1720,6 +1896,7 @@ def load_solubility_aqsoldb(
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -1727,6 +1904,7 @@ def load_vdss_lombardo(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the Volume of Distribution at Steady State dataset.
@@ -1758,6 +1936,11 @@ def load_vdss_lombardo(
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
 
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
+
     Returns
     -------
     data : pd.DataFrame or tuple(list[str], np.ndarray)
@@ -1784,5 +1967,6 @@ def load_vdss_lombardo(
         dataset_name="TDC_vdss_lombardo",
         filename="tdc_vdss_lombardo.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)

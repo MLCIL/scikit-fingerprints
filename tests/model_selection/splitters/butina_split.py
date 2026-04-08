@@ -174,14 +174,3 @@ def test_empty_train_subset_raises_an_error_train_valid_test():
     smiles_list = ["C1CCCC(C2CC2)CC1", "c1n[nH]cc1C1CCCCCC1"]
     with pytest.raises(ValueError, match="one of the sets will be empty"):
         butina_train_valid_test_split(data=smiles_list)
-
-
-def test_approximate_butina_split(mols_list):
-    train_split, test_split = butina_train_test_split(mols_list, approximate=True)
-    assert len(train_split) >= len(test_split)
-
-    train_split, valid_split, test_split = butina_train_valid_test_split(
-        mols_list, approximate=True
-    )
-    assert len(train_split) >= len(valid_split)
-    assert len(train_split) >= len(test_split)

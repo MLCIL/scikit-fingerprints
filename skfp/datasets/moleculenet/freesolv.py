@@ -12,6 +12,7 @@ from skfp.datasets.utils import fetch_dataset, get_mol_strings_and_labels
         "data_dir": [None, str, os.PathLike],
         "as_frame": ["boolean"],
         "verbose": ["boolean"],
+        "force_update": ["boolean"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -19,6 +20,7 @@ def load_freesolv(
     data_dir: str | os.PathLike | None = None,
     as_frame: bool = False,
     verbose: bool = False,
+    force_update: bool = False,
 ) -> pd.DataFrame | tuple[list[str], np.ndarray]:
     """
     Load the FreeSolv (Free Solvation Database) dataset.
@@ -46,6 +48,11 @@ def load_freesolv(
 
     verbose : bool, default=False
         If True, progress bar will be shown for downloading or loading files.
+
+    force_update : bool, default=False
+        If True, always re-download the dataset from HuggingFace Hub, even if
+        it is already present locally. If False, the dataset is downloaded only
+        if it is not yet available locally.
 
     Returns
     -------
@@ -90,5 +97,6 @@ def load_freesolv(
         dataset_name="MoleculeNet_FreeSolv",
         filename="freesolv.csv",
         verbose=verbose,
+        force_update=force_update,
     )
     return df if as_frame else get_mol_strings_and_labels(df)
