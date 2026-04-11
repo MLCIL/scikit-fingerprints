@@ -136,8 +136,10 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
             num_bits_per_feature=1,
             count=True,
         )
-        ecfpc = ecfp.transform(X)
-        rdkc = rdkit_fp.transform(X)
+        # np.asarray() ensures ndarray output even under a global pandas
+        # transform_output config (torch.from_numpy() requires ndarray).
+        ecfpc = np.asarray(ecfp.transform(X))
+        rdkc = np.asarray(rdkit_fp.transform(X))
         features = np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
         # load model and run inference
