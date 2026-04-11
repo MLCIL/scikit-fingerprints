@@ -117,7 +117,6 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy=copy)
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
-
         X = ensure_mols(X)
 
         # compute the "Mc+RDKc" input fingerprint as defined in the CLAMP
