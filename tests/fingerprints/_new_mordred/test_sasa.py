@@ -56,7 +56,9 @@ def sdf_mols() -> dict[str, Chem.Mol]:
     ids=[row[0] for row in REFERENCE_DATA],
 )
 def test_sasa_reference_values(name, expected_sasa, sdf_mols):
-    """SASA reference values calculated by PyMOL."""
+    """
+    Check per-molecule SASA against reference values calculated with PyMOL.
+    """
     mol = sdf_mols[name]
     actual = sum(SurfaceArea.from_mol(mol).surface_area())
 

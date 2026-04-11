@@ -12,10 +12,11 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 class PeriodicTable:
-    """Periodic-table lookup tables.
+    """
+    Periodic-table lookup table.
 
+    Each instance maps a 1-based atomic number to a scalar property value.
     Data files are loaded once at module import time.
-    Each PeriodicTable instance maps atomic_number (1-based) -> value.
     """
 
     __slots__ = ("_data",)

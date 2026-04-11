@@ -12,12 +12,12 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 def _calc_abc_index(mol: Mol) -> float:
-    r"""atom-bond connectivity index descriptor.
+    """
+    Atom-bond connectivity (ABC) index descriptor.
 
-    References
-    ----------
-        * :doi:`10.2298/FIL1204733D`
-
+    Based on Das, K. C., Gutman, I., & Furtula, B. (2012). On atom-bond
+    connectivity index. Filomat, 26(4), 733-738.
+    https://doi.org/10.2298/FIL1204733D
     """
     total = 0.0
     bond: Bond
@@ -29,12 +29,13 @@ def _calc_abc_index(mol: Mol) -> float:
 
 
 def _calc_abcgg_index(mol: Mol, distance_matrix_regular: DistanceMatrix) -> float:
-    r"""Graovac-Ghorbani atom-bond connectivity index descriptor.
+    """
+    Graovac-Ghorbani atom-bond connectivity index descriptor.
 
-    References
-    ----------
-        * Furtula, B. Atom-bond connectivity index versus Graovac-Ghorbani analog. MATCH Commun. Math. Comput. Chem 75, 233-242 (2016).
-
+    Based on Furtula, B. (2016). Atom-bond connectivity index versus
+    Graovac-Ghorbani analog. MATCH Communications in Mathematical and in
+    Computer Chemistry, 75(1), 233-242.
+    http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
     """
     D = distance_matrix_regular.matrix
 
@@ -52,12 +53,14 @@ def _calc_abcgg_index(mol: Mol, distance_matrix_regular: DistanceMatrix) -> floa
 
 
 def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarray:
-    r"""ABC Index descriptor.
+    """
+    ABC index descriptor, combining the classical ABC index and its
+    Graovac-Ghorbani analog.
 
-    References
-    ----------
-        * http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
-
+    Based on Furtula, B. (2016). Atom-bond connectivity index versus
+    Graovac-Ghorbani analog. MATCH Communications in Mathematical and in
+    Computer Chemistry, 75(1), 233-242.
+    http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
     """
     return np.array(
         [

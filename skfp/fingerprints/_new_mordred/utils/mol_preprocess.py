@@ -16,12 +16,18 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def atoms_to_numpy(
     f: Callable[[Atom], float], mol: Mol, dtype: str = "float"
 ) -> np.ndarray:
-    """Apply a function to each atom and return results as a numpy array of shape (N,)."""
+    """
+    Apply a function to each atom of a molecule and return the results as a
+    NumPy array of shape ``(N,)``, where ``N`` is the number of atoms.
+    """
     return np.fromiter((f(a) for a in mol.GetAtoms()), dtype, mol.GetNumAtoms())
 
 
 def conformer_to_numpy(conf: Conformer) -> np.ndarray:
-    """Convert an RDKit Conformer to a numpy array of shape (N, 3)."""
+    """
+    Convert an RDKit ``Conformer`` to a NumPy array of shape ``(N, 3)``,
+    containing the 3D coordinates of each atom.
+    """
     return np.array([list(conf.GetAtomPosition(i)) for i in range(conf.GetNumAtoms())])
 
 
@@ -32,25 +38,39 @@ def preprocess_mol(
     require_3D: bool = False,
     conformer_id: int = -1,
 ) -> tuple[Mol, np.ndarray | None]:
-    """Preprocess an RDKit Mol before descriptor calculation.
+    """
+    Preprocess an RDKit molecule before descriptor calculation.
 
-    Args:
-        mol: rdkit.Chem.Mol instance.
-        explicit_hydrogens: If True, add explicit hydrogens (AddHs).
-                            If False, remove hydrogens (RemoveHs).
-        kekulize: If True, kekulize the molecule (convert aromatic bonds
-                  to alternating single/double bonds).
-        require_3D: If True, extract 3D coordinates from the conformer
-                    before stripping conformers from the mol.
-        conformer_id: Which conformer to use when extracting 3D coords.
-                      Defaults to -1 (the default/first conformer).
+    Parameters
+    ----------
+    mol : rdkit.Chem.Mol
+        Input molecule.
+
+    explicit_hydrogens : bool, default=False
+        If ``True``, add explicit hydrogens via ``AddHs``. If ``False``,
+        remove hydrogens via ``RemoveHs``.
+
+    kekulize : bool, default=False
+        If ``True``, kekulize the molecule, converting aromatic bonds to
+        alternating single and double bonds.
+
+    require_3D : bool, default=False
+        If ``True``, extract 3D coordinates from the selected conformer
+        before stripping all conformers from the molecule.
+
+    conformer_id : int, default=-1
+        Conformer ID to use when extracting 3D coordinates. The default
+        value of ``-1`` selects the most recently added conformer.
 
     Returns
     -------
-        tuple of (mol, coords):
-            mol - the preprocessed RDKit Mol (conformers removed).
-            coords - numpy array of shape (N, 3) if require_3D and a 3D
-                conformer is available, otherwise None.
+    mol : rdkit.Chem.Mol
+        The preprocessed molecule, with all conformers removed.
+
+    coords : numpy.ndarray or None
+        NumPy array of shape ``(N, 3)`` with 3D coordinates if
+        ``require_3D`` is ``True`` and a 3D conformer was available,
+        otherwise ``None``.
     """
     if explicit_hydrogens:
         m = Chem.AddHs(mol)

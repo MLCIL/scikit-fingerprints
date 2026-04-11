@@ -29,7 +29,10 @@ REFERENCE_DATA = [
     ids=[row[0] for row in REFERENCE_DATA],
 )
 def test_abc_index_reference_values(smi, expected_abc, expected_abcgg):
-    """ABC index reference values from doi:10.2298/JSC150901093F."""
+    """
+    Check ABC index against reference values from
+    :doi:`10.2298/JSC150901093F`.
+    """
     mol = Chem.MolFromSmiles(smi)
     dm = DistanceMatrix(mol)
 
