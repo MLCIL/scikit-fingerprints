@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import Bond, Mol
+from rdkit.Chem import Mol
 
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
@@ -20,7 +20,6 @@ def _calc_abc_index(mol: Mol) -> float:
     https://doi.org/10.2298/FIL1204733D
     """
     total = 0.0
-    bond: Bond
     for bond in mol.GetBonds():
         du = bond.GetBeginAtom().GetDegree()
         dv = bond.GetEndAtom().GetDegree()
@@ -40,7 +39,6 @@ def _calc_abcgg_index(mol: Mol, distance_matrix_regular: DistanceMatrix) -> floa
     D = distance_matrix_regular.matrix
 
     total = 0.0
-    bond: Bond
     for bond in mol.GetBonds():
         u = bond.GetBeginAtomIdx()
         v = bond.GetEndAtomIdx()

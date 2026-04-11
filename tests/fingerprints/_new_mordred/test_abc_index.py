@@ -15,24 +15,26 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-REFERENCE_DATA = [
-    ("CC(C)CCCCCCC", 6.58, 6.49),
-    ("CCC(C)CCCCCC", 6.47, 6.58),
-    ("CC(C)(C)CCCCCC", 6.84, 6.82),
-    ("CCC(C)(C)CCCCC", 6.68, 6.95),
-]
 
-
-@pytest.mark.parametrize(
-    "smi,expected_abc,expected_abcgg",
-    REFERENCE_DATA,
-    ids=[row[0] for row in REFERENCE_DATA],
+@pytest.fixture(
+    params=[
+        ("CC(C)CCCCCCC", 6.58, 6.49),
+        ("CCC(C)CCCCCC", 6.47, 6.58),
+        ("CC(C)(C)CCCCCC", 6.84, 6.82),
+        ("CCC(C)(C)CCCCC", 6.68, 6.95),
+    ],
+    ids=lambda row: row[0],
 )
-def test_abc_index_reference_values(smi, expected_abc, expected_abcgg):
+def abc_reference(request):
+    return request.param
+
+
+def test_abc_index_reference_values(abc_reference):
     """
     Check ABC index against reference values from
     :doi:`10.2298/JSC150901093F`.
     """
+    smi, expected_abc, expected_abcgg = abc_reference
     mol = Chem.MolFromSmiles(smi)
     dm = DistanceMatrix(mol)
 

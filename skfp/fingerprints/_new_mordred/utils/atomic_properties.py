@@ -5,12 +5,12 @@ from rdkit.Chem.rdchem import Atom, Bond
 from .periodic_table import (
     ALLRED_ROCOW_EN,
     IONIZATION_POTENTIAL,
-    MASS,
     MC_GOWAN_VOLUME,
     PAULING_EN,
     PERIOD,
     POLARIZABILITY_94,
     SANDERSON_EN,
+    mass,
     vdw_volume,
 )
 
@@ -34,7 +34,7 @@ def get_atomic_number_from_symbol(symbol: str) -> int:
 
 
 def get_mass(atom: Atom) -> float:
-    return MASS[atom.GetAtomicNum()]
+    return mass(atom.GetAtomicNum())
 
 
 def get_vdw_volume(atom: Atom) -> float:
@@ -74,6 +74,10 @@ def get_gasteiger_charge(atom: Atom) -> float:
 
 
 def get_sigma_electrons(atom: Atom) -> int:
+    """
+    Return the number of sigma (single-bond framework) electrons on an atom,
+    approximated as the count of its non-hydrogen neighbors.
+    """
     return sum(1 for a in atom.GetNeighbors() if a.GetAtomicNum() != 1)
 
 
@@ -112,6 +116,10 @@ def get_intrinsic_state(atom: Atom) -> float:
 
 
 def get_core_count(atom: Atom) -> float:
+    """
+    Atomic core-count term (alpha) used as a building block of ETA indices.
+    Reflects the relative number of non-valence (core) electrons, scaled by period.
+    """
     Z = atom.GetAtomicNum()
     if Z == 1:
         return 0.0
@@ -121,11 +129,19 @@ def get_core_count(atom: Atom) -> float:
 
 
 def get_eta_epsilon(atom: Atom) -> float:
+    """
+    ETA electronegativity-like measure (epsilon) for a single atom.
+    Differences in epsilon between bonded atoms encode bond polarity.
+    """
     Zv = _TABLE.GetNOuterElecs(atom.GetAtomicNum())
     return 0.3 * Zv - get_core_count(atom)
 
 
 def get_eta_beta_sigma(atom: Atom) -> float:
+    """
+    Sigma-bond contribution to an atom's ETA beta index, summed over
+    non-hydrogen neighbors and weighted by similarity of their epsilon values.
+    """
     e = get_eta_epsilon(atom)
     return sum(
         0.5 if abs(get_eta_epsilon(a) - e) <= 0.3 else 0.75
@@ -142,6 +158,10 @@ def _get_other_atom(bond: Bond, atom: Atom) -> Atom:
 
 
 def get_eta_nonsigma_contribute(bond: Bond) -> float:
+    """
+    Non-sigma (pi, aromatic) contribution of a single bond to the ETA beta index.
+    Weighted by bond order, aromaticity, and the epsilon difference of its endpoints.
+    """
     if bond.GetBondType() is Chem.BondType.SINGLE:
         return 0.0
 
@@ -164,6 +184,10 @@ def get_eta_nonsigma_contribute(bond: Bond) -> float:
 
 
 def get_eta_beta_delta(atom: Atom) -> float:
+    """
+    Lone-pair (delta) contribution to an atom's ETA beta index.
+    Nonzero only for acyclic atoms with lone pairs adjacent to an aromatic neighbor.
+    """
     if (
         atom.GetIsAromatic()
         or atom.IsInRing()
@@ -179,6 +203,10 @@ def get_eta_beta_delta(atom: Atom) -> float:
 
 
 def get_eta_beta_non_sigma(atom: Atom) -> float:
+    """
+    Total non-sigma (pi, aromatic) bond contribution to an atom's ETA beta index,
+    summed over all bonds to non-hydrogen neighbors.
+    """
     return sum(
         get_eta_nonsigma_contribute(b)
         for b in atom.GetBonds()
@@ -187,6 +215,10 @@ def get_eta_beta_non_sigma(atom: Atom) -> float:
 
 
 def get_eta_gamma(atom: Atom) -> float:
+    """
+    ETA gamma index for an atom: core count divided by total beta contribution.
+    Represents an atom's topochemical "hardness" in the ETA framework.
+    """
     beta = (
         get_eta_beta_sigma(atom)
         + get_eta_beta_non_sigma(atom)

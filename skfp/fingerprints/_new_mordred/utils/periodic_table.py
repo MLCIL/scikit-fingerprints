@@ -49,18 +49,21 @@ class PeriodicTable:
             return np.nan
 
 
-_rdkit_pt = GetPeriodicTable()
+_RDKIT_PT = GetPeriodicTable()
+
+
+def mass(atomic_num: int) -> float:
+    return _RDKIT_PT.GetAtomicWeight(atomic_num)
 
 
 def vdw_radii(atomic_num: int) -> float:
-    return _rdkit_pt.GetRvdw(atomic_num)
+    return _RDKIT_PT.GetRvdw(atomic_num)
 
 
 def vdw_volume(atomic_num: int) -> float:
     return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
 
 
-MASS = PeriodicTable.from_file("mass.txt")
 SANDERSON_EN = PeriodicTable.from_file("sanderson_electron_negativity.txt")
 PAULING_EN = PeriodicTable.from_file("pauling_electron_negativity.txt")
 ALLRED_ROCOW_EN = PeriodicTable.from_file("allred_rocow_electron_negativity.txt")
