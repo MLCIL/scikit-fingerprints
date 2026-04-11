@@ -15,9 +15,6 @@ _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
 _CLAMP_HF_FILENAME = "compound_encoder.pt"
 
 
-
-
-
 class CLAMPFingerprint(BaseFingerprintTransformer):
     """
     CLAMP (Contrastive Language And Molecule Pre-training) fingerprint.
@@ -145,7 +142,9 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         features = np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
         # load model and run inference
-        path = self.weights_path or _get_weights_path(_CLAMP_HF_REPO, _CLAMP_HF_FILENAME)
+        path = self.weights_path or _get_weights_path(
+            _CLAMP_HF_REPO, _CLAMP_HF_FILENAME
+        )
         model = get_clamp_model(path)
 
         with torch.no_grad():
