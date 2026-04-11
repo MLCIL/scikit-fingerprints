@@ -11,7 +11,7 @@ from .periodic_table import (
     PERIOD,
     POLARIZABILITY_94,
     SANDERSON_EN,
-    VDW_VOLUME,
+    vdw_volume,
 )
 
 """
@@ -38,7 +38,7 @@ def get_mass(atom: Atom) -> float:
 
 
 def get_vdw_volume(atom: Atom) -> float:
-    return VDW_VOLUME[atom.GetAtomicNum()]
+    return vdw_volume(atom.GetAtomicNum())
 
 
 def get_sanderson_en(atom: Atom) -> float:

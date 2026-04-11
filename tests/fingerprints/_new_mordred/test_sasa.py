@@ -3,7 +3,7 @@ import os
 import pytest
 from rdkit import Chem
 
-from skfp.fingerprints._new_mordred.utils.surface_area.sasa import SurfaceArea
+from skfp.fingerprints._new_mordred.utils.sasa import SurfaceArea
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.

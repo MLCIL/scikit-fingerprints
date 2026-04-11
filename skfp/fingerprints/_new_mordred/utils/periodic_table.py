@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+from rdkit.Chem import GetPeriodicTable
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -47,9 +48,18 @@ class PeriodicTable:
             return np.nan
 
 
+_rdkit_pt = GetPeriodicTable()
+
+
+def vdw_radii(atomic_num: int) -> float:
+    return _rdkit_pt.GetRvdw(atomic_num)
+
+
+def vdw_volume(atomic_num: int) -> float:
+    return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
+
+
 MASS = PeriodicTable.from_file("mass.txt")
-VDW_RADII = PeriodicTable.from_file("van_der_waals_radii.txt")
-VDW_VOLUME = PeriodicTable([4.0 / 3.0 * np.pi * r**3 for r in VDW_RADII._data])
 SANDERSON_EN = PeriodicTable.from_file("sanderson_electron_negativity.txt")
 PAULING_EN = PeriodicTable.from_file("pauling_electron_negativity.txt")
 ALLRED_ROCOW_EN = PeriodicTable.from_file("allred_rocow_electron_negativity.txt")
