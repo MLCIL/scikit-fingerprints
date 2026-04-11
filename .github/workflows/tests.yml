@@ -49,7 +49,9 @@ jobs:
           key: datasets-${{ runner.os }}-${{ hashFiles('skfp/datasets/**/*.py') }}
 
       - name: Install the project dependencies
-        run: uv sync --group test --group docs
+        env:
+          UV_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
+        run: uv sync --group test --group docs --extra neural
 
       - name: Check pre-commit
         run: uv run pre-commit run --all-files
