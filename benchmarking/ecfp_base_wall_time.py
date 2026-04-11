@@ -15,6 +15,7 @@ FP_SIZE = 2048
 FP_RADIUS = 2
 
 OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
+OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
 MCULE_URL = "https://dl.mcule.com/database/mcule_purchasable_full_260129.smi.gz"
 COCONUT_URL = (

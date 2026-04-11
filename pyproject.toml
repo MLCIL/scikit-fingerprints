@@ -78,7 +78,6 @@ eval = [
     "matplotlib",
     "tenacity",
     "polars",
-    "rapidgzip",
 ]
 
 [tool.pytest.ini_options]
