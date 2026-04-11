@@ -1,4 +1,4 @@
-import contextlib
-
-with contextlib.suppress(ImportError):
+try:
     from ._clamp import CLAMPFingerprint
+except ImportError:
+    pass

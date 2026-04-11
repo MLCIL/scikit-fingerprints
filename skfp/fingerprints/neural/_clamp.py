@@ -1,24 +1,21 @@
 from collections.abc import Sequence
 
 import numpy as np
-from huggingface_hub import hf_hub_download
+import torch
 from rdkit.Chem import Mol
 
 from skfp.bases import BaseFingerprintTransformer
+from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
+from skfp.fingerprints.neural.utils import _get_weights_path
 from skfp.utils import ensure_mols
+
+from ._clamp_model import get_clamp_model
 
 _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
 _CLAMP_HF_FILENAME = "compound_encoder.pt"
 
 
-def _get_weights_path() -> str:
-    """Download CLAMP compound encoder weights from HuggingFace Hub if needed,
-    returning the local cached path.
-    """
-    return hf_hub_download(
-        repo_id=_CLAMP_HF_REPO,
-        filename=_CLAMP_HF_FILENAME,
-    )
+
 
 
 class CLAMPFingerprint(BaseFingerprintTransformer):
@@ -26,7 +23,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     CLAMP (Contrastive Language And Molecule Pre-training) fingerprint.
 
     Uses a pretrained two-layer MLP compound encoder from CLAMP [1]_ to
-    transform concatenated Morgan count (4096 bits) and RDKit count (4096 bits)
+    transform concatenated ECFP count (4096 bits) and RDKit count (4096 bits)
     fingerprints into 768-dimensional learned embeddings.
 
     Requires PyTorch (``torch``) as an additional dependency.
@@ -69,8 +66,8 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     .. [1] `Seidl et al.
         "Enhancing Activity Prediction Models in Drug Discovery with the
         Ability to Understand Human Language"
-        ICML 2023
-        <https://arxiv.org/abs/2303.03363>`_
+        International Conference on Machine Learning. PMLR, 2023.
+        <https://proceedings.mlr.press/v202/seidl23a.html>`_
 
     Examples
     --------
@@ -123,16 +120,8 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy=copy)
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
-        import torch
-
-        from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
-
-        from ._clamp_model import get_clamp_model
 
         X = ensure_mols(X)
-
-        if len(X) == 0:
-            return np.empty((0, 768), dtype=np.float32)
 
         # compute the "Mc+RDKc" input fingerprint as defined in the CLAMP
         # paper: element-wise sum of folded count fingerprints
@@ -151,12 +140,12 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
             num_bits_per_feature=1,
             count=True,
         )
-        morganc = ecfp.transform(X).astype(np.float64)
-        rdkc = rdkit_fp.transform(X).astype(np.float64)
-        features = np.log(1.0 + morganc + rdkc).astype(np.float32)
+        ecfpc = ecfp.transform(X)
+        rdkc = rdkit_fp.transform(X)
+        features = np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
         # load model and run inference
-        path = self.weights_path or _get_weights_path()
+        path = self.weights_path or _get_weights_path(_CLAMP_HF_REPO, _CLAMP_HF_FILENAME)
         model = get_clamp_model(path)
 
         with torch.no_grad():

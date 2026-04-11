@@ -3,15 +3,6 @@ import functools
 import torch
 from torch import nn
 
-_KEY_MAP = {
-    "compound_encoder.linear_input.weight": "net.0.weight",
-    "compound_encoder.linear_input.bias": "net.0.bias",
-    "compound_encoder.linear_hidden_l.0.weight": "net.4.weight",
-    "compound_encoder.linear_hidden_l.0.bias": "net.4.bias",
-    "compound_encoder.linear_output.weight": "net.8.weight",
-    "compound_encoder.linear_output.bias": "net.8.bias",
-}
-
 
 class CLAMPCompoundEncoder(nn.Module):
     """
@@ -24,17 +15,16 @@ class CLAMPCompoundEncoder(nn.Module):
                      -> Linear(2048, 768)
         Output (768)
 
-    Dropout values match the pretrained checkpoint's hp.json (dropout_input=0.1,
-    dropout_hidden=0.2). They have no effect at inference time since the model
-    is always run in eval() mode, but are kept faithful to the original.
+    Dropout layers are retained to match the original model weights. They have
+    no effect at inference time in default ``eval()`` mode
 
     References
     ----------
     .. [1] `Seidl et al.
         "Enhancing Activity Prediction Models in Drug Discovery with the
         Ability to Understand Human Language"
-        ICML 2023
-        <https://arxiv.org/abs/2303.03363>`_
+        International Conference on Machine Learning. PMLR, 2023
+        <https://proceedings.mlr.press/v202/seidl23a.html>`_
     """
 
     def __init__(self):
@@ -61,10 +51,7 @@ def _load_clamp_compound_encoder(checkpoint_path: str) -> CLAMPCompoundEncoder:
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
-    full_state_dict = checkpoint["model_state_dict"]
-    encoder_state_dict = {
-        _KEY_MAP[k]: v for k, v in full_state_dict.items() if k in _KEY_MAP
-    }
+    encoder_state_dict = checkpoint["model_state_dict"]
     model.load_state_dict(encoder_state_dict)
     model.eval()
     return model
