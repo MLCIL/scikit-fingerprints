@@ -6,13 +6,11 @@ import argparse
 import os
 import subprocess
 import time
+import zipfile
 from pathlib import Path
 
 import polars as pl
 from skfp.fingerprints import ECFPFingerprint
-
-FP_SIZE = 2048
-FP_RADIUS = 2
 
 OUTPUTS_DIR = Path("benchmark_times") / "benchmark_times_saved"
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -24,6 +22,7 @@ COCONUT_URL = (
 
 MCULE_GZ = os.path.join(OUTPUTS_DIR, "mcule.smi.gz")
 COCONUT_ZIP = os.path.join(OUTPUTS_DIR, "coconut-10-2024.csv.zip")
+COCONUT_CSV = os.path.join(OUTPUTS_DIR, "coconut-10-2024.csv")
 
 
 def main():
@@ -68,11 +67,13 @@ def run_benchmark(
         if not os.path.exists(MCULE_GZ):
             _download_file(MCULE_URL, MCULE_GZ)
     elif dataset_name == "coconut":
-        dataset_path = COCONUT_ZIP
         smiles_column = "canonical_smiles"
         csv_args = {"columns": [smiles_column]}
         if not os.path.exists(COCONUT_ZIP):
             _download_file(COCONUT_URL, COCONUT_ZIP)
+        if not os.path.exists(COCONUT_CSV):
+            _extract_zip(COCONUT_ZIP, OUTPUTS_DIR)
+        dataset_path = COCONUT_CSV
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
@@ -83,7 +84,7 @@ def run_benchmark(
     smiles_list = df[smiles_column].to_list()
     print(f"Loaded {len(smiles_list)} molecules from {dataset_path}")
 
-    ecfp = ECFPFingerprint(fp_size=FP_SIZE, radius=FP_RADIUS, n_jobs=-1)
+    ecfp = ECFPFingerprint()
 
     print("Computing ECFP fingerprints with scikit-fingerprints...")
     start = time.perf_counter()
@@ -98,6 +99,11 @@ def run_benchmark(
 
 def _download_file(url: str, output_path: str) -> None:
     subprocess.run(["wget", "-c", "-O", os.path.abspath(output_path), url], check=True)
+
+
+def _extract_zip(zip_path: str, output_dir: str) -> None:
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        zf.extractall(output_dir)
 
 
 if __name__ == "__main__":

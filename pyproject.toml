@@ -76,8 +76,8 @@ docs = [
 eval = [
     "lightgbm",
     "matplotlib",
-    "tenacity",
     "polars",
+    "tenacity",
 ]
 
 [tool.pytest.ini_options]
