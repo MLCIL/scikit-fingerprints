@@ -10,12 +10,13 @@
 from collections.abc import Sequence
 
 import numpy as np
-from _new_mordred.calculator import compute, get_feature_names
 from rdkit.Chem import Mol
 from scipy.sparse import csr_array
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.utils import ensure_mols
+
+from ._new_mordred.calculator import compute, get_feature_names
 
 
 class NewMordredFingerprint(BaseFingerprintTransformer):

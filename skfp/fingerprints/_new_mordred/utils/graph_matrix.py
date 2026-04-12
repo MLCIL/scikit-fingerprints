@@ -47,7 +47,13 @@ class AdjacencyMatrix:
         return self._orders[n - 1]
 
     @cached_property
-    def valence(self) -> np.ndarray:
+    def degree(self) -> np.ndarray:
+        """Number of edges incident to each vertex (atom).
+
+        By default ``use_bo=False``, so bond orders are ignored and each
+        bond counts as one edge. In that case, atom degree equals the atom
+        valence, i.e. the number of bonds each atom forms.
+        """
         return self._base.sum(axis=0)
 
 
@@ -58,12 +64,12 @@ class DistanceMatrix3D:
         self.use_atom_wts = use_atom_wts
 
     @cached_property
-    def eccentricity(self) -> np.ndarray:
+    def eccentricities(self) -> np.ndarray:
         return self.matrix.max(axis=0)
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricity().min()
+        return self.eccentricities().min()
 
     @cached_property
     def diameter(self) -> np.floating:

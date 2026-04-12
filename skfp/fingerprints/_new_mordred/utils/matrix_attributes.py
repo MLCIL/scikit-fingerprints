@@ -27,58 +27,59 @@ class MatrixAttributes:
         # not connected
         if n_frags != 1:
             n = self._n_atoms
-            self._vals = np.full(n, np.nan)
-            self._vecs = np.full((n, n), np.nan)
+            self._eigvals = np.full(n, np.nan)
+            self._eigvecs = np.full((n, n), np.nan)
             self._i_min = 0
             self._i_max = 0
             return
 
-        w, v = (np.linalg.eigh if hermitian else np.linalg.eig)(matrix)
+        eig_func = np.linalg.eigh if hermitian else np.linalg.eig
+        w, v = eig_func(matrix)
 
         if np.iscomplexobj(w):
             w = w.real
         if np.iscomplexobj(v):
             v = v.real
 
-        self._vals = w
-        self._vecs = v
+        self._eigvals = w
+        self._eigvecs = v
         self._i_min = int(np.argmin(w))
         self._i_max = int(np.argmax(w))
 
     @cached_property
-    def sp_abs(self) -> np.floating:
+    def graph_energy(self) -> np.floating:
         """
-        Graph energy.
+        Graph energy (originally ``SpAbs``).
         """
-        return np.abs(self._vals).sum()
+        return np.abs(self._eigvals).sum()
 
     @cached_property
-    def sp_max(self) -> np.floating:
+    def leading_eigenvalue(self) -> np.floating:
         """
-        Leading eigenvalue.
+        Leading eigenvalue (originally ``SpMax``).
         """
-        return self._vals[self._i_max]
+        return self._eigvals[self._i_max]
 
     @cached_property
-    def sp_diam(self) -> np.floating:
+    def spectral_diameter(self) -> np.floating:
         """
-        Spectral diameter.
+        Spectral diameter (originally ``SpDiam``).
         """
-        return self.sp_max - self._vals[self._i_min]
+        return self.leading_eigenvalue - self._eigvals[self._i_min]
 
     @cached_property
-    def sp_mean(self) -> np.floating:
+    def mean_eigenvalue(self) -> np.floating:
         """
-        Mean of eigenvalues.
+        Mean of eigenvalues (originally ``SpMean``).
         """
-        return np.mean(self._vals)
+        return np.mean(self._eigvals)
 
     @cached_property
     def sp_ad(self) -> np.floating:
         """
         Spectral absolute deviation.
         """
-        return np.abs(self._vals - self.sp_mean).sum()
+        return np.abs(self._eigvals - self.mean_eigenvalue).sum()
 
     @cached_property
     def sp_mad(self) -> np.floating:
@@ -95,8 +96,8 @@ class MatrixAttributes:
         See https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp
         for the log-sum-exp trick used here for numerical stability.
         """
-        a = np.maximum(self._vals[self._i_max], 0)
-        sx = np.exp(self._vals - a).sum() + np.exp(-a)
+        a = np.maximum(self._eigvals[self._i_max], 0)
+        sx = np.exp(self._eigvals - a).sum() + np.exp(-a)
         return a + np.log(sx)
 
     @cached_property
@@ -111,7 +112,7 @@ class MatrixAttributes:
         """
         Coefficient sum of the last eigenvector.
         """
-        return np.abs(self._vecs[:, self._i_max]).sum()
+        return np.abs(self._eigvecs[:, self._i_max]).sum()
 
     @cached_property
     def ve2(self) -> np.floating:
@@ -136,7 +137,7 @@ class MatrixAttributes:
         for bond in self._mol.GetBonds():
             i = bond.GetBeginAtomIdx()
             j = bond.GetEndAtomIdx()
-            s += (self._vecs[i, self._i_max] * self._vecs[j, self._i_max]) ** -0.5
+            s += (self._eigvecs[i, self._i_max] * self._eigvecs[j, self._i_max]) ** -0.5
         return s
 
     @cached_property

@@ -37,4 +37,4 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:  # noqa: ARG001
     # descriptors
     descriptors = [abc_index.calc(mol_regular, distance_matrix_regular)]
 
-    return np.concatenate(descriptors, axis=1).astype(np.float32, copy=False)
+    return np.concatenate(descriptors).astype(np.float32, copy=False)

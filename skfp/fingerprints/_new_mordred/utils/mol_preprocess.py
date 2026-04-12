@@ -13,7 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-def atoms_to_numpy(
+def atoms_apply_func(
     f: Callable[[Atom], float], mol: Mol, dtype: str = "float"
 ) -> np.ndarray:
     """
@@ -23,7 +23,7 @@ def atoms_to_numpy(
     return np.fromiter((f(a) for a in mol.GetAtoms()), dtype, mol.GetNumAtoms())
 
 
-def conformer_to_numpy(conf: Conformer) -> np.ndarray:
+def get_conformer_atomic_coords(conf: Conformer) -> np.ndarray:
     """
     Convert an RDKit ``Conformer`` to a NumPy array of shape ``(N, 3)``,
     containing the 3D coordinates of each atom.
@@ -85,7 +85,7 @@ def preprocess_mol(
         try:
             conf = m.GetConformer(conformer_id)
             if conf.Is3D():
-                coords = conformer_to_numpy(conf)
+                coords = get_conformer_atomic_coords(conf)
         except ValueError:
             pass
 
