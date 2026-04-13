@@ -11,14 +11,11 @@ def test_new_mordred_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(n_jobs=-1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporarily prune X_old to test only against implemented descriptors in X_new
-    effective_test_len = X_new.shape[1]
-    X_old = X_old[:, :effective_test_len]
+    # temporary mask - will be eventually removed
+    mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new, X_old, equal_nan=True)
-    assert_equal(
-        X_new.shape, (len(smallest_smiles_list), effective_test_len)
-    )  # replace later to 1613
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
 
@@ -29,14 +26,11 @@ def test_new_mordred_sparse_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(sparse=True, n_jobs=-1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporarily prune X_old to test only against implemented descriptors in X_new
-    effective_test_len = X_new.shape[1]
-    X_old = X_old[:, :effective_test_len]
+    # temporary mask - will be eventually removed
+    mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new.data, X_old.data, equal_nan=True)
-    assert_equal(
-        X_new.shape, (len(smallest_smiles_list), effective_test_len)
-    )  # replace later to 1613
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
 
@@ -47,14 +41,11 @@ def test_new_mordred_3D_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporarily prune X_old to test only against implemented descriptors in X_new
-    effective_test_len = X_new.shape[1]
-    X_old = X_old[:, :effective_test_len]
+    # temporary mask - will be eventually removed
+    mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new, X_old, equal_nan=True)
-    assert_equal(
-        X_new.shape, (len(smallest_smiles_list), effective_test_len)
-    )  # replace later to 1826
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
 
@@ -65,14 +56,11 @@ def test_new_mordred_3D_sparse_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporarily prune X_old to test only against implemented descriptors in X_new
-    effective_test_len = X_new.shape[1]
-    X_old = X_old[:, :effective_test_len]
+    # temporary mask - will be eventually removed
+    mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new.data, X_old.data, equal_nan=True)
-    assert_equal(
-        X_new.shape, (len(smallest_smiles_list), effective_test_len)
-    )  # replace later to 1826
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
 

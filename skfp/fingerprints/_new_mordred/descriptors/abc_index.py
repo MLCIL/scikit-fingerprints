@@ -10,6 +10,8 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+FEATURE_NAMES = ["ABC", "ABCGG"]
+
 
 def _calc_abc_index(mol: Mol) -> float:
     """
@@ -60,10 +62,11 @@ def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarra
     Computer Chemistry, 75(1), 233-242.
     http://match.pmf.kg.ac.rs/electronic_versions/Match75/n1/match75n1_233-242.pdf
     """
-    return np.array(
+    values = np.array(
         [
             _calc_abc_index(mol_regular),
             _calc_abcgg_index(mol_regular, distance_matrix_regular),
         ],
         dtype=np.float32,
     )
+    return values, FEATURE_NAMES
