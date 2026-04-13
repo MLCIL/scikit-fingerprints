@@ -23,3 +23,13 @@ docs/examples/
 
 .tmp_coverage_files/
 tests/preprocessing/input_output/data/mol_out.sdf
+
+.pip_audit_cache
+.python-version
+
+.DS_Store
+.vscode
+
+*.tsv
+*.gz
+*.zip

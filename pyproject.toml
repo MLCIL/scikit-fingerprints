@@ -76,6 +76,7 @@ docs = [
 eval = [
     "lightgbm",
     "matplotlib",
+    "polars",
     "tenacity",
 ]
 
