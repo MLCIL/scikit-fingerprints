@@ -1,5 +1,3 @@
-import contextlib
-
 from .atom_pair import AtomPairFingerprint
 from .autocorr import AutocorrFingerprint
 from .avalon import AvalonFingerprint
@@ -22,6 +20,7 @@ from .mhfp import MHFPFingerprint
 from .mordred_fp import MordredFingerprint
 from .morse import MORSEFingerprint
 from .mqns import MQNsFingerprint
+from .neural import CLAMPFingerprint
 from .pattern import PatternFingerprint
 from .pharmacophore import PharmacophoreFingerprint
 from .physiochemical_properties import PhysiochemicalPropertiesFingerprint
@@ -36,5 +35,8 @@ from .usrcat import USRCATFingerprint
 from .vsa import VSAFingerprint
 from .whim import WHIMFingerprint
 
-with contextlib.suppress(ImportError):
+try:
     from .neural import CLAMPFingerprint
+except ImportError:
+    pass
+

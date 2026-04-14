@@ -2,11 +2,11 @@ from collections.abc import Sequence
 
 import numpy as np
 import torch
+from huggingface_hub import hf_hub_download
 from rdkit.Chem import Mol
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
-from skfp.fingerprints.neural.utils import _get_weights_path
 from skfp.utils import ensure_mols
 
 from ._clamp_model import get_clamp_model
@@ -119,10 +119,9 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
         X = ensure_mols(X)
 
-        # compute the "Mc+RDKc" input fingerprint as defined in the CLAMP
-        # paper: element-wise sum of folded count fingerprints
-        # from FCFP-style Morgan (useFeatures=True, useChirality=True) and
-        # RDKit FP (maxPath=6, 1 bit per feature), then log(1+x) scaled
+        # Compute the "Mc+RDKc" input: element-wise sum of Morgan FCFP
+        # and RDKit count fingerprints, then log(1+x) scaled.
+        # See: https://github.com/ml-jku/mhn-react/blob/main/mhnreact/molutils.py#L161-L190
         ecfp = ECFPFingerprint(
             fp_size=8192,
             radius=2,
@@ -143,12 +142,12 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         features = np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
         # load model and run inference
-        path = self.weights_path or _get_weights_path(
-            _CLAMP_HF_REPO, _CLAMP_HF_FILENAME
+        path = self.weights_path or hf_hub_download(
+            repo_id=_CLAMP_HF_REPO, filename=_CLAMP_HF_FILENAME
         )
         model = get_clamp_model(path)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             features_tensor = torch.from_numpy(features)
             embeddings = model(features_tensor).numpy()
 

@@ -1,4 +1,4 @@
-try:  # noqa: SIM105
+try:
     from ._clamp import CLAMPFingerprint
 except ImportError:
     pass

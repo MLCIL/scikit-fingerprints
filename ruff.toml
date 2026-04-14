@@ -57,6 +57,7 @@ ignore = [
     "RUF059",   # unused variables after unpacking
     "RUF012",   # mutable class attributes
     "SLF001",   # use private members
+    "SIM105",   # try-except-pass for optional imports readability
     "SIM108",   # if/else instead of ternary if when we need
     "TRY003",   # long error messages
 ]

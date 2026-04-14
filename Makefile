@@ -8,7 +8,7 @@ setup: ## Install development dependencies
 	@# check if pandoc (for docs) is installed
 	@pandoc --version >/dev/null 2>&1 || (echo "Pandoc is not installed. Please install it from https://pandoc.org/" && exit 1)
 
-	@# install dependencies (including the `neural` extra for torch-based fingerprints)
+	@# install dependencies
 	uv sync --group dev --group docs --extra neural
 	uv run pre-commit install
 
