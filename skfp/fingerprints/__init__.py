@@ -20,7 +20,6 @@ from .mhfp import MHFPFingerprint
 from .mordred_fp import MordredFingerprint
 from .morse import MORSEFingerprint
 from .mqns import MQNsFingerprint
-from .neural import CLAMPFingerprint
 from .pattern import PatternFingerprint
 from .pharmacophore import PharmacophoreFingerprint
 from .physiochemical_properties import PhysiochemicalPropertiesFingerprint
@@ -39,4 +38,3 @@ try:
     from .neural import CLAMPFingerprint
 except ImportError:
     pass
-
