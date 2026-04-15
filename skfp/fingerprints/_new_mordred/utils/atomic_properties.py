@@ -150,7 +150,7 @@ def get_eta_beta_sigma(atom: Atom) -> float:
     )
 
 
-def _get_other_atom(bond: Bond, atom: Atom) -> Atom:
+def get_other_bond_atom(bond: Bond, atom: Atom) -> Atom:
     begin = bond.GetBeginAtom()
     if atom.GetIdx() != begin.GetIdx():
         return begin
@@ -210,7 +210,7 @@ def get_eta_beta_non_sigma(atom: Atom) -> float:
     return sum(
         get_eta_nonsigma_contribute(b)
         for b in atom.GetBonds()
-        if _get_other_atom(b, atom).GetAtomicNum() != 1
+        if get_other_bond_atom(b, atom).GetAtomicNum() != 1
     )
 
 

@@ -50,5 +50,5 @@ class SurfaceArea:
         opts.probeRadius = solvent_radius
         CalcSASA(mol, radii, confIdx=conformer, opts=opts)
 
-        per_atom = [float(atom.GetProp("SASA")) for atom in mol.GetAtoms()]
+        per_atom = [atom.GetDoubleProp("SASA") for atom in mol.GetAtoms()]
         return cls(per_atom)

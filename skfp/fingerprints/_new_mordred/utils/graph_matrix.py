@@ -14,9 +14,13 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 class DistanceMatrix:
     hermitian = True
 
-    def __init__(self, mol: Mol, use_bo: bool = False, use_atom_wts: bool = False):
+    def __init__(
+        self, mol: Mol, use_bond_orders: bool = False, use_atom_weights: bool = False
+    ):
         self.matrix: np.ndarray
-        self.matrix = GetDistanceMatrix(mol, useBO=use_bo, useAtomWts=use_atom_wts)
+        self.matrix = GetDistanceMatrix(
+            mol, useBO=use_bond_orders, useAtomWts=use_atom_weights
+        )
 
     @cached_property
     def eccentricity(self) -> np.ndarray:
@@ -34,11 +38,13 @@ class DistanceMatrix:
 class AdjacencyMatrix:
     hermitian = True
 
-    def __init__(self, mol: Mol, use_bo: bool = False):
+    def __init__(self, mol: Mol, use_bond_orders: bool = False):
         self._base: np.ndarray
-        self._base = GetAdjacencyMatrix(mol, useBO=use_bo)
+        self._base = GetAdjacencyMatrix(mol, useBO=use_bond_orders)
         self._orders = [self._base]
 
+    # TODO(Aleksander Jóźwik): check if caching all intermediate orders is necessary or if # noqa: TD003, FIX002
+    # WalkCount can be simplified to avoid the extra memory usage
     def order(self, n: int = 1) -> np.ndarray:
         while len(self._orders) < n:
             self._orders.append(self._orders[-1].dot(self._base))
@@ -48,7 +54,7 @@ class AdjacencyMatrix:
     def degree(self) -> np.ndarray:
         """Number of edges incident to each vertex (atom).
 
-        By default ``use_bo=False``, so bond orders are ignored and each
+        By default ``use_bond_orders=False``, so bond orders are ignored and each
         bond counts as one edge. In that case, atom degree equals the atom
         valence, i.e. the number of bonds each atom forms.
         """
@@ -56,9 +62,9 @@ class AdjacencyMatrix:
 
 
 class DistanceMatrix3D:
-    def __init__(self, mol: Mol, use_atom_wts: bool = False):
+    def __init__(self, mol: Mol, use_atom_weights: bool = False):
         self.matrix: np.ndarray
-        self.matrix = Get3DDistanceMatrix(mol, useAtomWts=use_atom_wts)
+        self.matrix = Get3DDistanceMatrix(mol, useAtomWts=use_atom_weights)
 
     @cached_property
     def eccentricities(self) -> np.ndarray:

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 import numpy as np
 from rdkit.Chem import GetPeriodicTable
@@ -20,22 +20,23 @@ class PeriodicTable:
     """
 
     __slots__ = ("_data",)
-    _datadir = os.path.join(os.path.dirname(__file__), "data")
+    _datadir = Path(__file__).parent / "data"
 
     def __init__(self, data: list[float]):
         self._data = data
 
     @classmethod
-    def from_file(cls, name: str, conv: type = float) -> "PeriodicTable":
+    def from_file(cls, name: str) -> "PeriodicTable":
         values: list[float] = []
-        with open(os.path.join(cls._datadir, name)) as f:
-            for line in f:
+        # example lines: "2.592 #   1 H", "-     #   2 He", "# comment"
+        with open(cls._datadir / name) as file:
+            for line in file:
                 raw = line.split("#")[0].strip()
                 if "-" in raw:
                     values.append(np.nan)
                 else:
                     try:
-                        values.append(conv(raw))
+                        values.append(float(raw))
                     except ValueError:
                         continue
         return cls(values)
@@ -47,21 +48,6 @@ class PeriodicTable:
             return self._data[atomic_num - 1]
         except IndexError:
             return np.nan
-
-
-_RDKIT_PT = GetPeriodicTable()
-
-
-def mass(atomic_num: int) -> float:
-    return _RDKIT_PT.GetAtomicWeight(atomic_num)
-
-
-def vdw_radii(atomic_num: int) -> float:
-    return _RDKIT_PT.GetRvdw(atomic_num)
-
-
-def vdw_volume(atomic_num: int) -> float:
-    return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
 
 
 SANDERSON_EN = PeriodicTable.from_file("sanderson_electron_negativity.txt")
@@ -83,3 +69,17 @@ PERIOD = PeriodicTable(
 )
 
 HALOGEN_ATOMIC_NUMS: frozenset[int] = frozenset({9, 17, 35, 53, 85, 117})
+
+_RDKIT_PT = GetPeriodicTable()
+
+
+def mass(atomic_num: int) -> float:
+    return _RDKIT_PT.GetAtomicWeight(atomic_num)
+
+
+def vdw_radii(atomic_num: int) -> float:
+    return _RDKIT_PT.GetRvdw(atomic_num)
+
+
+def vdw_volume(atomic_num: int) -> float:
+    return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
