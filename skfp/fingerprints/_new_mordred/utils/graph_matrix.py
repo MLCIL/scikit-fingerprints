@@ -1,7 +1,7 @@
 from functools import cached_property
 
 import numpy as np
-from rdkit.Chem import GetAdjacencyMatrix, GetDistanceMatrix, Mol
+from rdkit.Chem import Get3DDistanceMatrix, GetAdjacencyMatrix, GetDistanceMatrix, Mol
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,9 +16,7 @@ class DistanceMatrix:
 
     def __init__(self, mol: Mol, use_bo: bool = False, use_atom_wts: bool = False):
         self.matrix: np.ndarray
-        self.matrix = GetDistanceMatrix(
-            mol, useBO=use_bo, useAtomWts=use_atom_wts, force=True
-        )
+        self.matrix = GetDistanceMatrix(mol, useBO=use_bo, useAtomWts=use_atom_wts)
 
     @cached_property
     def eccentricity(self) -> np.ndarray:
@@ -38,7 +36,7 @@ class AdjacencyMatrix:
 
     def __init__(self, mol: Mol, use_bo: bool = False):
         self._base: np.ndarray
-        self._base = GetAdjacencyMatrix(mol, useBO=use_bo, force=True)
+        self._base = GetAdjacencyMatrix(mol, useBO=use_bo)
         self._orders = [self._base]
 
     def order(self, n: int = 1) -> np.ndarray:
@@ -58,10 +56,9 @@ class AdjacencyMatrix:
 
 
 class DistanceMatrix3D:
-    def __init__(self, coords: np.ndarray, use_atom_wts: bool = False):
+    def __init__(self, mol: Mol, use_atom_wts: bool = False):
         self.matrix: np.ndarray
-        self.matrix = np.sqrt(np.sum((coords[:, np.newaxis] - coords) ** 2, axis=2))
-        self.use_atom_wts = use_atom_wts
+        self.matrix = Get3DDistanceMatrix(mol, useAtomWts=use_atom_wts)
 
     @cached_property
     def eccentricities(self) -> np.ndarray:

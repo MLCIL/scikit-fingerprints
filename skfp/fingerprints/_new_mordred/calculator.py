@@ -38,7 +38,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # dependencies
     n_frags = len(GetMolFrags(mol))  # noqa: F841
 
-    mol_regular, _ = preprocess_mol(mol)
+    mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
 
     # 2D descriptors

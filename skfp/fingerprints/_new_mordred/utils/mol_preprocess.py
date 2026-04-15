@@ -3,7 +3,7 @@ from collections.abc import Callable
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Atom, Conformer
+from rdkit.Chem.rdchem import Atom
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -23,21 +23,11 @@ def atoms_apply_func(
     return np.fromiter((f(a) for a in mol.GetAtoms()), dtype, mol.GetNumAtoms())
 
 
-def get_conformer_atomic_coords(conf: Conformer) -> np.ndarray:
-    """
-    Convert an RDKit ``Conformer`` to a NumPy array of shape ``(N, 3)``,
-    containing the 3D coordinates of each atom.
-    """
-    return np.array([list(conf.GetAtomPosition(i)) for i in range(conf.GetNumAtoms())])
-
-
 def preprocess_mol(
     mol: Mol,
     explicit_hydrogens: bool = False,
     kekulize: bool = False,
-    require_3D: bool = False,
-    conformer_id: int = -1,
-) -> tuple[Mol, np.ndarray | None]:
+) -> Mol:
     """
     Preprocess an RDKit molecule before descriptor calculation.
 
@@ -54,41 +44,17 @@ def preprocess_mol(
         If ``True``, kekulize the molecule, converting aromatic bonds to
         alternating single and double bonds.
 
-    require_3D : bool, default=False
-        If ``True``, extract 3D coordinates from the selected conformer
-        before stripping all conformers from the molecule.
-
-    conformer_id : int, default=-1
-        Conformer ID to use when extracting 3D coordinates. The default
-        value of ``-1`` selects the most recently added conformer.
-
     Returns
     -------
     mol : rdkit.Chem.Mol
         The preprocessed molecule, with all conformers removed.
-
-    coords : numpy.ndarray or None
-        NumPy array of shape ``(N, 3)`` with 3D coordinates if
-        ``require_3D`` is ``True`` and a 3D conformer was available,
-        otherwise ``None``.
     """
     if explicit_hydrogens:
-        m = Chem.AddHs(mol)
+        mol = Chem.AddHs(mol)
     else:
-        m = Chem.RemoveHs(mol, updateExplicitCount=True)
+        mol = Chem.RemoveHs(mol, updateExplicitCount=True)
 
     if kekulize:
-        Chem.Kekulize(m)
+        Chem.Kekulize(mol)
 
-    coords = None
-    if require_3D:
-        try:
-            conf = m.GetConformer(conformer_id)
-            if conf.Is3D():
-                coords = get_conformer_atomic_coords(conf)
-        except ValueError:
-            pass
-
-    m.RemoveAllConformers()
-
-    return m, coords
+    return mol
