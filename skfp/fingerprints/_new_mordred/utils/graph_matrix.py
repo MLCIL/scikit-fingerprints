@@ -23,12 +23,12 @@ class DistanceMatrix:
         )
 
     @cached_property
-    def eccentricity(self) -> np.ndarray:
+    def eccentricities(self) -> np.ndarray:
         return self.matrix.max(axis=0)
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricity().min()
+        return self.eccentricities().min()
 
     @cached_property
     def diameter(self) -> np.floating:
