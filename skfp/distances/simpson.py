@@ -85,7 +85,7 @@ def simpson_binary_similarity(
     if isinstance(vec_a, (np.ndarray, list)):
         num_common = np.sum(np.logical_and(vec_a, vec_b))
     else:
-        num_common = len(set(vec_a.indices) & set(vec_b.indices))
+        num_common = len(set(vec_a.indices) & set(vec_b.indices))  # type: ignore
 
     min_vec = min(np.sum(vec_a), np.sum(vec_b))
 

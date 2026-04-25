@@ -2,14 +2,17 @@
 name = "scikit-fingerprints"
 version = "0.0.0"  # version set dynamically in GitHub Actions from Git tags
 description = "Library for effective molecular fingerprints calculation"
-authors = [{ name = "AGH ML & Chemoinformatics Group", email = "jadamczy@agh.edu.pl" }]
+authors = [
+    { name = "Jakub Adamczyk", email = "jadamczy@agh.edu.pl" },
+    { name = "AGH ML & Chemoinformatics Group"}
+]
 keywords = ["molecular fingerprints", "molecular descriptors", "chemoinformatics", "chemistry", "machine learning"]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE.md"]
 readme = "README.md"
 classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -54,6 +57,7 @@ dev = [
     "pytest-rerunfailures",
     "ruff",
     "scipy-stubs",
+    "zizmor",
 ]
 
 test = [
@@ -106,7 +110,7 @@ module-name = "skfp"
 module-root = ""
 
 [build-system]
-requires = ["uv_build"]
+requires = ["uv_build<1"]
 build-backend = "uv_build"
 
 [[tool.uv.index]]

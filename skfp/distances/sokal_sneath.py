@@ -88,7 +88,7 @@ def sokal_sneath_2_binary_similarity(
         b_sum = np.sum(vec_b)
     else:
         vec_a_idxs = set(vec_a.indices)
-        vec_b_idxs = set(vec_b.indices)
+        vec_b_idxs = set(vec_b.indices)  # type: ignore
 
         intersection = len(vec_a_idxs & vec_b_idxs)
         a_sum = len(vec_a_idxs)
