@@ -87,7 +87,7 @@ def ct4_binary_similarity(
         union = np.sum(np.logical_or(vec_a, vec_b))
     else:
         vec_a_idxs = set(vec_a.indices)
-        vec_b_idxs = set(vec_b.indices)
+        vec_b_idxs = set(vec_b.indices)  # type: ignore
         intersection = len(vec_a_idxs & vec_b_idxs)
         union = len(vec_a_idxs | vec_b_idxs)
 
@@ -256,7 +256,7 @@ def ct4_count_similarity(
     else:
         dot_ab = vec_a.multiply(vec_b).sum()
         dot_aa = vec_a.multiply(vec_a).sum()
-        dot_bb = vec_b.multiply(vec_b).sum()
+        dot_bb = vec_b.multiply(vec_b).sum()  # type: ignore
 
     numerator = np.log1p(dot_ab)
     denominator = np.log1p(dot_aa + dot_bb - dot_ab)

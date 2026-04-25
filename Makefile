@@ -29,6 +29,7 @@ endef
 
 test: ## Run tests
 	uv run ruff check
+	uv audit --preview-features audit
 
 	@# datasets tests are slow, so we run them only if Git indicates change there
 	@if $(DATASETS_CHANGED); then \
@@ -41,6 +42,7 @@ test: ## Run tests
 
 test_with_datasets: ## Run tests, always including dataset tests
 	uv run ruff check
+	uv audit --preview-features audit
 	uv run pytest tests
 
 test-coverage: ## Run tests and calculate test coverage

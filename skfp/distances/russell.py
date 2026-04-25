@@ -89,7 +89,7 @@ def russell_binary_similarity(
     else:
         n = vec_a.shape[1]
         vec_a_idxs = set(vec_a.indices)
-        vec_b_idxs = set(vec_b.indices)
+        vec_b_idxs = set(vec_b.indices)  # type: ignore
         a = len(vec_a_idxs & vec_b_idxs)
 
     return float(a / n)
