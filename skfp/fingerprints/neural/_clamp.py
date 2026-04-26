@@ -1,34 +1,81 @@
+import functools
 from collections.abc import Sequence
 
 import numpy as np
 import torch
 from huggingface_hub import hf_hub_download
 from rdkit.Chem import Mol
+from torch import nn
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
 from skfp.utils import ensure_mols
 
-from ._clamp_model import CLAMPCompoundEncoder, get_clamp_model
-
 _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
 _CLAMP_HF_FILENAME = "compound_encoder.pt"
 
 
+class CLAMPCompoundEncoder(nn.Module):
+    """
+    Two-layer MLP compound encoder from CLAMP [1]_.
+
+    Architecture::
+
+        Input (8192) -> Linear(8192, 4096) -> LayerNorm -> ReLU -> Dropout(0.1)
+                     -> Linear(4096, 2048) -> LayerNorm -> ReLU -> Dropout(0.2)
+                     -> Linear(2048, 768)
+        Output (768)
+
+    Dropout layers are retained to match the original model weights. They have
+    no effect at inference time in default ``eval()`` mode
+
+    References
+    ----------
+    .. [1] `Seidl et al.
+        "Enhancing Activity Prediction Models in Drug Discovery with the
+        Ability to Understand Human Language"
+        International Conference on Machine Learning. PMLR, 2023
+        <https://proceedings.mlr.press/v202/seidl23a.html>`_
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(8192, 4096),
+            nn.LayerNorm(4096, elementwise_affine=False),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(4096, 2048),
+            nn.LayerNorm(2048, elementwise_affine=False),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(2048, 768),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+
+# Module-level so lru_cache is keyed only by path, not by instance (avoids memory leaks).
+@functools.lru_cache(maxsize=1)
+def _load_clamp_model(checkpoint_path: str) -> CLAMPCompoundEncoder:
+    """Load pretrained CLAMP compound encoder from a checkpoint file."""
+    model = CLAMPCompoundEncoder()
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+    return model
+
+
 class CLAMPFingerprint(BaseFingerprintTransformer):
     """
-    CLAMP (Contrastive Language And Molecule Pre-training) fingerprint.
+    CLAMP fingerprint.
 
-    Uses a pretrained two-layer MLP compound encoder from CLAMP [1]_ to
+    CLAMP (Contrastive Language And Molecule Pre-training) uses a pretrained two-layer MLP compound encoder from CLAMP [1]_ to
     transform concatenated ECFP count (4096 bits) and RDKit count (4096 bits)
     fingerprints into 768-dimensional learned embeddings.
 
-    Requires PyTorch (``torch``) as an additional dependency. Install it via
-    the ``neural`` extra::
-
-        pip install "scikit-fingerprints[neural]"
-
-    See :doc:`/installation` for details, including CPU-only and CUDA builds.
+    Requires neural optional dependency, installed as scikit-fingerprints[neural]
 
     Parameters
     ----------
@@ -133,7 +180,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         path = self.weights_path or hf_hub_download(
             repo_id=_CLAMP_HF_REPO, filename=_CLAMP_HF_FILENAME
         )
-        return get_clamp_model(path)
+        return _load_clamp_model(path)
 
     def get_input_features(self, X: Sequence[str | Mol]) -> np.ndarray:
         """

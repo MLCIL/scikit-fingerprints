@@ -56,19 +56,11 @@ You can install from PyPI, using `pip` or `uv`.
 pip install scikit-fingerprints
 ```
 
-For more detailed installation notes (extras, PyTorch builds, etc.), see `INSTALL.md`.
-
-### Optional dependencies (extras)
-
-Some functionality requires optional dependencies. Install them via extras:
-
-- **Neural fingerprints (CLAMP)**:
+If you want to use neural fingerprints (embeddings from pretrained neural networks), install optional dependencies with:
 
 ```bash
 pip install "scikit-fingerprints[neural]"
 ```
-
-This installs the additional dependency **PyTorch** (`torch`). If you need a specific PyTorch build (CPU/CUDA), follow the official PyTorch installation instructions and then install scikit-fingerprints.
 
 If you need bleeding-edge features and don't mind potentially unstable or undocumented functionalities, you can also install directly from GitHub:
 

@@ -2,8 +2,7 @@
 Installation
 ============
 
-This page covers base installation and optional dependencies (“extras”). For the same information
-in Markdown (e.g. for GitHub), see ``INSTALL.md`` in the repository root.
+This page covers base installation and optional dependencies (“extras”).
 
 Base installation
 =================
@@ -29,6 +28,5 @@ To use neural fingerprints (e.g. CLAMP), install the ``neural`` extra (this inst
 
     pip install "scikit-fingerprints[neural]"
 
-If you need a specific PyTorch build (CPU/CUDA), install PyTorch following the official instructions
-and then install scikit-fingerprints (with or without the extra).
+If you need a specific PyTorch build (CPU/CUDA), install PyTorch following the official instructions. We highly recommend using uv for this to avoid dependency conflicts.
 
