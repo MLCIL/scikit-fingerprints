@@ -9,7 +9,7 @@ from skfp.bases import BaseFingerprintTransformer
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
 from skfp.utils import ensure_mols
 
-from ._clamp_model import get_clamp_model
+from ._clamp_model import CLAMPCompoundEncoder, get_clamp_model
 
 _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
 _CLAMP_HF_FILENAME = "compound_encoder.pt"
@@ -121,12 +121,39 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         """
         return super().transform(X, copy=copy)
 
-    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
-        X = ensure_mols(X)
+    def get_model(self) -> CLAMPCompoundEncoder:
+        """
+        Return the pretrained CLAMP compound encoder.
 
-        # Compute the "Mc+RDKc" input: element-wise sum of Morgan FCFP
-        # and RDKit count fingerprints, then log(1+x) scaled.
-        # See: https://github.com/ml-jku/mhn-react/blob/main/mhnreact/molutils.py#L161-L190
+        Returns
+        -------
+        encoder : CLAMPCompoundEncoder
+            Pretrained ``nn.Module`` in eval mode.
+        """
+        path = self.weights_path or hf_hub_download(
+            repo_id=_CLAMP_HF_REPO, filename=_CLAMP_HF_FILENAME
+        )
+        return get_clamp_model(path)
+
+    def get_input_features(self, X: Sequence[str | Mol]) -> np.ndarray:
+        """
+        Compute CLAMP encoder input features.
+
+        Returns the intermediate 8192-dimensional representation used as input
+        to the pretrained encoder in :meth:`transform`: a log-scaled sum of
+        ECFP count and RDKit count fingerprints.
+
+        Parameters
+        ----------
+        X : {sequence of str or Mol}
+            Sequence containing SMILES strings or RDKit ``Mol`` objects.
+
+        Returns
+        -------
+        X : ndarray of shape (n_samples, 8192)
+            Array with encoder input features as float32.
+        """
+        X = ensure_mols(X)
         ecfp = ECFPFingerprint(
             fp_size=8192,
             radius=2,
@@ -140,20 +167,19 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
             num_bits_per_feature=1,
             count=True,
         )
-        # np.asarray() ensures ndarray output even under a global pandas
-        # transform_output config (torch.from_numpy() requires ndarray).
         ecfpc = np.asarray(ecfp.transform(X))
         rdkc = np.asarray(rdkit_fp.transform(X))
-        features = np.log(1.0 + ecfpc + rdkc).astype(np.float32)
+        return np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
-        # load model and run inference
-        path = self.weights_path or hf_hub_download(
-            repo_id=_CLAMP_HF_REPO, filename=_CLAMP_HF_FILENAME
-        )
-        model = get_clamp_model(path)
+    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
+        # "Mc+RDKc" preprocessing — see:
+        # https://github.com/ml-jku/mhn-react/blob/main/mhnreact/molutils.py#L161-L190
+        features = self.get_input_features(X)
 
+        model = self.get_model()
         with torch.inference_mode():
-            features_tensor = torch.from_numpy(features)
-            embeddings = model(features_tensor).numpy()
+            # np.asarray() ensures ndarray even under a global pandas
+            # transform_output config (torch.from_numpy() requires ndarray).
+            embeddings = model(torch.from_numpy(np.asarray(features))).numpy()
 
         return embeddings
