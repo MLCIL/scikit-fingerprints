@@ -31,12 +31,12 @@ def test_clamp_reference_values():
     # (architecture, weight loading, featurization) will therefore fail this
     # test.
     smiles = [
-        "CCO",                          # ethanol
-        "c1ccccc1",                     # benzene
-        "CC(=O)O",                      # acetic acid
-        "CC(C)CC(=O)O",                 # isovaleric acid
-        "CC(=O)Nc1ccc(O)cc1",           # paracetamol
-        "CN1CCCC1c1cccnc1",             # nicotine
+        "CCO",  # ethanol
+        "c1ccccc1",  # benzene
+        "CC(=O)O",  # acetic acid
+        "CC(C)CC(=O)O",  # isovaleric acid
+        "CC(=O)Nc1ccc(O)cc1",  # paracetamol
+        "CN1CCCC1c1cccnc1",  # nicotine
     ]
 
     X_skfp = CLAMPFingerprint().transform(smiles)
