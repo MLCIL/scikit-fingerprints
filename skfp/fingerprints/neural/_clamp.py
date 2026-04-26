@@ -11,9 +11,6 @@ from skfp.bases import BaseFingerprintTransformer
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
 from skfp.utils import ensure_mols
 
-_CLAMP_HF_REPO = "scikit-fingerprints/clamp"
-_CLAMP_HF_FILENAME = "compound_encoder.pt"
-
 
 class CLAMPCompoundEncoder(nn.Module):
     """
@@ -127,6 +124,9 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     array([...], shape=(4, 768), dtype=float32)
     """
 
+    _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
+    _CLAMP_HF_FILENAME = "compound_encoder.pt"
+
     _parameter_constraints: dict = {
         **BaseFingerprintTransformer._parameter_constraints,
         "weights_path": [str, None],
@@ -178,7 +178,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
             Pretrained ``nn.Module`` in eval mode.
         """
         path = self.weights_path or hf_hub_download(
-            repo_id=_CLAMP_HF_REPO, filename=_CLAMP_HF_FILENAME
+            repo_id=self._CLAMP_HF_REPO, filename=self._CLAMP_HF_FILENAME
         )
         return _load_clamp_model(path)
 
