@@ -50,6 +50,7 @@ class CLAMPCompoundEncoder(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Run a forward pass through the compound encoder MLP."""
         return self.net(x)
 
 
