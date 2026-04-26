@@ -23,7 +23,12 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     transform concatenated ECFP count (4096 bits) and RDKit count (4096 bits)
     fingerprints into 768-dimensional learned embeddings.
 
-    Requires PyTorch (``torch``) as an additional dependency.
+    Requires PyTorch (``torch``) as an additional dependency. Install it via
+    the ``neural`` extra::
+
+        pip install "scikit-fingerprints[neural]"
+
+    See :doc:`/installation` for details, including CPU-only and CUDA builds.
 
     Parameters
     ----------
