@@ -49,3 +49,4 @@ def test_cache_prepares_3d_hydrogen_variant_when_requested():
     assert cache.mol_with_hydrogens is not None
     assert cache.mol_regular.GetNumAtoms() == 1
     assert cache.mol_with_hydrogens.GetNumAtoms() == 3
+    assert cache.geometrical_index_values.shape == (4,)

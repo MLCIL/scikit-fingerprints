@@ -12,7 +12,7 @@ from time import monotonic
 import networkx as nx
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import EState, GetMolFrags, Mol, rdPartialCharges
+from rdkit.Chem import EState, Get3DDistanceMatrix, GetMolFrags, Mol, rdPartialCharges
 from rdkit.Chem.rdchem import Atom, Bond, BondType
 from scipy.sparse.csgraph import floyd_warshall
 from scipy.spatial.distance import cdist
@@ -276,6 +276,12 @@ EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES = [
 ]
 FRAGMENT_COMPLEXITY_FEATURE_NAMES = ["fragCpx"]
 FRAMEWORK_FEATURE_NAMES = ["fMF"]
+GEOMETRICAL_INDEX_FEATURE_NAMES = [
+    "GeomDiameter",
+    "GeomRadius",
+    "GeomShapeIndex",
+    "GeomPetitjeanIndex",
+]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -715,6 +721,29 @@ def _framework_values(mol: Mol) -> np.ndarray:
     ring_atoms = {atom_idx for ring in rings for atom_idx in ring}
     value = (len(linkers) + len(ring_atoms)) / n_atoms
     return np.asarray([value], dtype=np.float32)
+
+
+def _geometrical_index_values(mol: Mol | None) -> np.ndarray:
+    if mol is None:
+        return np.full(len(GEOMETRICAL_INDEX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    try:
+        conformer = mol.GetConformer()
+    except ValueError:
+        return np.full(len(GEOMETRICAL_INDEX_FEATURE_NAMES), np.nan, dtype=np.float32)
+    if not conformer.Is3D():
+        return np.full(len(GEOMETRICAL_INDEX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    distances = Get3DDistanceMatrix(mol)
+    eccentricities = np.max(distances, axis=0)
+    radius = float(np.min(eccentricities))
+    diameter = float(np.max(distances))
+
+    shape_index = np.nan if radius == 0.0 else (diameter - radius) / radius
+    petitjean_index = np.nan if diameter == 0.0 else (diameter - radius) / diameter
+    return np.asarray(
+        [diameter, radius, shape_index, petitjean_index], dtype=np.float32
+    )
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1553,6 +1582,7 @@ class MordredMolCache:
     extended_topochemical_atom_values: np.ndarray
     fragment_complexity_values: np.ndarray
     framework_values: np.ndarray
+    geometrical_index_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1606,6 +1636,7 @@ class MordredMolCache:
             ),
             fragment_complexity_values=_fragment_complexity_values(mol_regular),
             framework_values=_framework_values(mol_regular),
+            geometrical_index_values=_geometrical_index_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
