@@ -43,6 +43,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     molecular_id,
     morse,
     path_count,
+    polarizability,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -109,6 +110,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         molecular_distance_edge.calc(cache),
         molecular_id.calc(cache),
         path_count.calc(cache),
+        polarizability.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(

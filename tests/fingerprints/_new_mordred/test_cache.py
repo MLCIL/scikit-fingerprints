@@ -32,6 +32,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.molecular_distance_edge_values.shape == (19,)
     assert cache.molecular_id_values.shape == (12,)
     assert cache.path_count_values.shape == (21,)
+    assert cache.polarizability_values.shape == (2,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9

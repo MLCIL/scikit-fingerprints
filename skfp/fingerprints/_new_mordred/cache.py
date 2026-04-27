@@ -513,6 +513,8 @@ PATH_COUNT_FEATURE_NAMES = [
     "piPC10",
     "TpiPC10",
 ]
+
+POLARIZABILITY_FEATURE_NAMES = ["apol", "bpol"]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1499,6 +1501,29 @@ def _path_count_values(mol: Mol) -> np.ndarray:
     return np.asarray(values, dtype=np.float32)
 
 
+def _polarizability_values(mol: Mol) -> np.ndarray:
+    atoms = list(mol.GetAtoms())
+    bonds = list(mol.GetBonds())
+
+    try:
+        apol = sum(get_polarizability(atom) for atom in atoms)
+    except (IndexError, KeyError):
+        apol = np.nan
+
+    try:
+        bpol = sum(
+            abs(
+                get_polarizability(bond.GetBeginAtom())
+                - get_polarizability(bond.GetEndAtom())
+            )
+            for bond in bonds
+        )
+    except (IndexError, KeyError):
+        bpol = np.nan
+
+    return np.asarray([apol, bpol], dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2385,6 +2410,7 @@ class MordredMolCache:
     molecular_distance_edge_values: np.ndarray
     molecular_id_values: np.ndarray
     path_count_values: np.ndarray
+    polarizability_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2453,6 +2479,7 @@ class MordredMolCache:
             ),
             molecular_id_values=_molecular_id_values(mol_regular, n_frags),
             path_count_values=_path_count_values(mol_regular),
+            polarizability_values=_polarizability_values(mol_regular),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
