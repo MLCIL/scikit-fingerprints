@@ -492,6 +492,13 @@ MOLECULAR_ID_FEATURE_NAMES = [
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
+MORSE_MAX_DISTANCE = 32
+MORSE_PROPERTIES = ["", "m", "v", "se", "p"]
+MORSE_FEATURE_NAMES = [
+    f"Mor{distance:02d}{prop}"
+    for prop in MORSE_PROPERTIES
+    for distance in range(1, MORSE_MAX_DISTANCE + 1)
+]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1387,6 +1394,46 @@ def _molecular_id_values(mol: Mol, n_frags: int) -> np.ndarray:
     )
 
 
+def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
+    prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
+    carbon_value = prop_func(_CARBON)
+    values = np.asarray([prop_func(atom) for atom in mol.GetAtoms()], dtype=float)
+    return values / carbon_value
+
+
+def _morse_group_values(
+    pair_distances: np.ndarray, weight_products: np.ndarray
+) -> list[float]:
+    if np.any(~np.isfinite(weight_products)):
+        return [np.nan] * MORSE_MAX_DISTANCE
+
+    values = [float(np.sum(weight_products))]
+    for distance in range(2, MORSE_MAX_DISTANCE + 1):
+        scaled_distances = (distance - 1) * pair_distances
+        with np.errstate(divide="ignore", invalid="ignore"):
+            kernel = np.sin(scaled_distances) / scaled_distances
+        values.append(float(np.sum(weight_products * kernel)))
+    return values
+
+
+def _morse_values(mol: Mol | None) -> np.ndarray:
+    if mol is None or mol.GetNumAtoms() <= 1 or not _has_3d_conformer(mol):
+        return np.full(len(MORSE_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    distances = Get3DDistanceMatrix(mol).astype(float)
+    triu_idxs = np.triu_indices_from(distances, k=1)
+    pair_distances = distances[triu_idxs]
+
+    values: list[float] = []
+    values.extend(_morse_group_values(pair_distances, np.ones_like(pair_distances)))
+    for prop in MORSE_PROPERTIES[1:]:
+        prop_weights = _morse_atomic_property_vector(mol, prop)
+        weight_products = prop_weights[triu_idxs[0]] * prop_weights[triu_idxs[1]]
+        values.extend(_morse_group_values(pair_distances, weight_products))
+
+    return np.asarray(values, dtype=np.float32)
+
+
 def _aromatic_values(mol: Mol) -> np.ndarray:
     return np.asarray(
         [
@@ -2232,6 +2279,7 @@ class MordredMolCache:
     mcgowan_volume_values: np.ndarray
     molecular_distance_edge_values: np.ndarray
     molecular_id_values: np.ndarray
+    morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2298,6 +2346,7 @@ class MordredMolCache:
                 mol_regular, distance_matrix_regular, adjacency_matrix_regular
             ),
             molecular_id_values=_molecular_id_values(mol_regular, n_frags),
+            morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),

@@ -41,6 +41,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     mcgowan_volume,
     molecular_distance_edge,
     molecular_id,
+    morse,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -131,6 +132,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             cpsa.calc_3d(cache),
             geometrical_index.calc(cache),
             gravitational_index.calc(cache),
+            morse.calc(cache),
             rdkit_descriptors.calc_3d(mol_with_hydrogens),
         ]
 

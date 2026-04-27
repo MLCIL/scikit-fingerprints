@@ -58,3 +58,4 @@ def test_cache_prepares_3d_hydrogen_variant_when_requested():
     assert cache.mol_with_hydrogens.GetNumAtoms() == 3
     assert cache.geometrical_index_values.shape == (4,)
     assert cache.gravitational_index_values.shape == (4,)
+    assert cache.morse_values.shape == (160,)
