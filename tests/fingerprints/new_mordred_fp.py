@@ -42,6 +42,7 @@ NO_EXPLICIT_H_INFORMATION_CONTENT_FEATURES = [
     for order in range(6)
 ]
 NO_EXPLICIT_H_LIPINSKI_FEATURES = ["GhoseFilter"]
+NO_EXPLICIT_H_MCGOWAN_VOLUME_FEATURES = ["VMcGowan"]
 
 
 @pytest.fixture(autouse=True)
@@ -174,14 +175,15 @@ def _parity_mask(X_new, X_old, feature_names):
     Create the old-vs-new Mordred parity mask.
 
     New Mordred BondCount, Constitutional, charge-only CPSA, ETA epsilon,
-    Framework, InformationContent, and GhoseFilter descriptors intentionally keep 2D
-    molecules hydrogen-suppressed, while default Mordred adds explicit
+    Framework, InformationContent, GhoseFilter, and McGowanVolume descriptors
+    intentionally keep 2D molecules hydrogen-suppressed, while default Mordred adds explicit
     hydrogens for nBonds/nBondsS/nBondsKS, the Constitutional descriptors
     SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/Mpe/Mare/Mp/Mi, CPSA RNCG/RPCG,
     ETA epsilon descriptors except epsilon_2, the fMF denominator, and all
     42 IC/TIC/SIC/BIC/CIC/MIC/ZMIC descriptors. GhoseFilter can differ because
     its atom-count criterion uses the hydrogen-suppressed atom count here and
-    the explicit-H atom count in default Mordred.
+    the explicit-H atom count in default Mordred. VMcGowan can differ because
+    default Mordred includes explicit hydrogen atom volumes and bond corrections.
     """
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
     for name in [
@@ -192,6 +194,7 @@ def _parity_mask(X_new, X_old, feature_names):
         *NO_EXPLICIT_H_FRAMEWORK_FEATURES,
         *NO_EXPLICIT_H_INFORMATION_CONTENT_FEATURES,
         *NO_EXPLICIT_H_LIPINSKI_FEATURES,
+        *NO_EXPLICIT_H_MCGOWAN_VOLUME_FEATURES,
     ]:
         mask[:, feature_names.tolist().index(name)] = False
 

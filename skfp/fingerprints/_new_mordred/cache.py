@@ -40,6 +40,7 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_intrinsic_state,
     get_ionization_potential,
     get_mass,
+    get_mc_gowan_volume,
     get_pauling_en,
     get_polarizability,
     get_sanderson_en,
@@ -430,6 +431,7 @@ _LOGS_PATTERN_CONTRIBUTIONS = [
     (MolFromSmarts(smarts), contribution)
     for smarts, contribution in _LOGS_SMARTS_CONTRIBUTIONS
 ]
+MCGOWAN_VOLUME_FEATURE_NAMES = ["VMcGowan"]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1192,6 +1194,15 @@ def _logs_values(mol: Mol) -> np.ndarray:
     value = 0.89823 - 0.10369 * np.sqrt(Descriptors.MolWt(mol))
     for pattern, contribution in _LOGS_PATTERN_CONTRIBUTIONS:
         value += contribution * len(mol.GetSubstructMatches(pattern))
+    return np.asarray([value], dtype=np.float32)
+
+
+def _mcgowan_volume_values(mol: Mol) -> np.ndarray:
+    try:
+        volume = sum(get_mc_gowan_volume(atom) for atom in mol.GetAtoms())
+    except (IndexError, KeyError):
+        volume = np.nan
+    value = volume - 6.56 * mol.GetNumBonds()
     return np.asarray([value], dtype=np.float32)
 
 
@@ -2037,6 +2048,7 @@ class MordredMolCache:
     kappa_shape_index_values: np.ndarray
     lipinski_values: np.ndarray
     logs_values: np.ndarray
+    mcgowan_volume_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2098,6 +2110,7 @@ class MordredMolCache:
             kappa_shape_index_values=_kappa_shape_index_values(mol_regular),
             lipinski_values=_lipinski_values(mol_regular),
             logs_values=_logs_values(mol_regular),
+            mcgowan_volume_values=_mcgowan_volume_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
