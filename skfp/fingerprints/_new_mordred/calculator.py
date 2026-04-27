@@ -15,6 +15,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     atom_count,
     carbon_types,
     rdkit_descriptors,
+    rotatable_bond,
     wiener_index,
     zagreb_index,
 )
@@ -66,6 +67,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         atom_count.calc(mol_with_hydrogens),
         carbon_types.calc(mol_kekulized),
+        rotatable_bond.calc(mol_regular),
     ]
 
     for values, feature_names in descriptors_2d:
