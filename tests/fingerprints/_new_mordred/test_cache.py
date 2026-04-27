@@ -25,6 +25,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.fragment_complexity_values.shape == (1,)
     assert cache.framework_values.shape == (1,)
     assert cache.information_content_values.shape == (42,)
+    assert cache.kappa_shape_index_values.shape == (3,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9

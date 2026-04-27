@@ -395,6 +395,7 @@ INFORMATION_CONTENT_FEATURE_NAMES = [
     for prefix in _INFORMATION_CONTENT_PREFIXES
     for order in _INFORMATION_CONTENT_ORDERS
 ]
+KAPPA_SHAPE_INDEX_FEATURE_NAMES = ["Kier1", "Kier2", "Kier3"]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1106,6 +1107,31 @@ def _information_atomic_numbers(mol: Mol, atom_ids: np.ndarray) -> np.ndarray:
         dtype=float,
         count=len(atom_ids),
     )
+
+
+def _kappa_shape_index_values(mol: Mol) -> np.ndarray:
+    n_atoms = mol.GetNumAtoms()
+    values = [_kappa_shape_index(mol, n_atoms, order) for order in range(1, 4)]
+    return np.asarray(values, dtype=np.float32)
+
+
+def _kappa_shape_index(mol: Mol, n_atoms: int, order: int) -> float:
+    n_paths = len(_chi_subgraphs(mol, order)["path"])
+    if n_paths == 0:
+        return np.nan
+
+    p_min = n_atoms - order
+    if order == 1:
+        p_max = 0.5 * n_atoms * (n_atoms - 1)
+        return 2 * p_max * p_min / n_paths**2
+    if order == 2:
+        p_max = 0.5 * (n_atoms - 1) * (n_atoms - 2)
+        return 2 * p_max * p_min / n_paths**2
+    if n_atoms % 2 == 0:
+        p_max = 0.25 * (n_atoms - 2) ** 2
+    else:
+        p_max = 0.25 * (n_atoms - 1) * (n_atoms - 3)
+    return 4 * p_max * p_min / n_paths**2
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1947,6 +1973,7 @@ class MordredMolCache:
     geometrical_index_values: np.ndarray
     gravitational_index_values: np.ndarray
     information_content_values: np.ndarray
+    kappa_shape_index_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2005,6 +2032,7 @@ class MordredMolCache:
                 mol_regular, mol_with_hydrogens
             ),
             information_content_values=_information_content_values(mol_kekulized),
+            kappa_shape_index_values=_kappa_shape_index_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
