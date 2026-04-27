@@ -19,6 +19,11 @@ from scipy.spatial.distance import cdist
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_allred_rocow_en,
+    get_core_count,
+    get_eta_beta_delta,
+    get_eta_beta_non_sigma,
+    get_eta_beta_sigma,
+    get_eta_epsilon,
     get_gasteiger_charge,
     get_intrinsic_state,
     get_ionization_potential,
@@ -257,6 +262,18 @@ ESTATE_FEATURE_NAMES = [
 _ESTATE_ATOM_TYPE_TO_IDX = {
     atom_type: idx for idx, atom_type in enumerate(ESTATE_ATOM_TYPES)
 }
+EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES = [
+    "ETA_alpha", "AETA_alpha", "ETA_shape_p", "ETA_shape_y", "ETA_shape_x",
+    "ETA_beta", "AETA_beta", "ETA_beta_s", "AETA_beta_s", "ETA_beta_ns",
+    "AETA_beta_ns", "ETA_beta_ns_d", "AETA_beta_ns_d", "ETA_eta", "AETA_eta",
+    "ETA_eta_L", "AETA_eta_L", "ETA_eta_R", "AETA_eta_R", "ETA_eta_RL",
+    "AETA_eta_RL", "ETA_eta_F", "AETA_eta_F", "ETA_eta_FL", "AETA_eta_FL",
+    "ETA_eta_B", "AETA_eta_B", "ETA_eta_BR", "AETA_eta_BR", "ETA_dAlpha_A",
+    "ETA_dAlpha_B", "ETA_epsilon_1", "ETA_epsilon_2", "ETA_epsilon_3",
+    "ETA_epsilon_4", "ETA_epsilon_5", "ETA_dEpsilon_A", "ETA_dEpsilon_B",
+    "ETA_dEpsilon_C", "ETA_dEpsilon_D", "ETA_dBeta", "AETA_dBeta",
+    "ETA_psi_1", "ETA_dPsi_A", "ETA_dPsi_B",
+]
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
@@ -384,6 +401,256 @@ def _estate_values(mol: Mol) -> np.ndarray:
     return np.concatenate((counts, sums, max_values, min_values)).astype(
         np.float32, copy=False
     )
+
+
+@dataclass(frozen=True, slots=True)
+class _EtaData:
+    mol: Mol
+    n_atoms: int
+    alpha: np.ndarray
+    epsilon: np.ndarray
+    beta_sigma: np.ndarray
+    beta_non_sigma: np.ndarray
+    beta_delta: np.ndarray
+    gamma: np.ndarray
+
+
+def _eta_data(mol: Mol) -> _EtaData:
+    alpha = np.asarray([get_core_count(atom) for atom in mol.GetAtoms()], dtype=float)
+    epsilon = np.asarray(
+        [get_eta_epsilon(atom) for atom in mol.GetAtoms()], dtype=float
+    )
+    beta_sigma = np.asarray(
+        [get_eta_beta_sigma(atom) for atom in mol.GetAtoms()], dtype=float
+    )
+    beta_non_sigma = np.asarray(
+        [get_eta_beta_non_sigma(atom) for atom in mol.GetAtoms()], dtype=float
+    )
+    beta_delta = np.asarray(
+        [get_eta_beta_delta(atom) for atom in mol.GetAtoms()], dtype=float
+    )
+    beta = beta_sigma + beta_non_sigma + beta_delta
+    gamma = np.divide(
+        alpha,
+        beta,
+        out=np.full(mol.GetNumAtoms(), np.nan, dtype=float),
+        where=beta != 0,
+    )
+    return _EtaData(
+        mol=mol,
+        n_atoms=mol.GetNumAtoms(),
+        alpha=alpha,
+        epsilon=epsilon,
+        beta_sigma=beta_sigma,
+        beta_non_sigma=beta_non_sigma,
+        beta_delta=beta_delta,
+        gamma=gamma,
+    )
+
+
+def _alter_molecule(mol: Mol, saturated: bool = False) -> Mol:
+    new = Chem.RWMol(Chem.Mol())
+    atom_idxs: dict[int, int] = {}
+
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 1:
+            continue
+        if saturated:
+            new_atom = Chem.Atom(atom.GetAtomicNum())
+            new_atom.SetFormalCharge(atom.GetFormalCharge())
+        else:
+            new_atom = Chem.Atom(6)
+        atom_idxs[atom.GetIdx()] = new.AddAtom(new_atom)
+
+    for bond in mol.GetBonds():
+        begin = bond.GetBeginAtom()
+        end = bond.GetEndAtom()
+        if not saturated and (begin.GetDegree() > 4 or end.GetDegree() > 4):
+            raise ValueError("bond degree greater than 4")
+        begin_idx = atom_idxs.get(begin.GetIdx())
+        end_idx = atom_idxs.get(end.GetIdx())
+        if begin_idx is None or end_idx is None:
+            continue
+        bond_type = (
+            bond.GetBondType()
+            if saturated and (begin.GetAtomicNum() != 6 or end.GetAtomicNum() != 6)
+            else Chem.BondType.SINGLE
+        )
+        new.AddBond(begin_idx, end_idx, bond_type)
+
+    new_mol = Chem.Mol(new)
+    if Chem.SanitizeMol(new_mol, catchErrors=True) != 0:
+        raise ValueError("cannot sanitize altered molecule")
+    Chem.Kekulize(new_mol)
+    return new_mol
+
+
+def _safe_eta_data(mol: Mol) -> _EtaData | None:
+    try:
+        return _eta_data(mol)
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _safe_altered_data(mol: Mol, saturated: bool) -> _EtaData | None:
+    try:
+        return _eta_data(_alter_molecule(mol, saturated=saturated))
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _eta_safe_divide(numerator: float, denominator: float) -> float:
+    if denominator == 0:
+        return np.nan
+    return numerator / denominator
+
+
+def _eta_alpha(data: _EtaData) -> float:
+    return float(data.alpha.sum())
+
+
+def _eta_average(value: float, data: _EtaData | None) -> float:
+    if data is None:
+        return np.nan
+    return _eta_safe_divide(value, data.n_atoms)
+
+
+def _eta_positive_delta(value: float, data: _EtaData | None) -> float:
+    if data is None:
+        return np.nan
+    return max(_eta_safe_divide(value, data.n_atoms), 0.0)
+
+
+def _eta_shape_index(data: _EtaData | None, degree: int) -> float:
+    if data is None:
+        return np.nan
+    alpha = _eta_alpha(data)
+    return float(
+        _eta_safe_divide(
+            sum(
+                data.alpha[atom.GetIdx()]
+                for atom in data.mol.GetAtoms()
+                if atom.GetDegree() == degree
+            ),
+            alpha,
+        )
+    )
+
+
+def _eta_beta_sigma(data: _EtaData) -> float:
+    return float(data.beta_sigma.sum() / 2.0)
+
+
+def _eta_beta_non_sigma_delta(data: _EtaData) -> float:
+    return float(data.beta_delta.sum())
+
+
+def _eta_beta_non_sigma(data: _EtaData) -> float:
+    return float(data.beta_non_sigma.sum() / 2.0 + _eta_beta_non_sigma_delta(data))
+
+
+def _eta_value(data: _EtaData, local: bool = False) -> float:
+    distances = Chem.GetDistanceMatrix(data.mol, force=True)
+    value = 0.0
+    for i, row in enumerate(distances):
+        for j, distance in enumerate(row):
+            if i >= j or (local and distance != 1) or (not local and distance == 0):
+                continue
+            value += np.sqrt(data.gamma[i] * data.gamma[j] / distance**2)
+    return float(value)
+
+
+def _eta_branching(data: _EtaData, eta_reference_local: float, ring: bool) -> float:
+    if data.n_atoms <= 1:
+        return np.nan
+    eta_normal_local = (
+        1.0 if data.n_atoms == 2 else np.sqrt(2.0) + 0.5 * (data.n_atoms - 3)
+    )
+    ring_count = len(Chem.GetSymmSSSR(data.mol)) if ring else 0
+    return float(eta_normal_local - eta_reference_local + 0.086 * ring_count)
+
+
+def _eta_epsilon(data: _EtaData) -> float:
+    if data.n_atoms == 0:
+        return np.nan
+    return float(data.epsilon.mean())
+
+
+def _eta_calculate_values(
+    data: _EtaData | None,
+    reference_data: _EtaData | None,
+    saturated_data: _EtaData | None,
+) -> list[float]:
+    if data is None:
+        alpha = beta_sigma = beta_non_sigma = beta_non_sigma_delta = np.nan
+        beta = eta = eta_local = eta_branching = eta_branching_ring = np.nan
+        epsilon_1 = epsilon_2 = epsilon_5 = delta_beta = psi = np.nan
+    else:
+        alpha = _eta_alpha(data)
+        beta_sigma = _eta_beta_sigma(data)
+        beta_non_sigma = _eta_beta_non_sigma(data)
+        beta_non_sigma_delta = _eta_beta_non_sigma_delta(data)
+        beta = beta_sigma + beta_non_sigma
+        eta = _eta_value(data)
+        eta_local = _eta_value(data, local=True)
+        epsilon_1 = _eta_epsilon(data)
+        epsilon_2 = epsilon_1
+        epsilon_5 = epsilon_2
+        delta_beta = beta_non_sigma - beta_sigma
+        psi = _eta_safe_divide(alpha, data.n_atoms * epsilon_2)
+
+    alpha_reference = (
+        _eta_alpha(reference_data) if reference_data is not None else np.nan
+    )
+    eta_reference = (
+        _eta_value(reference_data) if reference_data is not None else np.nan
+    )
+    eta_reference_local = (
+        _eta_value(reference_data, local=True)
+        if reference_data is not None
+        else np.nan
+    )
+    eta_functionality = eta_reference - eta
+    eta_functionality_local = eta_reference_local - eta_local
+    if data is not None:
+        eta_branching = _eta_branching(data, eta_reference_local, ring=False)
+        eta_branching_ring = _eta_branching(data, eta_reference_local, ring=True)
+
+    epsilon_3 = _eta_epsilon(reference_data) if reference_data is not None else np.nan
+    epsilon_4 = _eta_epsilon(saturated_data) if saturated_data is not None else np.nan
+
+    return [
+        alpha, _eta_average(alpha, data), _eta_shape_index(data, 1),
+        _eta_shape_index(data, 3), _eta_shape_index(data, 4), beta,
+        _eta_average(beta, data), beta_sigma, _eta_average(beta_sigma, data),
+        beta_non_sigma, _eta_average(beta_non_sigma, data),
+        beta_non_sigma_delta, _eta_average(beta_non_sigma_delta, data), eta,
+        _eta_average(eta, data), eta_local, _eta_average(eta_local, data),
+        eta_reference, _eta_average(eta_reference, reference_data),
+        eta_reference_local, _eta_average(eta_reference_local, reference_data),
+        eta_functionality, _eta_average(eta_functionality, data),
+        eta_functionality_local, _eta_average(eta_functionality_local, data),
+        eta_branching, _eta_average(eta_branching, data), eta_branching_ring,
+        _eta_average(eta_branching_ring, data),
+        _eta_positive_delta(alpha - alpha_reference, data),
+        _eta_positive_delta(alpha_reference - alpha, data), epsilon_1, epsilon_2,
+        epsilon_3, epsilon_4, epsilon_5, epsilon_1 - epsilon_3,
+        epsilon_1 - epsilon_4, epsilon_3 - epsilon_4, epsilon_2 - epsilon_5,
+        delta_beta, _eta_average(delta_beta, data), psi, max(0.714 - psi, 0.0),
+        max(psi - 0.714, 0.0),
+    ]
+
+
+def _extended_topochemical_atom_values(mol: Mol, n_frags: int) -> np.ndarray:
+    if n_frags != 1:
+        return np.full(
+            len(EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES), np.nan, dtype=np.float32
+        )
+    data = _safe_eta_data(mol)
+    reference_data = _safe_altered_data(mol, saturated=False)
+    saturated_data = _safe_altered_data(mol, saturated=True)
+    values = _eta_calculate_values(data, reference_data, saturated_data)
+    return np.asarray(values, dtype=np.float32)
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1219,6 +1486,7 @@ class MordredMolCache:
     distance_matrix_values: np.ndarray
     eccentric_connectivity_index_values: np.ndarray
     estate_values: np.ndarray
+    extended_topochemical_atom_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1267,6 +1535,9 @@ class MordredMolCache:
                 distance_matrix_regular, adjacency_matrix_regular
             ),
             estate_values=_estate_values(mol_regular),
+            extended_topochemical_atom_values=_extended_topochemical_atom_values(
+                mol_kekulized, n_frags
+            ),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
