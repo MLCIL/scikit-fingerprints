@@ -1,3 +1,6 @@
+import ast
+from pathlib import Path
+
 import numpy as np
 import pytest
 from mordred import Calculator, descriptors
@@ -47,6 +50,13 @@ RDKIT_2D_FEATURE_NAMES = [
 ]
 
 RDKIT_3D_FEATURE_NAMES = ["MOMI-X", "MOMI-Y", "MOMI-Z", "PBF"]
+
+
+def test_rdkit_descriptors_avoid_lambda_wrappers():
+    source = Path(rdkit_descriptors.__file__).read_text()
+    tree = ast.parse(source)
+
+    assert not [node for node in ast.walk(tree) if isinstance(node, ast.Lambda)]
 
 
 @pytest.fixture(scope="module")
