@@ -274,6 +274,7 @@ EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES = [
     "ETA_dEpsilon_C", "ETA_dEpsilon_D", "ETA_dBeta", "AETA_dBeta",
     "ETA_psi_1", "ETA_dPsi_A", "ETA_dPsi_B",
 ]
+FRAGMENT_COMPLEXITY_FEATURE_NAMES = ["fragCpx"]
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
@@ -651,6 +652,14 @@ def _extended_topochemical_atom_values(mol: Mol, n_frags: int) -> np.ndarray:
     saturated_data = _safe_altered_data(mol, saturated=True)
     values = _eta_calculate_values(data, reference_data, saturated_data)
     return np.asarray(values, dtype=np.float32)
+
+
+def _fragment_complexity_values(mol: Mol) -> np.ndarray:
+    n_atoms = mol.GetNumAtoms()
+    n_bonds = mol.GetNumBonds()
+    n_hetero = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() != 6)
+    value = abs(n_bonds**2 - n_atoms**2 + n_atoms) + n_hetero / 100
+    return np.asarray([value], dtype=np.float32)
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1487,6 +1496,7 @@ class MordredMolCache:
     eccentric_connectivity_index_values: np.ndarray
     estate_values: np.ndarray
     extended_topochemical_atom_values: np.ndarray
+    fragment_complexity_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1538,6 +1548,7 @@ class MordredMolCache:
             extended_topochemical_atom_values=_extended_topochemical_atom_values(
                 mol_kekulized, n_frags
             ),
+            fragment_complexity_values=_fragment_complexity_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
