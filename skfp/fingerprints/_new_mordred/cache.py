@@ -8,7 +8,7 @@ from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import groupby
-from math import sqrt
+from math import log, sqrt
 from time import monotonic
 from typing import Any
 
@@ -488,6 +488,30 @@ MOLECULAR_ID_FEATURE_NAMES = [
     "AMID_O",
     "MID_X",
     "AMID_X",
+]
+
+PATH_COUNT_FEATURE_NAMES = [
+    "MPC2",
+    "MPC3",
+    "MPC4",
+    "MPC5",
+    "MPC6",
+    "MPC7",
+    "MPC8",
+    "MPC9",
+    "MPC10",
+    "TMPC10",
+    "piPC1",
+    "piPC2",
+    "piPC3",
+    "piPC4",
+    "piPC5",
+    "piPC6",
+    "piPC7",
+    "piPC8",
+    "piPC9",
+    "piPC10",
+    "TpiPC10",
 ]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
@@ -1394,6 +1418,87 @@ def _molecular_id_values(mol: Mol, n_frags: int) -> np.ndarray:
     )
 
 
+def _path_count_bond_ids_to_atom_ids(
+    bond_ids: tuple[int, ...], bond_atoms: list[tuple[int, int]]
+) -> list[int] | tuple[int, int]:
+    it = iter(bond_ids)
+
+    try:
+        a0f, a0t = bond_atoms[next(it)]
+    except StopIteration:
+        return []
+
+    try:
+        a1f, a1t = bond_atoms[next(it)]
+    except StopIteration:
+        return a0f, a0t
+
+    if a0f in [a1f, a1t]:
+        path = [a0t, a0f]
+        current = a1f if a0f == a1t else a1t
+    else:
+        path = [a0f, a0t]
+        current = a1f if a0t == a1t else a1t
+
+    for bond_id in it:
+        anf, ant = bond_atoms[bond_id]
+
+        path.append(current)
+
+        if anf == current:
+            current = ant
+        else:
+            current = anf
+
+    path.append(current)
+    return path
+
+
+def _path_counts(mol: Mol, order: int) -> tuple[int, float]:
+    length = 0
+    pi_count = 0.0
+    bond_atoms = [
+        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
+    ]
+
+    for path in Chem.FindAllPathsOfLengthN(mol, order):
+        atom_ids = set()
+        previous = None
+        weight = 1.0
+
+        for atom_id in _path_count_bond_ids_to_atom_ids(path, bond_atoms):
+            if atom_id in atom_ids:
+                break
+
+            atom_ids.add(atom_id)
+
+            if previous is not None:
+                bond = mol.GetBondBetweenAtoms(previous, atom_id)
+                weight *= bond.GetBondTypeAsDouble()
+
+            previous = atom_id
+        else:
+            length += 1
+            pi_count += weight
+
+    return length, pi_count
+
+
+def _path_count_values(mol: Mol) -> np.ndarray:
+    raw_counts = {order: _path_counts(mol, order) for order in range(1, 11)}
+    atom_count = mol.GetNumAtoms()
+
+    values: list[float] = []
+    values.extend(raw_counts[order][0] for order in range(2, 11))
+    values.append(atom_count + sum(raw_counts[order][0] for order in range(1, 11)))
+    values.extend(log(raw_counts[order][1] + 1) for order in range(1, 11))
+    values.append(
+        log(atom_count + sum(raw_counts[order][1] for order in range(1, 11)) + 1)
+    )
+
+    return np.asarray(values, dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2279,6 +2384,7 @@ class MordredMolCache:
     mcgowan_volume_values: np.ndarray
     molecular_distance_edge_values: np.ndarray
     molecular_id_values: np.ndarray
+    path_count_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2346,6 +2452,7 @@ class MordredMolCache:
                 mol_regular, distance_matrix_regular, adjacency_matrix_regular
             ),
             molecular_id_values=_molecular_id_values(mol_regular, n_frags),
+            path_count_values=_path_count_values(mol_regular),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
