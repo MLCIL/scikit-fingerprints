@@ -9,7 +9,7 @@ setup: ## Install development dependencies
 	@pandoc --version >/dev/null 2>&1 || (echo "Pandoc is not installed. Please install it from https://pandoc.org/" && exit 1)
 
 	@# install dependencies
-	uv sync --group dev --group docs
+	uv sync --group dev --group docs --extra neural
 	uv run pre-commit install
 
 docs: ## Re-generate documentation

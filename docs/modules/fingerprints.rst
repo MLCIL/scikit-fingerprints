@@ -49,3 +49,12 @@ Classes for computing molecular fingerprints.
     USRCATFingerprint
     VSAFingerprint
     WHIMFingerprint
+
+Neural fingerprints
+-------------------
+
+.. autosummary::
+    :nosignatures:
+    :toctree: generated/
+
+    CLAMPFingerprint

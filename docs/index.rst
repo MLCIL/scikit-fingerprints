@@ -23,12 +23,22 @@ Easiest way to get started is to install it with pip:
 
     pip install scikit-fingerprints
 
+Optional dependencies are available as extras. For example, to enable neural fingerprints (CLAMP),
+install the ``neural`` extra (this pulls in PyTorch ``torch``):
+
+.. code-block:: console
+
+    pip install "scikit-fingerprints[neural]"
+
+See :doc:`installation` for details.
+
 Then, see the quickstart below, or go for more detailed :doc:`examples`.
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents
 
+   installation
    examples
    api_reference
 
