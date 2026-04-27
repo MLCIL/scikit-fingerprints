@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import groupby
+from math import sqrt
 from time import monotonic
 from typing import Any
 
@@ -454,11 +455,43 @@ MOLECULAR_DISTANCE_EDGE_FEATURE_NAMES = [
     "MDEN-33",
 ]
 _MOLECULAR_DISTANCE_EDGE_FEATURES = [
-    (6, 1, 1), (6, 1, 2), (6, 1, 3), (6, 1, 4), (6, 2, 2),
-    (6, 2, 3), (6, 2, 4), (6, 3, 3), (6, 3, 4), (6, 4, 4),
-    (8, 1, 1), (8, 1, 2), (8, 2, 2), (7, 1, 1), (7, 1, 2),
-    (7, 1, 3), (7, 2, 2), (7, 2, 3), (7, 3, 3),
+    (6, 1, 1),
+    (6, 1, 2),
+    (6, 1, 3),
+    (6, 1, 4),
+    (6, 2, 2),
+    (6, 2, 3),
+    (6, 2, 4),
+    (6, 3, 3),
+    (6, 3, 4),
+    (6, 4, 4),
+    (8, 1, 1),
+    (8, 1, 2),
+    (8, 2, 2),
+    (7, 1, 1),
+    (7, 1, 2),
+    (7, 1, 3),
+    (7, 2, 2),
+    (7, 2, 3),
+    (7, 3, 3),
 ]
+MOLECULAR_ID_FEATURE_NAMES = [
+    "MID",
+    "AMID",
+    "MID_h",
+    "AMID_h",
+    "MID_C",
+    "AMID_C",
+    "MID_N",
+    "AMID_N",
+    "MID_O",
+    "AMID_O",
+    "MID_X",
+    "AMID_X",
+]
+_MOLECULAR_ID_EPS = 1e-10
+_MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
+_MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1278,6 +1311,80 @@ def _molecular_distance_edge_values(
         for atomic_num, a, b in _MOLECULAR_DISTANCE_EDGE_FEATURES
     ]
     return np.asarray(values, dtype=np.float32)
+
+
+def _molecular_id_adjacency_list(mol: Mol) -> list[list[tuple[int, int]]]:
+    adjacency: list[list[tuple[int, int]]] = [[] for _ in range(mol.GetNumAtoms())]
+    for bond in mol.GetBonds():
+        begin_atom = bond.GetBeginAtom()
+        end_atom = bond.GetEndAtom()
+        begin_idx = begin_atom.GetIdx()
+        end_idx = end_atom.GetIdx()
+        weight = begin_atom.GetDegree() * end_atom.GetDegree()
+        adjacency[begin_idx].append((end_idx, weight))
+        adjacency[end_idx].append((begin_idx, weight))
+    return adjacency
+
+
+def _molecular_atomic_id(start: int, adjacency: list[list[tuple[int, int]]]) -> float:
+    path_sum = 0.0
+    visited = {start}
+
+    def dfs(atom_idx: int, cumulative_weight: int) -> None:
+        nonlocal path_sum
+        for neighbor_idx, edge_weight in adjacency[atom_idx]:
+            if neighbor_idx in visited:
+                continue
+            visited.add(neighbor_idx)
+            next_weight = cumulative_weight * edge_weight
+            path_sum += 1.0 / sqrt(next_weight)
+            if next_weight < _MOLECULAR_ID_WEIGHT_LIMIT:
+                dfs(neighbor_idx, next_weight)
+            visited.remove(neighbor_idx)
+
+    dfs(start, 1)
+    return 1.0 + path_sum / 2.0
+
+
+def _molecular_id_values(mol: Mol, n_frags: int) -> np.ndarray:
+    n_atoms = mol.GetNumAtoms()
+    if n_atoms == 0 or n_frags > 1:
+        return np.full(len(MOLECULAR_ID_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    atom_nums = np.fromiter(
+        (atom.GetAtomicNum() for atom in mol.GetAtoms()),
+        dtype=np.int32,
+        count=n_atoms,
+    )
+    adjacency = _molecular_id_adjacency_list(mol)
+    atomic_ids = np.asarray(
+        [_molecular_atomic_id(i, adjacency) for i in range(n_atoms)]
+    )
+
+    total = np.sum(atomic_ids)
+    hetero = np.sum(atomic_ids[(atom_nums != 1) & (atom_nums != 6)])
+    carbon = np.sum(atomic_ids[atom_nums == 6])
+    nitrogen = np.sum(atomic_ids[atom_nums == 7])
+    oxygen = np.sum(atomic_ids[atom_nums == 8])
+    halogen = np.sum(atomic_ids[np.isin(atom_nums, list(_MOLECULAR_ID_HALOGENS))])
+
+    return np.asarray(
+        [
+            total,
+            total / n_atoms,
+            hetero,
+            hetero / n_atoms,
+            carbon,
+            carbon / n_atoms,
+            nitrogen,
+            nitrogen / n_atoms,
+            oxygen,
+            oxygen / n_atoms,
+            halogen,
+            halogen / n_atoms,
+        ],
+        dtype=np.float32,
+    )
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -2124,6 +2231,7 @@ class MordredMolCache:
     logs_values: np.ndarray
     mcgowan_volume_values: np.ndarray
     molecular_distance_edge_values: np.ndarray
+    molecular_id_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2189,6 +2297,7 @@ class MordredMolCache:
             molecular_distance_edge_values=_molecular_distance_edge_values(
                 mol_regular, distance_matrix_regular, adjacency_matrix_regular
             ),
+            molecular_id_values=_molecular_id_values(mol_regular, n_frags),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
