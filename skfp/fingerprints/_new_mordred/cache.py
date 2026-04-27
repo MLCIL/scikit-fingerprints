@@ -4,7 +4,7 @@ Per-molecule dependency cache for New Mordred descriptors.
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from time import monotonic
@@ -275,7 +275,9 @@ EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES = [
     "ETA_psi_1", "ETA_dPsi_A", "ETA_dPsi_B",
 ]
 FRAGMENT_COMPLEXITY_FEATURE_NAMES = ["fragCpx"]
+FRAMEWORK_FEATURE_NAMES = ["fMF"]
 _CARBON = Atom(6)
+_FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
 
@@ -365,6 +367,9 @@ def _distance_matrix_values(
 def _eccentric_connectivity_index_values(
     distance_matrix: DistanceMatrix, adjacency_matrix: AdjacencyMatrix
 ) -> np.ndarray:
+    if distance_matrix.matrix.size == 0:
+        return np.asarray([np.nan], dtype=np.float32)
+
     eccentricity = distance_matrix.matrix.max(axis=0)
     vertex_degree = adjacency_matrix.degree
     value = int((eccentricity.astype("int") * vertex_degree).sum())
@@ -659,6 +664,56 @@ def _fragment_complexity_values(mol: Mol) -> np.ndarray:
     n_bonds = mol.GetNumBonds()
     n_hetero = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() != 6)
     value = abs(n_bonds**2 - n_atoms**2 + n_atoms) + n_hetero / 100
+    return np.asarray([value], dtype=np.float32)
+
+
+def _framework_shortest_path(
+    graph: dict[_FrameworkNode, list[_FrameworkNode]],
+    source: _FrameworkNode,
+    target: _FrameworkNode,
+) -> list[_FrameworkNode]:
+    queue = deque([(source, [source])])
+    visited = {source}
+
+    while queue:
+        node, path = queue.popleft()
+        if node == target:
+            return path
+        for neighbor in graph.get(node, []):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, [*path, neighbor]))
+    return []
+
+
+def _framework_values(mol: Mol) -> np.ndarray:
+    n_atoms = mol.GetNumAtoms()
+    if n_atoms == 0:
+        return np.asarray([np.nan], dtype=np.float32)
+
+    rings = [frozenset(ring) for ring in Chem.GetSymmSSSR(mol)]
+    ring_by_atom = {
+        atom_idx: ("R", ring_idx)
+        for ring_idx, ring in enumerate(rings)
+        for atom_idx in ring
+    }
+    ring_nodes = list(set(ring_by_atom.values()))
+
+    graph: dict[_FrameworkNode, list[_FrameworkNode]] = {}
+    for bond in mol.GetBonds():
+        begin = ring_by_atom.get(bond.GetBeginAtomIdx(), ("A", bond.GetBeginAtomIdx()))
+        end = ring_by_atom.get(bond.GetEndAtomIdx(), ("A", bond.GetEndAtomIdx()))
+        graph.setdefault(begin, []).append(end)
+        graph.setdefault(end, []).append(begin)
+
+    linkers: set[int] = set()
+    for i, source in enumerate(ring_nodes):
+        for target in ring_nodes[i + 1 :]:
+            path = _framework_shortest_path(graph, source, target)
+            linkers.update(atom_idx for node_type, atom_idx in path if node_type == "A")
+
+    ring_atoms = {atom_idx for ring in rings for atom_idx in ring}
+    value = (len(linkers) + len(ring_atoms)) / n_atoms
     return np.asarray([value], dtype=np.float32)
 
 
@@ -1497,6 +1552,7 @@ class MordredMolCache:
     estate_values: np.ndarray
     extended_topochemical_atom_values: np.ndarray
     fragment_complexity_values: np.ndarray
+    framework_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1549,6 +1605,7 @@ class MordredMolCache:
                 mol_kekulized, n_frags
             ),
             fragment_complexity_values=_fragment_complexity_values(mol_regular),
+            framework_values=_framework_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
