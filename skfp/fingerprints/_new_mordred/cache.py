@@ -515,6 +515,30 @@ PATH_COUNT_FEATURE_NAMES = [
 ]
 
 POLARIZABILITY_FEATURE_NAMES = ["apol", "bpol"]
+
+TOPOLOGICAL_CHARGE_FEATURE_NAMES = [
+    "GGI1",
+    "GGI2",
+    "GGI3",
+    "GGI4",
+    "GGI5",
+    "GGI6",
+    "GGI7",
+    "GGI8",
+    "GGI9",
+    "GGI10",
+    "JGI1",
+    "JGI2",
+    "JGI3",
+    "JGI4",
+    "JGI5",
+    "JGI6",
+    "JGI7",
+    "JGI8",
+    "JGI9",
+    "JGI10",
+    "JGT10",
+]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1524,6 +1548,62 @@ def _polarizability_values(mol: Mol) -> np.ndarray:
     return np.asarray([apol, bpol], dtype=np.float32)
 
 
+def _topological_charge_term_matrix(
+    adjacency_matrix: np.ndarray, distance_matrix: np.ndarray
+) -> np.ndarray:
+    squared_distance_matrix = distance_matrix.copy()
+    squared_distance_matrix[squared_distance_matrix != 0] **= -2
+    np.fill_diagonal(squared_distance_matrix, 0)
+
+    matrix = adjacency_matrix.dot(squared_distance_matrix)
+    return matrix - matrix.T
+
+
+def _topological_charge_mean_sum(
+    charge_term_matrix: np.ndarray, lower_distances: np.ndarray, selected: np.ndarray
+) -> np.floating:
+    selected_distances = lower_distances[selected]
+    selected_charge_terms = charge_term_matrix[selected]
+
+    counts = np.empty_like(selected_distances)
+    for distance in np.unique(selected_distances):
+        counts[selected_distances == distance] = np.count_nonzero(
+            selected_distances == distance
+        )
+
+    return np.abs(selected_charge_terms / counts).sum()
+
+
+def _topological_charge_values(
+    distance_matrix: DistanceMatrix, adjacency_matrix: AdjacencyMatrix
+) -> np.ndarray:
+    adjacency = adjacency_matrix.order()
+    distances = distance_matrix.matrix
+    charge_term_matrix = _topological_charge_term_matrix(adjacency, distances)
+
+    lower_distances = distances * np.tri(*distances.shape)
+    lower_distances[lower_distances == 0] = np.inf
+
+    values: list[float] = []
+
+    for order in range(1, 11):
+        selected = lower_distances == order
+        values.append(np.abs(charge_term_matrix[selected]).sum())
+
+    for order in range(1, 11):
+        selected = lower_distances == order
+        values.append(
+            _topological_charge_mean_sum(charge_term_matrix, lower_distances, selected)
+        )
+
+    selected = lower_distances <= 10
+    values.append(
+        _topological_charge_mean_sum(charge_term_matrix, lower_distances, selected)
+    )
+
+    return np.asarray(values, dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2411,6 +2491,7 @@ class MordredMolCache:
     molecular_id_values: np.ndarray
     path_count_values: np.ndarray
     polarizability_values: np.ndarray
+    topological_charge_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2480,6 +2561,9 @@ class MordredMolCache:
             molecular_id_values=_molecular_id_values(mol_regular, n_frags),
             path_count_values=_path_count_values(mol_regular),
             polarizability_values=_polarizability_values(mol_regular),
+            topological_charge_values=_topological_charge_values(
+                distance_matrix_regular, adjacency_matrix_regular
+            ),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
