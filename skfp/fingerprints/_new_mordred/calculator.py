@@ -24,6 +24,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     carbon_types,
     chi,
     constitutional,
+    cpsa,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -74,6 +75,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         bond_count.calc(cache),
         chi.calc(cache),
         constitutional.calc(cache),
+        cpsa.calc_2d(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(
@@ -96,6 +98,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             raise RuntimeError("3D Mordred cache was not initialized.")
 
         descriptors_3d: list = [
+            cpsa.calc_3d(cache),
             rdkit_descriptors.calc_3d(mol_with_hydrogens),
         ]
 

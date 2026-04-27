@@ -24,6 +24,7 @@ NO_EXPLICIT_H_CONSTITUTIONAL_FEATURES = [
     "Mp",
     "Mi",
 ]
+NO_EXPLICIT_H_CPSA_FEATURES = ["RNCG", "RPCG"]
 
 
 @pytest.fixture(autouse=True)
@@ -155,15 +156,17 @@ def _parity_mask(X_new, X_old, feature_names):
     """
     Create the old-vs-new Mordred parity mask.
 
-    New Mordred BondCount and Constitutional descriptors intentionally keep 2D
-    molecules hydrogen-suppressed, while default Mordred adds explicit
-    hydrogens for nBonds/nBondsS/nBondsKS and the Constitutional descriptors
-    SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/Mpe/Mare/Mp/Mi.
+    New Mordred BondCount, Constitutional, and charge-only CPSA descriptors
+    intentionally keep 2D molecules hydrogen-suppressed, while default Mordred
+    adds explicit hydrogens for nBonds/nBondsS/nBondsKS, the Constitutional
+    descriptors SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/Mpe/Mare/Mp/Mi, and
+    CPSA RNCG/RPCG.
     """
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
     for name in [
         *NO_EXPLICIT_H_BOND_COUNT_FEATURES,
         *NO_EXPLICIT_H_CONSTITUTIONAL_FEATURES,
+        *NO_EXPLICIT_H_CPSA_FEATURES,
     ]:
         mask[:, feature_names.tolist().index(name)] = False
 

@@ -13,6 +13,7 @@ from rdkit import Chem
 from rdkit.Chem import GetMolFrags, Mol, rdPartialCharges
 from rdkit.Chem.rdchem import Atom, Bond, BondType
 from scipy.sparse.csgraph import floyd_warshall
+from scipy.spatial.distance import cdist
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_allred_rocow_en,
@@ -33,6 +34,7 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
 )
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.periodic_table import MORDRED_VDW_RADII
 
 ADJACENCY_MATRIX_FEATURE_NAMES = [
     "SpAbs_A",
@@ -152,7 +154,57 @@ CONSTITUTIONAL_FEATURE_NAMES = [
     *[f"S{prop}" for prop in CONSTITUTIONAL_PROPERTIES],
     *[f"M{prop}" for prop in CONSTITUTIONAL_PROPERTIES],
 ]
+CPSA_FEATURE_NAMES = [
+    "PNSA1",
+    "PNSA2",
+    "PNSA3",
+    "PNSA4",
+    "PNSA5",
+    "PPSA1",
+    "PPSA2",
+    "PPSA3",
+    "PPSA4",
+    "PPSA5",
+    "DPSA1",
+    "DPSA2",
+    "DPSA3",
+    "DPSA4",
+    "DPSA5",
+    "FNSA1",
+    "FNSA2",
+    "FNSA3",
+    "FNSA4",
+    "FNSA5",
+    "FPSA1",
+    "FPSA2",
+    "FPSA3",
+    "FPSA4",
+    "FPSA5",
+    "WNSA1",
+    "WNSA2",
+    "WNSA3",
+    "WNSA4",
+    "WNSA5",
+    "WPSA1",
+    "WPSA2",
+    "WPSA3",
+    "WPSA4",
+    "WPSA5",
+    "RNCG",
+    "RPCG",
+    "RNCS",
+    "RPCS",
+    "TASA",
+    "TPSA",
+    "RASA",
+    "RPSA",
+]
+CPSA_FEATURE_NAMES_2D = ["RNCG", "RPCG"]
+CPSA_FEATURE_NAMES_3D = [
+    name for name in CPSA_FEATURE_NAMES if name not in CPSA_FEATURE_NAMES_2D
+]
 _CARBON = Atom(6)
+_SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
 
 def _get_atomic_number(atom: Atom) -> int:
@@ -558,6 +610,275 @@ def _constitutional_values(mol: Mol) -> np.ndarray:
     return np.asarray([*sums, *means], dtype=np.float32)
 
 
+class _SphereMesh:
+    def __init__(self, level: int = 5):
+        golden_ratio = (1.0 + np.sqrt(5.0)) / 2.0
+        self.vertices = np.asarray(
+            [
+                (-1, golden_ratio, 0),
+                (1, golden_ratio, 0),
+                (-1, -golden_ratio, 0),
+                (1, -golden_ratio, 0),
+                (0, -1, golden_ratio),
+                (0, 1, golden_ratio),
+                (0, -1, -golden_ratio),
+                (0, 1, -golden_ratio),
+                (golden_ratio, 0, -1),
+                (golden_ratio, 0, 1),
+                (-golden_ratio, 0, -1),
+                (-golden_ratio, 0, 1),
+            ],
+            dtype=float,
+        )
+        self.faces = np.asarray(
+            [
+                (0, 11, 5),
+                (0, 5, 1),
+                (0, 1, 7),
+                (0, 7, 10),
+                (0, 10, 11),
+                (1, 5, 9),
+                (5, 11, 4),
+                (11, 10, 2),
+                (10, 7, 6),
+                (7, 1, 8),
+                (3, 9, 4),
+                (3, 4, 2),
+                (3, 2, 6),
+                (3, 6, 8),
+                (3, 8, 9),
+                (4, 9, 5),
+                (2, 4, 11),
+                (6, 2, 10),
+                (8, 6, 7),
+                (9, 8, 1),
+            ],
+            dtype=int,
+        )
+
+        self._normalize(0)
+        self._level = 1
+        self._subdivide_to(level)
+
+    def _normalize(self, begin: int) -> None:
+        self.vertices[begin:] /= np.sqrt((self.vertices[begin:] ** 2).sum(axis=1))[
+            :, np.newaxis
+        ]
+
+    def _subdivide(self) -> None:
+        self._level += 1
+
+        n_vertices = len(self.vertices)
+        n_faces = len(self.faces)
+
+        a = self.faces[:, 0]
+        b = self.faces[:, 1]
+        c = self.faces[:, 2]
+
+        av = self.vertices[a]
+        bv = self.vertices[b]
+        cv = self.vertices[c]
+
+        self.vertices = np.r_[self.vertices, av + bv, bv + cv, av + cv]
+        self._normalize(n_vertices)
+
+        ab = np.arange(len(self.faces)) + n_vertices
+        bc = ab + n_faces
+        ac = ab + 2 * n_faces
+
+        self.faces = (
+            np.concatenate([a, b, c, ab, ab, ab, ac, ac, ac, bc, bc, bc])
+            .reshape(3, -1)
+            .T
+        )
+
+    def _subdivide_to(self, level: int) -> None:
+        for _ in range(level - self._level):
+            self._subdivide()
+
+
+def _atomic_surface_areas(
+    mol: Mol, conformer: int = -1, solvent_radius: float = 1.4, level: int = 5
+) -> np.ndarray:
+    radii = np.asarray(
+        [
+            MORDRED_VDW_RADII[atom.GetAtomicNum()] + solvent_radius
+            for atom in mol.GetAtoms()
+        ],
+        dtype=float,
+    )
+    radii_squared = radii**2
+
+    conf = mol.GetConformer(conformer)
+    coords = np.asarray(
+        [list(conf.GetAtomPosition(i)) for i in range(mol.GetNumAtoms())],
+        dtype=float,
+    )
+
+    cutoff_distances = radii[:, np.newaxis] + radii
+    distances = cdist(coords, coords)
+    if level not in _SPHERE_MESH_CACHE:
+        _SPHERE_MESH_CACHE[level] = _SphereMesh(level).vertices.T
+    mesh = _SPHERE_MESH_CACHE[level]
+
+    surface_areas: list[float] = []
+    for atom_idx, radius in enumerate(radii):
+        surface_area = 4.0 * np.pi * radii_squared[atom_idx]
+        neighbor_idxs = np.flatnonzero(
+            cutoff_distances[atom_idx] >= distances[atom_idx]
+        )
+        neighbor_idxs = [idx for idx in neighbor_idxs if idx != atom_idx]
+        neighbor_idxs.sort(key=lambda idx: distances[atom_idx, idx])
+
+        if not neighbor_idxs:
+            surface_areas.append(float(surface_area))
+            continue
+
+        sphere = mesh * radius + coords[atom_idx, np.newaxis].T
+        n_points = sphere.shape[1]
+
+        for neighbor_idx in neighbor_idxs:
+            neighbor_coords = coords[neighbor_idx, np.newaxis].T
+            squared_distances = (sphere - neighbor_coords) ** 2
+            mask = (
+                squared_distances[0] + squared_distances[1] + squared_distances[2]
+            ) > radii_squared[neighbor_idx]
+            sphere = np.compress(mask, sphere, axis=1)
+
+        surface_areas.append(float(surface_area * sphere.shape[1] / n_points))
+
+    return np.asarray(surface_areas, dtype=float)
+
+
+def _gasteiger_charges(mol: Mol) -> np.ndarray:
+    return np.asarray(
+        [
+            atom.GetDoubleProp("_GasteigerCharge")
+            + (
+                atom.GetDoubleProp("_GasteigerHCharge")
+                if atom.HasProp("_GasteigerHCharge")
+                else 0.0
+            )
+            for atom in mol.GetAtoms()
+        ],
+        dtype=float,
+    )
+
+
+def _relative_charge(charges: np.ndarray, mask: np.ndarray) -> float:
+    matching_charges = charges[mask]
+    if len(matching_charges) == 0:
+        return 0.0
+
+    qmax = matching_charges[np.argmax(np.abs(matching_charges))]
+    return float(qmax / np.sum(matching_charges))
+
+
+def _partial_surface_areas(
+    surface_areas: np.ndarray, charges: np.ndarray, mask: np.ndarray
+) -> np.ndarray:
+    charge_sum = np.sum(charges[mask])
+    mask_count = np.sum(mask)
+    n_atoms = len(charges)
+
+    values = [
+        np.sum(surface_areas[mask]),
+        np.sum(charge_sum * surface_areas[mask]),
+        np.sum(charges[mask] * surface_areas[mask]),
+        np.sum((charge_sum / n_atoms) * surface_areas[mask]),
+        np.nan
+        if mask_count == 0
+        else np.sum((charge_sum / mask_count) * surface_areas[mask]),
+    ]
+    return np.asarray(values, dtype=float)
+
+
+def _relative_charge_surface_area(
+    surface_areas: np.ndarray,
+    charges: np.ndarray,
+    mask: np.ndarray,
+    relative_charge: float,
+) -> float:
+    matching_charges = charges[mask]
+    if len(matching_charges) == 0:
+        return 0.0
+
+    surface_area_max = surface_areas[mask][np.argmax(np.abs(matching_charges))]
+    return float(surface_area_max / relative_charge)
+
+
+def _cpsa_2d_values(mol: Mol) -> np.ndarray:
+    charges = _gasteiger_charges(mol)
+    negative_mask = charges < 0.0
+    positive_mask = charges > 0.0
+
+    values = [
+        _relative_charge(charges, negative_mask),
+        _relative_charge(charges, positive_mask),
+    ]
+    return np.asarray(values, dtype=np.float32)
+
+
+def _cpsa_3d_values(mol: Mol | None) -> np.ndarray:
+    if mol is None:
+        return np.full(len(CPSA_FEATURE_NAMES_3D), np.nan, dtype=np.float32)
+
+    rdPartialCharges.ComputeGasteigerCharges(mol)
+    charges = _gasteiger_charges(mol)
+    try:
+        conformer = mol.GetConformer()
+    except ValueError:
+        return np.full(len(CPSA_FEATURE_NAMES_3D), np.nan, dtype=np.float32)
+    if not conformer.Is3D():
+        return np.full(len(CPSA_FEATURE_NAMES_3D), np.nan, dtype=np.float32)
+
+    try:
+        surface_areas = _atomic_surface_areas(mol)
+    except ValueError:
+        return np.full(len(CPSA_FEATURE_NAMES_3D), np.nan, dtype=np.float32)
+
+    total_surface_area = np.sum(surface_areas)
+    negative_mask = charges < 0.0
+    positive_mask = charges > 0.0
+
+    pnsa = _partial_surface_areas(surface_areas, charges, negative_mask)
+    ppsa = _partial_surface_areas(surface_areas, charges, positive_mask)
+    dpsa = ppsa - pnsa
+    fnsa = pnsa / total_surface_area
+    fpsa = ppsa / total_surface_area
+    wnsa = pnsa * total_surface_area / 1000.0
+    wpsa = ppsa * total_surface_area / 1000.0
+
+    rncg = _relative_charge(charges, negative_mask)
+    rpcg = _relative_charge(charges, positive_mask)
+    rncs = _relative_charge_surface_area(surface_areas, charges, negative_mask, rncg)
+    rpcs = _relative_charge_surface_area(surface_areas, charges, positive_mask, rpcg)
+
+    hydrophobic_mask = np.abs(charges) < 0.2
+    polar_mask = np.abs(charges) >= 0.2
+    tasa = np.sum(surface_areas[hydrophobic_mask])
+    tpsa = np.sum(surface_areas[polar_mask])
+    rasa = tasa / total_surface_area
+    rpsa = tpsa / total_surface_area
+
+    values = [
+        *pnsa,
+        *ppsa,
+        *dpsa,
+        *fnsa,
+        *fpsa,
+        *wnsa,
+        *wpsa,
+        rncs,
+        rpcs,
+        tasa,
+        tpsa,
+        rasa,
+        rpsa,
+    ]
+    return np.asarray(values, dtype=np.float32)
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -582,6 +903,8 @@ class MordredMolCache:
     bond_count_values: np.ndarray
     chi_values: np.ndarray
     constitutional_values: np.ndarray
+    cpsa_2d_values: np.ndarray
+    cpsa_3d_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
@@ -620,5 +943,7 @@ class MordredMolCache:
             bond_count_values=_bond_count_values(mol_regular, mol_kekulized),
             chi_values=_chi_values(mol_regular),
             constitutional_values=_constitutional_values(mol_regular),
+            cpsa_2d_values=_cpsa_2d_values(mol_regular),
+            cpsa_3d_values=_cpsa_3d_values(mol_with_hydrogens),
             mol_with_hydrogens=mol_with_hydrogens,
         )
