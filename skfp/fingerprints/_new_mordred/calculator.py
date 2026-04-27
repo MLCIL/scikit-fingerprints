@@ -33,6 +33,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     fragment_complexity,
     framework,
     geometrical_index,
+    gravitational_index,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -115,6 +116,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         descriptors_3d: list = [
             cpsa.calc_3d(cache),
             geometrical_index.calc(cache),
+            gravitational_index.calc(cache),
             rdkit_descriptors.calc_3d(mol_with_hydrogens),
         ]
 

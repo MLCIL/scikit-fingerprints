@@ -282,6 +282,7 @@ GEOMETRICAL_INDEX_FEATURE_NAMES = [
     "GeomShapeIndex",
     "GeomPetitjeanIndex",
 ]
+GRAVITATIONAL_INDEX_FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -743,6 +744,64 @@ def _geometrical_index_values(mol: Mol | None) -> np.ndarray:
     petitjean_index = np.nan if diameter == 0.0 else (diameter - radius) / diameter
     return np.asarray(
         [diameter, radius, shape_index, petitjean_index], dtype=np.float32
+    )
+
+
+def _has_3d_conformer(mol: Mol | None) -> bool:
+    if mol is None:
+        return False
+    try:
+        conformer = mol.GetConformer()
+    except ValueError:
+        return False
+    return conformer.Is3D()
+
+
+def _gravitational_index_value(
+    mass_products: np.ndarray,
+    inverse_squared_distances: np.ndarray,
+    adjacency: np.ndarray | None = None,
+) -> float:
+    values = mass_products * inverse_squared_distances
+    if adjacency is not None:
+        values = values * adjacency
+    return float(0.5 * np.sum(values))
+
+
+def _gravitational_pair_values(mol: Mol) -> list[float]:
+    masses = np.asarray([atom.GetMass() for atom in mol.GetAtoms()], dtype=float)
+    mass_products = masses[:, np.newaxis] * masses
+    np.fill_diagonal(mass_products, 0.0)
+
+    distances = Get3DDistanceMatrix(mol).astype(float)
+    if np.any(distances[~np.eye(len(distances), dtype=bool)] == 0.0):
+        return [np.nan, np.nan]
+    np.fill_diagonal(distances, 1.0)
+
+    inverse_squared_distances = distances**-2
+    adjacency = Chem.GetAdjacencyMatrix(mol, useBO=False, force=True)
+    return [
+        _gravitational_index_value(mass_products, inverse_squared_distances),
+        _gravitational_index_value(mass_products, inverse_squared_distances, adjacency),
+    ]
+
+
+def _gravitational_index_values(
+    mol_regular: Mol, mol_with_hydrogens: Mol | None
+) -> np.ndarray:
+    heavy_values = (
+        _gravitational_pair_values(mol_regular)
+        if _has_3d_conformer(mol_regular)
+        else [np.nan, np.nan]
+    )
+    hydrogen_values = (
+        _gravitational_pair_values(mol_with_hydrogens)
+        if _has_3d_conformer(mol_with_hydrogens)
+        else [np.nan, np.nan]
+    )
+    return np.asarray(
+        [heavy_values[0], hydrogen_values[0], heavy_values[1], hydrogen_values[1]],
+        dtype=np.float32,
     )
 
 
@@ -1583,6 +1642,7 @@ class MordredMolCache:
     fragment_complexity_values: np.ndarray
     framework_values: np.ndarray
     geometrical_index_values: np.ndarray
+    gravitational_index_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1637,6 +1697,9 @@ class MordredMolCache:
             fragment_complexity_values=_fragment_complexity_values(mol_regular),
             framework_values=_framework_values(mol_regular),
             geometrical_index_values=_geometrical_index_values(mol_with_hydrogens),
+            gravitational_index_values=_gravitational_index_values(
+                mol_regular, mol_with_hydrogens
+            ),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
