@@ -7,6 +7,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     adjacency_matrix,
     atom_count,
     autocorrelation,
+    carbon_types,
     morse,
     rdkit_descriptors,
     walk_count,
@@ -54,6 +55,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
+    mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
@@ -77,6 +79,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             distance_matrix_regular,
         ),
         atom_count.calc(mol_hydrogens),
+        carbon_types.calc(mol_kekulized),
     ]
 
     for values, feature_names in descriptors_2d:
