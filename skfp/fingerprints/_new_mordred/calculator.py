@@ -5,6 +5,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     adjacency_matrix,
+    atom_count,
     autocorrelation,
     morse,
     rdkit_descriptors,
@@ -75,6 +76,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             mol_hydrogens,
             distance_matrix_regular,
         ),
+        atom_count.calc(mol_hydrogens),
     ]
 
     for values, feature_names in descriptors_2d:
