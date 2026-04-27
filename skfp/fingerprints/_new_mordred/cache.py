@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol, rdPartialCharges
 from rdkit.Chem.rdchem import Atom
+from scipy.sparse.csgraph import floyd_warshall
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_allred_rocow_en,
@@ -61,6 +62,23 @@ AUTOCORRELATION_ATS_PROPERTIES = [
     "i",
 ]
 AUTOCORRELATION_ALL_PROPERTIES = ["c", *AUTOCORRELATION_ATS_PROPERTIES]
+BARYSZ_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
+BARYSZ_ATTRIBUTES = [
+    "SpAbs",
+    "SpMax",
+    "SpDiam",
+    "SpAD",
+    "SpMAD",
+    "LogEE",
+    "SM1",
+    "VE1",
+    "VE2",
+    "VE3",
+    "VR1",
+    "VR2",
+    "VR3",
+]
+_CARBON = Atom(6)
 
 
 def _get_atomic_number(atom: Atom) -> int:
@@ -123,6 +141,7 @@ def _aromatic_values(mol: Mol) -> np.ndarray:
         dtype=np.float32,
     )
 
+
 def _autocorrelation_property_vector(mol: Mol, prop: str) -> np.ndarray:
     return np.asarray(
         [_AUTOCORRELATION_PROPERTY_FUNCS[prop](atom) for atom in mol.GetAtoms()]
@@ -156,6 +175,84 @@ def _centered_weights(weights: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return {prop: values - values.mean() for prop, values in weights.items()}
 
 
+def _property_values(mol: Mol, prop: str) -> np.ndarray:
+    prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
+    return np.asarray([prop_func(atom) for atom in mol.GetAtoms()], dtype=float)
+
+
+def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
+    property_values = _property_values(mol, prop)
+    if np.any(~np.isfinite(property_values)):
+        return None
+
+    prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
+    carbon_value = prop_func(_CARBON)
+    n_atoms = mol.GetNumAtoms()
+
+    matrix = np.full((n_atoms, n_atoms), np.inf, dtype=float)
+    np.fill_diagonal(matrix, 0.0)
+
+    for bond in mol.GetBonds():
+        i = bond.GetBeginAtomIdx()
+        j = bond.GetEndAtomIdx()
+        bond_order = bond.GetBondTypeAsDouble()
+        denominator = property_values[i] * property_values[j] * bond_order
+        with np.errstate(divide="ignore", invalid="ignore"):
+            weight = float(np.divide(carbon_value * carbon_value, denominator))
+        if not np.isfinite(weight):
+            return None
+
+        matrix[i, j] = weight
+        matrix[j, i] = weight
+
+    matrix = floyd_warshall(matrix, directed=False)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        diagonal = 1.0 - carbon_value / property_values
+    if np.any(~np.isfinite(diagonal)):
+        return None
+
+    np.fill_diagonal(matrix, diagonal)
+    return matrix
+
+
+def _barysz_matrix_attribute_values(
+    mol: Mol, matrix: np.ndarray, n_frags: int
+) -> list[float]:
+    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
+    return [
+        attrs.graph_energy,
+        attrs.leading_eigenvalue,
+        attrs.spectral_diameter,
+        attrs.sp_ad,
+        attrs.sp_mad,
+        attrs.log_ee,
+        attrs.sm1,
+        attrs.ve1,
+        attrs.ve2,
+        attrs.ve3,
+        attrs.vr1,
+        attrs.vr2,
+        attrs.vr3,
+    ]
+
+
+def _barysz_values(mol: Mol, n_frags: int) -> np.ndarray:
+    if n_frags != 1:
+        return np.full(
+            len(BARYSZ_PROPERTIES) * len(BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
+        )
+
+    values: list[float] = []
+    for prop in BARYSZ_PROPERTIES:
+        matrix = _barysz_matrix(mol, prop)
+        if matrix is None:
+            values.extend([np.nan] * len(BARYSZ_ATTRIBUTES))
+        else:
+            values.extend(_barysz_matrix_attribute_values(mol, matrix, n_frags))
+
+    return np.asarray(values, dtype=np.float32)
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -175,11 +272,16 @@ class MordredMolCache:
     autocorrelation_gsums: list[float]
     autocorrelation_weights: dict[str, np.ndarray]
     autocorrelation_centered_weights: dict[str, np.ndarray]
+    barysz_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
     def from_mol(cls, mol: Mol, use_3D: bool) -> MordredMolCache:
         mol_regular = preprocess_mol(mol)
+        mol_kekulized = preprocess_mol(mol, kekulize=True)
+        mol_with_hydrogens = (
+            preprocess_mol(mol, explicit_hydrogens=True) if use_3D else None
+        )
         n_frags = len(GetMolFrags(mol))
         distance_matrix_regular = DistanceMatrix(mol_regular)
         adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
@@ -191,7 +293,7 @@ class MordredMolCache:
             use_3d=use_3D,
             n_frags=n_frags,
             mol_regular=mol_regular,
-            mol_kekulized=preprocess_mol(mol, kekulize=True),
+            mol_kekulized=mol_kekulized,
             distance_matrix_regular=distance_matrix_regular,
             adjacency_matrix_regular=adjacency_matrix_regular,
             adjacency_matrix_values=_adjacency_matrix_values(
@@ -204,7 +306,6 @@ class MordredMolCache:
             autocorrelation_centered_weights=_centered_weights(
                 autocorrelation_weights
             ),
-            mol_with_hydrogens=(
-                preprocess_mol(mol, explicit_hydrogens=True) if use_3D else None
-            ),
+            barysz_values=_barysz_values(mol_regular, n_frags),
+            mol_with_hydrogens=mol_with_hydrogens,
         )

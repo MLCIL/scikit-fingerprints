@@ -24,6 +24,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert len(cache.autocorrelation_gsums) == 9
     assert cache.autocorrelation_weights["c"].shape == (3,)
     assert cache.autocorrelation_centered_weights["c"].shape == (3,)
+    assert cache.barysz_values.shape == (104,)
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():
