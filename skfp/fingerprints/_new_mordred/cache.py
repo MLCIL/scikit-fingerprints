@@ -432,6 +432,33 @@ _LOGS_PATTERN_CONTRIBUTIONS = [
     for smarts, contribution in _LOGS_SMARTS_CONTRIBUTIONS
 ]
 MCGOWAN_VOLUME_FEATURE_NAMES = ["VMcGowan"]
+MOLECULAR_DISTANCE_EDGE_FEATURE_NAMES = [
+    "MDEC-11",
+    "MDEC-12",
+    "MDEC-13",
+    "MDEC-14",
+    "MDEC-22",
+    "MDEC-23",
+    "MDEC-24",
+    "MDEC-33",
+    "MDEC-34",
+    "MDEC-44",
+    "MDEO-11",
+    "MDEO-12",
+    "MDEO-22",
+    "MDEN-11",
+    "MDEN-12",
+    "MDEN-13",
+    "MDEN-22",
+    "MDEN-23",
+    "MDEN-33",
+]
+_MOLECULAR_DISTANCE_EDGE_FEATURES = [
+    (6, 1, 1), (6, 1, 2), (6, 1, 3), (6, 1, 4), (6, 2, 2),
+    (6, 2, 3), (6, 2, 4), (6, 3, 3), (6, 3, 4), (6, 4, 4),
+    (8, 1, 1), (8, 1, 2), (8, 2, 2), (7, 1, 1), (7, 1, 2),
+    (7, 1, 3), (7, 2, 2), (7, 2, 3), (7, 3, 3),
+]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1204,6 +1231,53 @@ def _mcgowan_volume_values(mol: Mol) -> np.ndarray:
         volume = np.nan
     value = volume - 6.56 * mol.GetNumBonds()
     return np.asarray([value], dtype=np.float32)
+
+
+def _molecular_distance_edge_value(
+    atom_nums: np.ndarray,
+    distance_matrix: np.ndarray,
+    degrees: np.ndarray,
+    atomic_num: int,
+    a: int,
+    b: int,
+) -> np.float32:
+    matching_atoms = np.where(atom_nums == atomic_num)[0]
+    distances = [
+        distance_matrix[i, j]
+        for idx, i in enumerate(matching_atoms)
+        for j in matching_atoms[idx + 1 :]
+        if (degrees[i] == a and degrees[j] == b)
+        or (degrees[i] == b and degrees[j] == a)
+    ]
+    if not distances:
+        return np.float32(np.nan)
+
+    distances_arr = np.asarray(distances, dtype=np.float64)
+    n = len(distances_arr)
+    dx = np.exp(np.sum(np.log(distances_arr)) / (2 * n))
+    return np.float32(n / (dx**2))
+
+
+def _molecular_distance_edge_values(
+    mol: Mol, distance_matrix: DistanceMatrix, adjacency_matrix: AdjacencyMatrix
+) -> np.ndarray:
+    atom_nums = np.fromiter(
+        (atom.GetAtomicNum() for atom in mol.GetAtoms()),
+        dtype=np.int32,
+        count=mol.GetNumAtoms(),
+    )
+    values = [
+        _molecular_distance_edge_value(
+            atom_nums,
+            distance_matrix.matrix,
+            adjacency_matrix.degree,
+            atomic_num,
+            a,
+            b,
+        )
+        for atomic_num, a, b in _MOLECULAR_DISTANCE_EDGE_FEATURES
+    ]
+    return np.asarray(values, dtype=np.float32)
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -2049,6 +2123,7 @@ class MordredMolCache:
     lipinski_values: np.ndarray
     logs_values: np.ndarray
     mcgowan_volume_values: np.ndarray
+    molecular_distance_edge_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2111,6 +2186,9 @@ class MordredMolCache:
             lipinski_values=_lipinski_values(mol_regular),
             logs_values=_logs_values(mol_regular),
             mcgowan_volume_values=_mcgowan_volume_values(mol_regular),
+            molecular_distance_edge_values=_molecular_distance_edge_values(
+                mol_regular, distance_matrix_regular, adjacency_matrix_regular
+            ),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),

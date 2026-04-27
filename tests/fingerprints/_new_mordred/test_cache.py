@@ -29,6 +29,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.lipinski_values.shape == (2,)
     assert cache.logs_values.shape == (1,)
     assert cache.mcgowan_volume_values.shape == (1,)
+    assert cache.molecular_distance_edge_values.shape == (19,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9
