@@ -26,6 +26,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.autocorrelation_centered_weights["c"].shape == (3,)
     assert cache.barysz_values.shape == (104,)
     assert cache.bcut_values.shape == (24,)
+    assert cache.bond_count_values.shape == (9,)
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():

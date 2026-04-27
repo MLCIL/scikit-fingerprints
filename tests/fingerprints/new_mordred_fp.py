@@ -5,6 +5,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
 
+NO_EXPLICIT_H_BOND_COUNT_FEATURES = ["nBonds", "nBondsS", "nBondsKS"]
+
 
 @pytest.fixture(autouse=True)
 def no_explicit_hydrogen_autocorrelation(monkeypatch):
@@ -25,7 +27,11 @@ def test_new_mordred_fingerprint(smallest_smiles_list):
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old))
+    mask = _parity_mask(
+        X_new,
+        X_old,
+        new_mordred_fp.get_feature_names_out(),
+    )
 
     assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
@@ -41,10 +47,17 @@ def test_new_mordred_sparse_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(sparse=True, n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
+    X_new_dense = X_new.toarray()
+    X_old_dense = X_old.toarray()
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    # temporary mask - will be eventually removed
+    mask = _parity_mask(
+        X_new_dense,
+        X_old_dense,
+        new_mordred_fp.get_feature_names_out(),
+    )
+
+    assert_allclose(X_new_dense[mask], X_old_dense[mask], equal_nan=True)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
@@ -59,7 +72,11 @@ def test_new_mordred_3D_fingerprint(smallest_smiles_list):
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old))
+    mask = _parity_mask(
+        X_new,
+        X_old,
+        new_mordred_fp.get_feature_names_out(),
+    )
 
     assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
@@ -75,10 +92,17 @@ def test_new_mordred_3D_sparse_fingerprint(smallest_smiles_list):
     mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
+    X_new_dense = X_new.toarray()
+    X_old_dense = X_old.toarray()
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    # temporary mask - will be eventually removed
+    mask = _parity_mask(
+        X_new_dense,
+        X_old_dense,
+        new_mordred_fp.get_feature_names_out(),
+    )
+
+    assert_allclose(X_new_dense[mask], X_old_dense[mask], equal_nan=True)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
@@ -107,3 +131,18 @@ def test_new_mordred_3D_feature_names():
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
     assert_equal(feature_names_new, feature_names_old)
+
+
+def _parity_mask(X_new, X_old, feature_names):
+    """
+    Create the old-vs-new Mordred parity mask.
+
+    New Mordred BondCount descriptors intentionally keep 2D molecules
+    hydrogen-suppressed, while default Mordred adds explicit hydrogens for
+    these single-bond counts.
+    """
+    mask = ~(np.isnan(X_new) | np.isnan(X_old))
+    for name in NO_EXPLICIT_H_BOND_COUNT_FEATURES:
+        mask[:, feature_names.tolist().index(name)] = False
+
+    return mask

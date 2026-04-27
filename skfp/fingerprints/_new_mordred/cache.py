@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol, rdPartialCharges
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, Bond, BondType
 from scipy.sparse.csgraph import floyd_warshall
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
@@ -288,6 +288,54 @@ def _bcut_values(mol: Mol, n_frags: int) -> np.ndarray:
     return np.asarray(values, dtype=np.float32)
 
 
+def _is_aromatic_bond(bond: Bond) -> bool:
+    return bond.GetIsAromatic() or bond.GetBondType() == BondType.AROMATIC
+
+
+def _bond_count_values(mol_regular: Mol, mol_kekulized: Mol) -> np.ndarray:
+    bonds_regular = mol_regular.GetBonds()
+    bonds_kekulized = mol_kekulized.GetBonds()
+
+    n_bonds = mol_regular.GetNumBonds()
+    n_bonds_s = 0
+    n_bonds_d = 0
+    n_bonds_t = 0
+    n_bonds_a = 0
+    n_bonds_m = 0
+
+    for bond in bonds_regular:
+        bond_type = bond.GetBondType()
+        is_aromatic = _is_aromatic_bond(bond)
+
+        n_bonds_s += bond_type == BondType.SINGLE
+        n_bonds_d += bond_type == BondType.DOUBLE
+        n_bonds_t += bond_type == BondType.TRIPLE
+        n_bonds_a += is_aromatic
+        n_bonds_m += is_aromatic or bond_type != BondType.SINGLE
+
+    n_bonds_ks = 0
+    n_bonds_kd = 0
+    for bond in bonds_kekulized:
+        bond_type = bond.GetBondType()
+        n_bonds_ks += bond_type == BondType.SINGLE
+        n_bonds_kd += bond_type == BondType.DOUBLE
+
+    return np.asarray(
+        [
+            n_bonds,
+            n_bonds,
+            n_bonds_s,
+            n_bonds_d,
+            n_bonds_t,
+            n_bonds_a,
+            n_bonds_m,
+            n_bonds_ks,
+            n_bonds_kd,
+        ],
+        dtype=np.float32,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -309,6 +357,7 @@ class MordredMolCache:
     autocorrelation_centered_weights: dict[str, np.ndarray]
     barysz_values: np.ndarray
     bcut_values: np.ndarray
+    bond_count_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
@@ -344,5 +393,6 @@ class MordredMolCache:
             ),
             barysz_values=_barysz_values(mol_regular, n_frags),
             bcut_values=_bcut_values(mol_regular, n_frags),
+            bond_count_values=_bond_count_values(mol_regular, mol_kekulized),
             mol_with_hydrogens=mol_with_hydrogens,
         )
