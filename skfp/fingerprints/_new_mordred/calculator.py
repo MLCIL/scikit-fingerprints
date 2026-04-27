@@ -34,6 +34,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     framework,
     geometrical_index,
     gravitational_index,
+    information_content,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -92,6 +93,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         extended_topochemical_atom.calc(cache),
         fragment_complexity.calc(cache),
         framework.calc(cache),
+        information_content.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(

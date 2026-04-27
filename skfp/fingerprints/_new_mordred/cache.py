@@ -7,7 +7,9 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from itertools import groupby
 from time import monotonic
+from typing import Any
 
 import networkx as nx
 import numpy as np
@@ -242,17 +244,85 @@ DISTANCE_MATRIX_FEATURE_NAMES = [
 ]
 ECCENTRIC_CONNECTIVITY_INDEX_FEATURE_NAMES = ["ECIndex"]
 ESTATE_ATOM_TYPES = [
-    "sLi", "ssBe", "ssssBe", "ssBH", "sssB", "ssssB", "sCH3", "dCH2",
-    "ssCH2", "tCH", "dsCH", "aaCH", "sssCH", "ddC", "tsC", "dssC",
-    "aasC", "aaaC", "ssssC", "sNH3", "sNH2", "ssNH2", "dNH", "ssNH",
-    "aaNH", "tN", "sssNH", "dsN", "aaN", "sssN", "ddsN", "aasN",
-    "ssssN", "sOH", "dO", "ssO", "aaO", "sF", "sSiH3", "ssSiH2",
-    "sssSiH", "ssssSi", "sPH2", "ssPH", "sssP", "dsssP", "sssssP",
-    "sSH", "dS", "ssS", "aaS", "dssS", "ddssS", "sCl", "sGeH3",
-    "ssGeH2", "sssGeH", "ssssGe", "sAsH2", "ssAsH", "sssAs", "sssdAs",
-    "sssssAs", "sSeH", "dSe", "ssSe", "aaSe", "dssSe", "ddssSe", "sBr",
-    "sSnH3", "ssSnH2", "sssSnH", "ssssSn", "sI", "sPbH3", "ssPbH2",
-    "sssPbH", "ssssPb",
+    "sLi",
+    "ssBe",
+    "ssssBe",
+    "ssBH",
+    "sssB",
+    "ssssB",
+    "sCH3",
+    "dCH2",
+    "ssCH2",
+    "tCH",
+    "dsCH",
+    "aaCH",
+    "sssCH",
+    "ddC",
+    "tsC",
+    "dssC",
+    "aasC",
+    "aaaC",
+    "ssssC",
+    "sNH3",
+    "sNH2",
+    "ssNH2",
+    "dNH",
+    "ssNH",
+    "aaNH",
+    "tN",
+    "sssNH",
+    "dsN",
+    "aaN",
+    "sssN",
+    "ddsN",
+    "aasN",
+    "ssssN",
+    "sOH",
+    "dO",
+    "ssO",
+    "aaO",
+    "sF",
+    "sSiH3",
+    "ssSiH2",
+    "sssSiH",
+    "ssssSi",
+    "sPH2",
+    "ssPH",
+    "sssP",
+    "dsssP",
+    "sssssP",
+    "sSH",
+    "dS",
+    "ssS",
+    "aaS",
+    "dssS",
+    "ddssS",
+    "sCl",
+    "sGeH3",
+    "ssGeH2",
+    "sssGeH",
+    "ssssGe",
+    "sAsH2",
+    "ssAsH",
+    "sssAs",
+    "sssdAs",
+    "sssssAs",
+    "sSeH",
+    "dSe",
+    "ssSe",
+    "aaSe",
+    "dssSe",
+    "ddssSe",
+    "sBr",
+    "sSnH3",
+    "ssSnH2",
+    "sssSnH",
+    "ssssSn",
+    "sI",
+    "sPbH3",
+    "ssPbH2",
+    "sssPbH",
+    "ssssPb",
 ]
 ESTATE_FEATURE_NAMES = [
     f"{prefix}{atom_type}"
@@ -263,16 +333,51 @@ _ESTATE_ATOM_TYPE_TO_IDX = {
     atom_type: idx for idx, atom_type in enumerate(ESTATE_ATOM_TYPES)
 }
 EXTENDED_TOPOCHEMICAL_ATOM_FEATURE_NAMES = [
-    "ETA_alpha", "AETA_alpha", "ETA_shape_p", "ETA_shape_y", "ETA_shape_x",
-    "ETA_beta", "AETA_beta", "ETA_beta_s", "AETA_beta_s", "ETA_beta_ns",
-    "AETA_beta_ns", "ETA_beta_ns_d", "AETA_beta_ns_d", "ETA_eta", "AETA_eta",
-    "ETA_eta_L", "AETA_eta_L", "ETA_eta_R", "AETA_eta_R", "ETA_eta_RL",
-    "AETA_eta_RL", "ETA_eta_F", "AETA_eta_F", "ETA_eta_FL", "AETA_eta_FL",
-    "ETA_eta_B", "AETA_eta_B", "ETA_eta_BR", "AETA_eta_BR", "ETA_dAlpha_A",
-    "ETA_dAlpha_B", "ETA_epsilon_1", "ETA_epsilon_2", "ETA_epsilon_3",
-    "ETA_epsilon_4", "ETA_epsilon_5", "ETA_dEpsilon_A", "ETA_dEpsilon_B",
-    "ETA_dEpsilon_C", "ETA_dEpsilon_D", "ETA_dBeta", "AETA_dBeta",
-    "ETA_psi_1", "ETA_dPsi_A", "ETA_dPsi_B",
+    "ETA_alpha",
+    "AETA_alpha",
+    "ETA_shape_p",
+    "ETA_shape_y",
+    "ETA_shape_x",
+    "ETA_beta",
+    "AETA_beta",
+    "ETA_beta_s",
+    "AETA_beta_s",
+    "ETA_beta_ns",
+    "AETA_beta_ns",
+    "ETA_beta_ns_d",
+    "AETA_beta_ns_d",
+    "ETA_eta",
+    "AETA_eta",
+    "ETA_eta_L",
+    "AETA_eta_L",
+    "ETA_eta_R",
+    "AETA_eta_R",
+    "ETA_eta_RL",
+    "AETA_eta_RL",
+    "ETA_eta_F",
+    "AETA_eta_F",
+    "ETA_eta_FL",
+    "AETA_eta_FL",
+    "ETA_eta_B",
+    "AETA_eta_B",
+    "ETA_eta_BR",
+    "AETA_eta_BR",
+    "ETA_dAlpha_A",
+    "ETA_dAlpha_B",
+    "ETA_epsilon_1",
+    "ETA_epsilon_2",
+    "ETA_epsilon_3",
+    "ETA_epsilon_4",
+    "ETA_epsilon_5",
+    "ETA_dEpsilon_A",
+    "ETA_dEpsilon_B",
+    "ETA_dEpsilon_C",
+    "ETA_dEpsilon_D",
+    "ETA_dBeta",
+    "AETA_dBeta",
+    "ETA_psi_1",
+    "ETA_dPsi_A",
+    "ETA_dPsi_B",
 ]
 FRAGMENT_COMPLEXITY_FEATURE_NAMES = ["fragCpx"]
 FRAMEWORK_FEATURE_NAMES = ["fMF"]
@@ -283,6 +388,13 @@ GEOMETRICAL_INDEX_FEATURE_NAMES = [
     "GeomPetitjeanIndex",
 ]
 GRAVITATIONAL_INDEX_FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
+_INFORMATION_CONTENT_ORDERS = range(6)
+_INFORMATION_CONTENT_PREFIXES = ("IC", "TIC", "SIC", "BIC", "CIC", "MIC", "ZMIC")
+INFORMATION_CONTENT_FEATURE_NAMES = [
+    f"{prefix}{order}"
+    for prefix in _INFORMATION_CONTENT_PREFIXES
+    for order in _INFORMATION_CONTENT_ORDERS
+]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -615,13 +727,9 @@ def _eta_calculate_values(
     alpha_reference = (
         _eta_alpha(reference_data) if reference_data is not None else np.nan
     )
-    eta_reference = (
-        _eta_value(reference_data) if reference_data is not None else np.nan
-    )
+    eta_reference = _eta_value(reference_data) if reference_data is not None else np.nan
     eta_reference_local = (
-        _eta_value(reference_data, local=True)
-        if reference_data is not None
-        else np.nan
+        _eta_value(reference_data, local=True) if reference_data is not None else np.nan
     )
     eta_functionality = eta_reference - eta
     eta_functionality_local = eta_reference_local - eta_local
@@ -633,23 +741,50 @@ def _eta_calculate_values(
     epsilon_4 = _eta_epsilon(saturated_data) if saturated_data is not None else np.nan
 
     return [
-        alpha, _eta_average(alpha, data), _eta_shape_index(data, 1),
-        _eta_shape_index(data, 3), _eta_shape_index(data, 4), beta,
-        _eta_average(beta, data), beta_sigma, _eta_average(beta_sigma, data),
-        beta_non_sigma, _eta_average(beta_non_sigma, data),
-        beta_non_sigma_delta, _eta_average(beta_non_sigma_delta, data), eta,
-        _eta_average(eta, data), eta_local, _eta_average(eta_local, data),
-        eta_reference, _eta_average(eta_reference, reference_data),
-        eta_reference_local, _eta_average(eta_reference_local, reference_data),
-        eta_functionality, _eta_average(eta_functionality, data),
-        eta_functionality_local, _eta_average(eta_functionality_local, data),
-        eta_branching, _eta_average(eta_branching, data), eta_branching_ring,
+        alpha,
+        _eta_average(alpha, data),
+        _eta_shape_index(data, 1),
+        _eta_shape_index(data, 3),
+        _eta_shape_index(data, 4),
+        beta,
+        _eta_average(beta, data),
+        beta_sigma,
+        _eta_average(beta_sigma, data),
+        beta_non_sigma,
+        _eta_average(beta_non_sigma, data),
+        beta_non_sigma_delta,
+        _eta_average(beta_non_sigma_delta, data),
+        eta,
+        _eta_average(eta, data),
+        eta_local,
+        _eta_average(eta_local, data),
+        eta_reference,
+        _eta_average(eta_reference, reference_data),
+        eta_reference_local,
+        _eta_average(eta_reference_local, reference_data),
+        eta_functionality,
+        _eta_average(eta_functionality, data),
+        eta_functionality_local,
+        _eta_average(eta_functionality_local, data),
+        eta_branching,
+        _eta_average(eta_branching, data),
+        eta_branching_ring,
         _eta_average(eta_branching_ring, data),
         _eta_positive_delta(alpha - alpha_reference, data),
-        _eta_positive_delta(alpha_reference - alpha, data), epsilon_1, epsilon_2,
-        epsilon_3, epsilon_4, epsilon_5, epsilon_1 - epsilon_3,
-        epsilon_1 - epsilon_4, epsilon_3 - epsilon_4, epsilon_2 - epsilon_5,
-        delta_beta, _eta_average(delta_beta, data), psi, max(0.714 - psi, 0.0),
+        _eta_positive_delta(alpha_reference - alpha, data),
+        epsilon_1,
+        epsilon_2,
+        epsilon_3,
+        epsilon_4,
+        epsilon_5,
+        epsilon_1 - epsilon_3,
+        epsilon_1 - epsilon_4,
+        epsilon_3 - epsilon_4,
+        epsilon_2 - epsilon_5,
+        delta_beta,
+        _eta_average(delta_beta, data),
+        psi,
+        max(0.714 - psi, 0.0),
         max(psi - 0.714, 0.0),
     ]
 
@@ -802,6 +937,174 @@ def _gravitational_index_values(
     return np.asarray(
         [heavy_values[0], hydrogen_values[0], heavy_values[1], hydrogen_values[1]],
         dtype=np.float32,
+    )
+
+
+class _InformationContentBFSTree:
+    __slots__ = ("atoms", "bonds", "tree", "visited")
+
+    def __init__(self, mol: Mol):
+        self.tree: dict[int, Any] = {}
+        self.visited: set[int] = set()
+
+        self.bonds: dict[tuple[int, int], BondType] = {}
+        for bond in mol.GetBonds():
+            begin_idx = bond.GetBeginAtomIdx()
+            end_idx = bond.GetEndAtomIdx()
+            bond_type = bond.GetBondType()
+            self.bonds[begin_idx, end_idx] = bond_type
+            self.bonds[end_idx, begin_idx] = bond_type
+
+        self.atoms = [
+            (
+                atom.GetAtomicNum(),
+                atom.GetDegree(),
+                tuple(neighbor.GetIdx() for neighbor in atom.GetNeighbors()),
+            )
+            for atom in mol.GetAtoms()
+        ]
+
+    def reset(self, atom_idx: int) -> None:
+        self.tree.clear()
+        self.visited.clear()
+        self.tree[atom_idx] = {}
+        self.visited.add(atom_idx)
+
+    def expand(self) -> None:
+        self._expand(self.tree)
+
+    def _expand(self, tree: dict[int, Any]) -> None:
+        for src, dst in list(tree.items()):
+            self.visited.add(src)
+            if not dst:
+                tree[src] = {
+                    neighbor_idx: {}
+                    for neighbor_idx in self.atoms[src][2]
+                    if neighbor_idx not in self.visited
+                }
+            else:
+                self._expand(dst)
+
+    def _code(self, tree: dict[int, Any], before: int | None, trail: tuple):
+        if not tree:
+            yield trail
+            return
+        for src, dst in tree.items():
+            atom_code = self.atoms[src][:2]
+            if before is None:
+                next_trail = (*trail, atom_code)
+            else:
+                next_trail = (*trail, self.bonds[before, src], atom_code)
+            yield from self._code(dst, src, next_trail)
+
+    def get_code(self, atom_idx: int, order: int) -> tuple:
+        self.reset(atom_idx)
+        for _ in range(order):
+            self.expand()
+        return tuple(sorted(self._code(self.tree, None, ())))
+
+
+def _information_content_values(mol: Mol) -> np.ndarray:
+    n_atoms = mol.GetNumAtoms()
+    if n_atoms == 0:
+        return np.full(len(INFORMATION_CONTENT_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    ag_values = _information_ag_values_by_order(mol)
+    ic_values = [_information_shannon_entropy(counts) for _, counts in ag_values]
+    bond_order_sum = sum(bond.GetBondTypeAsDouble() for bond in mol.GetBonds())
+    log2_atoms = np.log2(n_atoms)
+    log2_bond_order_sum = np.log2(bond_order_sum) if bond_order_sum > 0 else np.nan
+
+    tic_values = [n_atoms * ic_value for ic_value in ic_values]
+    sic_values = [_information_safe_divide(v, log2_atoms) for v in ic_values]
+    bic_values = [_information_safe_divide(v, log2_bond_order_sum) for v in ic_values]
+    cic_values = [log2_atoms - ic_value for ic_value in ic_values]
+    mic_values = [
+        _information_shannon_entropy(counts, _information_atom_masses(mol, ids))
+        for ids, counts in ag_values
+    ]
+    zmic_values = [
+        _information_shannon_entropy(
+            counts, counts * _information_atomic_numbers(mol, ids)
+        )
+        for ids, counts in ag_values
+    ]
+
+    return np.asarray(
+        [
+            *ic_values,
+            *tic_values,
+            *sic_values,
+            *bic_values,
+            *cic_values,
+            *mic_values,
+            *zmic_values,
+        ],
+        dtype=np.float32,
+    )
+
+
+def _information_ag_values_by_order(mol: Mol) -> list[tuple[np.ndarray, np.ndarray]]:
+    tree = _InformationContentBFSTree(mol)
+    atom_codes_by_order: list[list[Any]] = [_information_atom_codes_order_0(mol)]
+    atom_codes_by_order.extend(
+        [tree.get_code(atom_idx, order) for atom_idx in range(mol.GetNumAtoms())]
+        for order in range(1, 6)
+    )
+    return [_information_ag_values(atom_codes) for atom_codes in atom_codes_by_order]
+
+
+def _information_atom_codes_order_0(mol: Mol) -> list[Any]:
+    return [atom.GetAtomicNum() for atom in mol.GetAtoms()]
+
+
+def _information_ag_values(atom_codes: list[Any]) -> tuple[np.ndarray, np.ndarray]:
+    representative_ids = {code: atom_idx for atom_idx, code in enumerate(atom_codes)}
+    grouped_codes = [
+        (code, sum(1 for _ in group)) for code, group in groupby(sorted(atom_codes))
+    ]
+    n_groups = len(grouped_codes)
+    ids = np.fromiter(
+        (representative_ids[code] for code, _ in grouped_codes),
+        dtype=int,
+        count=n_groups,
+    )
+    counts = np.fromiter(
+        (count for _, count in grouped_codes),
+        dtype=float,
+        count=n_groups,
+    )
+    return ids, counts
+
+
+def _information_shannon_entropy(counts: np.ndarray, weights=1) -> float:
+    total = np.sum(counts)
+    if total <= 0:
+        return np.nan
+    probabilities = counts / total
+    entropy_terms = probabilities * np.log2(probabilities)
+    return float(-np.sum(weights * entropy_terms))
+
+
+def _information_safe_divide(numerator: float, denominator: float) -> float:
+    if denominator == 0 or np.isnan(denominator):
+        return np.nan
+    return numerator / denominator
+
+
+def _information_atom_masses(mol: Mol, atom_ids: np.ndarray) -> np.ndarray:
+    return np.fromiter(
+        (mol.GetAtomWithIdx(int(atom_id)).GetMass() for atom_id in atom_ids),
+        dtype=float,
+        count=len(atom_ids),
+    )
+
+
+def _information_atomic_numbers(mol: Mol, atom_ids: np.ndarray) -> np.ndarray:
+    return np.fromiter(
+        (mol.GetAtomWithIdx(int(atom_id)).GetAtomicNum() for atom_id in atom_ids),
+        dtype=float,
+        count=len(atom_ids),
     )
 
 
@@ -1643,6 +1946,7 @@ class MordredMolCache:
     framework_values: np.ndarray
     geometrical_index_values: np.ndarray
     gravitational_index_values: np.ndarray
+    information_content_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1700,13 +2004,12 @@ class MordredMolCache:
             gravitational_index_values=_gravitational_index_values(
                 mol_regular, mol_with_hydrogens
             ),
+            information_content_values=_information_content_values(mol_kekulized),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
             autocorrelation_weights=autocorrelation_weights,
-            autocorrelation_centered_weights=_centered_weights(
-                autocorrelation_weights
-            ),
+            autocorrelation_centered_weights=_centered_weights(autocorrelation_weights),
             barysz_values=_barysz_values(mol_regular, n_frags),
             bcut_values=_bcut_values(mol_regular, n_frags),
             bond_count_values=_bond_count_values(mol_regular, mol_kekulized),

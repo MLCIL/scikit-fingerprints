@@ -36,6 +36,11 @@ NO_EXPLICIT_H_ETA_FEATURES = [
     "ETA_dEpsilon_D",
 ]
 NO_EXPLICIT_H_FRAMEWORK_FEATURES = ["fMF"]
+NO_EXPLICIT_H_INFORMATION_CONTENT_FEATURES = [
+    f"{prefix}{order}"
+    for prefix in ("IC", "TIC", "SIC", "BIC", "CIC", "MIC", "ZMIC")
+    for order in range(6)
+]
 
 
 @pytest.fixture(autouse=True)
@@ -167,12 +172,15 @@ def _parity_mask(X_new, X_old, feature_names):
     """
     Create the old-vs-new Mordred parity mask.
 
-    New Mordred BondCount, Constitutional, charge-only CPSA, ETA epsilon, and
-    Framework descriptors intentionally keep 2D molecules hydrogen-suppressed,
-    while default Mordred adds explicit hydrogens for nBonds/nBondsS/nBondsKS,
-    the Constitutional descriptors SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/
-    Mpe/Mare/Mp/Mi, CPSA RNCG/RPCG, ETA epsilon descriptors except epsilon_2,
-    and the fMF denominator.
+    New Mordred BondCount, Constitutional, charge-only CPSA, ETA epsilon,
+    Framework, and InformationContent descriptors intentionally keep 2D
+    molecules hydrogen-suppressed, while default Mordred adds explicit
+    hydrogens for nBonds/nBondsS/nBondsKS, the Constitutional descriptors
+    SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/Mpe/Mare/Mp/Mi, CPSA RNCG/RPCG,
+    ETA epsilon descriptors except epsilon_2, the fMF denominator, and all
+    42 IC/TIC/SIC/BIC/CIC/MIC/ZMIC descriptors. Each InformationContent
+    descriptor can differ under the no-H policy; for example, methane has one
+    no-H atom but five atoms in default Mordred.
     """
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
     for name in [
@@ -181,6 +189,7 @@ def _parity_mask(X_new, X_old, feature_names):
         *NO_EXPLICIT_H_CPSA_FEATURES,
         *NO_EXPLICIT_H_ETA_FEATURES,
         *NO_EXPLICIT_H_FRAMEWORK_FEATURES,
+        *NO_EXPLICIT_H_INFORMATION_CONTENT_FEATURES,
     ]:
         mask[:, feature_names.tolist().index(name)] = False
 
