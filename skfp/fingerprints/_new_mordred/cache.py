@@ -12,7 +12,7 @@ from time import monotonic
 import networkx as nx
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import GetMolFrags, Mol, rdPartialCharges
+from rdkit.Chem import EState, GetMolFrags, Mol, rdPartialCharges
 from rdkit.Chem.rdchem import Atom, Bond, BondType
 from scipy.sparse.csgraph import floyd_warshall
 from scipy.spatial.distance import cdist
@@ -236,6 +236,27 @@ DISTANCE_MATRIX_FEATURE_NAMES = [
     "VR3_D",
 ]
 ECCENTRIC_CONNECTIVITY_INDEX_FEATURE_NAMES = ["ECIndex"]
+ESTATE_ATOM_TYPES = [
+    "sLi", "ssBe", "ssssBe", "ssBH", "sssB", "ssssB", "sCH3", "dCH2",
+    "ssCH2", "tCH", "dsCH", "aaCH", "sssCH", "ddC", "tsC", "dssC",
+    "aasC", "aaaC", "ssssC", "sNH3", "sNH2", "ssNH2", "dNH", "ssNH",
+    "aaNH", "tN", "sssNH", "dsN", "aaN", "sssN", "ddsN", "aasN",
+    "ssssN", "sOH", "dO", "ssO", "aaO", "sF", "sSiH3", "ssSiH2",
+    "sssSiH", "ssssSi", "sPH2", "ssPH", "sssP", "dsssP", "sssssP",
+    "sSH", "dS", "ssS", "aaS", "dssS", "ddssS", "sCl", "sGeH3",
+    "ssGeH2", "sssGeH", "ssssGe", "sAsH2", "ssAsH", "sssAs", "sssdAs",
+    "sssssAs", "sSeH", "dSe", "ssSe", "aaSe", "dssSe", "ddssSe", "sBr",
+    "sSnH3", "ssSnH2", "sssSnH", "ssssSn", "sI", "sPbH3", "ssPbH2",
+    "sssPbH", "ssssPb",
+]
+ESTATE_FEATURE_NAMES = [
+    f"{prefix}{atom_type}"
+    for prefix in ("N", "S", "MAX", "MIN")
+    for atom_type in ESTATE_ATOM_TYPES
+]
+_ESTATE_ATOM_TYPE_TO_IDX = {
+    atom_type: idx for idx, atom_type in enumerate(ESTATE_ATOM_TYPES)
+}
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
@@ -330,6 +351,39 @@ def _eccentric_connectivity_index_values(
     vertex_degree = adjacency_matrix.degree
     value = int((eccentricity.astype("int") * vertex_degree).sum())
     return np.asarray([value], dtype=np.float32)
+
+
+def _estate_values(mol: Mol) -> np.ndarray:
+    atom_types_by_atom = EState.TypeAtoms(mol)
+    estate_indices = EState.EStateIndices(mol)
+
+    n_atom_types = len(ESTATE_ATOM_TYPES)
+    counts = np.zeros(n_atom_types, dtype=np.float64)
+    sums = np.zeros(n_atom_types, dtype=np.float64)
+    max_values = np.full(n_atom_types, -np.inf, dtype=np.float64)
+    min_values = np.full(n_atom_types, np.inf, dtype=np.float64)
+    has_value = np.zeros(n_atom_types, dtype=bool)
+
+    for atom_types, estate_idx in zip(atom_types_by_atom, estate_indices, strict=True):
+        estate_value = float(estate_idx)
+        for atom_type in atom_types:
+            type_idx = _ESTATE_ATOM_TYPE_TO_IDX[atom_type]
+            counts[type_idx] += 1
+            sums[type_idx] += estate_value
+            if has_value[type_idx]:
+                max_values[type_idx] = max(max_values[type_idx], estate_value)
+                min_values[type_idx] = min(min_values[type_idx], estate_value)
+            else:
+                max_values[type_idx] = estate_value
+                min_values[type_idx] = estate_value
+                has_value[type_idx] = True
+
+    max_values[~has_value] = np.nan
+    min_values[~has_value] = np.nan
+
+    return np.concatenate((counts, sums, max_values, min_values)).astype(
+        np.float32, copy=False
+    )
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1164,6 +1218,7 @@ class MordredMolCache:
     adjacency_matrix_values: np.ndarray
     distance_matrix_values: np.ndarray
     eccentric_connectivity_index_values: np.ndarray
+    estate_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1211,6 +1266,7 @@ class MordredMolCache:
             eccentric_connectivity_index_values=_eccentric_connectivity_index_values(
                 distance_matrix_regular, adjacency_matrix_regular
             ),
+            estate_values=_estate_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),

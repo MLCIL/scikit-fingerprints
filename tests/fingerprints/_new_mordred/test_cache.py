@@ -20,6 +20,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.adjacency_matrix_values.shape == (12,)
     assert cache.distance_matrix_values.shape == (12,)
     assert cache.eccentric_connectivity_index_values.shape == (1,)
+    assert cache.estate_values.shape == (316,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9
