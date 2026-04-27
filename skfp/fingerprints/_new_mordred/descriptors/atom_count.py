@@ -25,7 +25,6 @@ FEATURE_NAMES = [
 ]
 
 _ELEMENTS = {
-    "nH": 1,
     "nB": 5,
     "nC": 6,
     "nN": 7,
@@ -40,18 +39,21 @@ _ELEMENTS = {
 _HALOGENS = {9, 17, 35, 53}
 
 
-def calc(mol_with_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
     Compute the remaining Mordred atom count descriptors.
 
-    Element counts use the explicit-hydrogen molecule to match Mordred
-    `AtomCount` semantics for `nH`.
+    Hydrogen counts use RDKit's total hydrogen count on each atom, so implicit
+    hydrogens are included without adding explicit hydrogen atoms to the
+    molecule. Heavy-element counts are taken from the molecule's atom list.
     """
-    atomic_nums = [atom.GetAtomicNum() for atom in mol_with_hydrogens.GetAtoms()]
-    values = [
+    atoms = mol.GetAtoms()
+    atomic_nums = [atom.GetAtomicNum() for atom in atoms]
+    values = [sum(atom.GetTotalNumHs() for atom in atoms)]
+    values.extend(
         sum(atomic_num == _ELEMENTS[name] for atomic_num in atomic_nums)
-        for name in FEATURE_NAMES[:-1]
-    ]
+        for name in FEATURE_NAMES[1:-1]
+    )
     values.append(sum(atomic_num in _HALOGENS for atomic_num in atomic_nums))
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

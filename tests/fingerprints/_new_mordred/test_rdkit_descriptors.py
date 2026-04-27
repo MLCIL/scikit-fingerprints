@@ -59,6 +59,22 @@ def test_rdkit_descriptors_avoid_lambda_wrappers():
     assert not [node for node in ast.walk(tree) if isinstance(node, ast.Lambda)]
 
 
+def test_2d_calculator_does_not_add_explicit_hydrogens(monkeypatch):
+    from skfp.fingerprints._new_mordred import calculator
+
+    original_preprocess_mol = calculator.preprocess_mol
+
+    def preprocess_without_explicit_hydrogens(*args, **kwargs):
+        assert kwargs.get("explicit_hydrogens", False) is False
+        return original_preprocess_mol(*args, **kwargs)
+
+    monkeypatch.setattr(
+        calculator, "preprocess_mol", preprocess_without_explicit_hydrogens
+    )
+
+    calculator.compute(Chem.MolFromSmiles("CCO"), use_3D=False)
+
+
 @pytest.fixture(scope="module")
 def mordred_2d_calc():
     return Calculator(descriptors, ignore_3D=True)
@@ -92,12 +108,9 @@ def mordred_2d_calc():
 def test_rdkit_2d_descriptors_match_mordred(smiles, mordred_2d_calc):
     mol = Chem.MolFromSmiles(smiles)
     mol_regular = preprocess_mol(mol)
-    mol_with_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix = DistanceMatrix(mol_regular)
 
-    values, feature_names = rdkit_descriptors.calc_2d(
-        mol_regular, mol_with_hydrogens, distance_matrix
-    )
+    values, feature_names = rdkit_descriptors.calc_2d(mol_regular, distance_matrix)
     mordred_values = dict(
         zip(
             (str(desc) for desc in mordred_2d_calc.descriptors),

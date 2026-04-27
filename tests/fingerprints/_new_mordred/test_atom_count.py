@@ -7,7 +7,6 @@ from rdkit import Chem
 from skfp.fingerprints._new_mordred.calculator import compute
 from skfp.fingerprints._new_mordred.descriptors import atom_count
 from skfp.fingerprints._new_mordred.utils.feature_names import FEATURE_NAMES_2D
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = [
     "nH",
@@ -42,9 +41,8 @@ def mordred_2d_calc():
 @pytest.mark.parametrize("smiles", SMILES)
 def test_atom_count_matches_mordred(smiles, mordred_2d_calc):
     mol = Chem.MolFromSmiles(smiles)
-    mol_with_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
 
-    values, feature_names = atom_count.calc(mol_with_hydrogens)
+    values, feature_names = atom_count.calc(mol)
     mordred_values = dict(
         zip(
             (str(desc) for desc in mordred_2d_calc.descriptors),

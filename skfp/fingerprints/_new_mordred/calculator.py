@@ -77,10 +77,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         estate.calc(mol_regular),
         rdkit_descriptors.calc_2d(
             mol_regular,
-            mol_hydrogens,
             distance_matrix_regular,
         ),
-        atom_count.calc(mol_hydrogens),
+        atom_count.calc(mol_regular),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
         ring_count.calc(mol_regular),
