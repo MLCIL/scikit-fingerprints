@@ -10,7 +10,11 @@
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol
 
-from skfp.fingerprints._new_mordred.descriptors import abc_index, rdkit_descriptors
+from skfp.fingerprints._new_mordred.descriptors import (
+    abc_index,
+    atom_count,
+    rdkit_descriptors,
+)
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -50,6 +54,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             mol_with_hydrogens,
             distance_matrix_regular,
         ),
+        atom_count.calc(mol_with_hydrogens),
     ]
 
     for values, feature_names in descriptors_2d:
