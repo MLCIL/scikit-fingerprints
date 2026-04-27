@@ -235,6 +235,7 @@ DISTANCE_MATRIX_FEATURE_NAMES = [
     "VR2_D",
     "VR3_D",
 ]
+ECCENTRIC_CONNECTIVITY_INDEX_FEATURE_NAMES = ["ECIndex"]
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
@@ -320,6 +321,15 @@ def _distance_matrix_values(
         ],
         dtype=np.float32,
     )
+
+
+def _eccentric_connectivity_index_values(
+    distance_matrix: DistanceMatrix, adjacency_matrix: AdjacencyMatrix
+) -> np.ndarray:
+    eccentricity = distance_matrix.matrix.max(axis=0)
+    vertex_degree = adjacency_matrix.degree
+    value = int((eccentricity.astype("int") * vertex_degree).sum())
+    return np.asarray([value], dtype=np.float32)
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1153,6 +1163,7 @@ class MordredMolCache:
     adjacency_matrix_regular: AdjacencyMatrix
     adjacency_matrix_values: np.ndarray
     distance_matrix_values: np.ndarray
+    eccentric_connectivity_index_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1196,6 +1207,9 @@ class MordredMolCache:
             ),
             distance_matrix_values=_distance_matrix_values(
                 mol_regular, n_frags, distance_matrix_regular
+            ),
+            eccentric_connectivity_index_values=_eccentric_connectivity_index_values(
+                distance_matrix_regular, adjacency_matrix_regular
             ),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
