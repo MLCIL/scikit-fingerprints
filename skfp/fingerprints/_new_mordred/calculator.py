@@ -46,7 +46,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     n_frags = len(GetMolFrags(mol))  # noqa: F841
 
     mol_regular = preprocess_mol(mol)
-    mol_with_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_regular = DistanceMatrix(mol_regular)
 
@@ -55,10 +54,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         abc_index.calc(mol_regular, distance_matrix_regular),
         rdkit_descriptors.calc_2d(
             mol_regular,
-            mol_with_hydrogens,
             distance_matrix_regular,
         ),
-        atom_count.calc(mol_with_hydrogens),
+        atom_count.calc(mol_regular),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
         ring_count.calc(mol_regular),
@@ -69,6 +67,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
+        mol_with_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
         descriptors_3d: list = [
             rdkit_descriptors.calc_3d(mol_with_hydrogens),
         ]
