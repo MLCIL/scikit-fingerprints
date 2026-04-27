@@ -103,15 +103,14 @@ def _average_exact_mol_wt(mol: Mol) -> float:
     """
     Compute average exact molecular weight.
 
-    Mordred `AMW` is exact molecular weight divided by atom count on the
-    explicit-hydrogen molecule.
+    Mordred `AMW` is exact molecular weight divided by total atom count,
+    including implicit hydrogens.
     """
-    return Descriptors.ExactMolWt(mol) / mol.GetNumAtoms()
+    return Descriptors.ExactMolWt(mol) / rdMolDescriptors.CalcNumAtoms(mol)
 
 
 def calc_2d(
     mol_regular: Mol,
-    mol_with_hydrogens: Mol,
     distance_matrix_regular: DistanceMatrix,
 ) -> tuple[np.ndarray, list[str]]:
     """
@@ -122,7 +121,7 @@ def calc_2d(
     topological polar surface area, and molecular weights.
     """
     values = [
-        _safe_value(rdMolDescriptors.CalcNumAtoms, mol_with_hydrogens),
+        _safe_value(rdMolDescriptors.CalcNumAtoms, mol_regular),
         _safe_value(rdMolDescriptors.CalcNumHeavyAtoms, mol_regular),
         _safe_value(rdMolDescriptors.CalcNumSpiroAtoms, mol_regular),
         _safe_value(rdMolDescriptors.CalcNumBridgeheadAtoms, mol_regular),
@@ -167,8 +166,8 @@ def calc_2d(
             _safe_value(Crippen.MolMR, mol_regular),
             _safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
             _safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
-            _safe_value(Descriptors.ExactMolWt, mol_with_hydrogens),
-            _safe_value(_average_exact_mol_wt, mol_with_hydrogens),
+            _safe_value(Descriptors.ExactMolWt, mol_regular),
+            _safe_value(_average_exact_mol_wt, mol_regular),
         ]
     )
 
