@@ -1,6 +1,6 @@
 # Installation
 
-This page covers base installation and optional dependencies (“extras”).
+This page covers base installation and optional dependencies ("extras").
 
 ## Base installation
 
