@@ -147,6 +147,11 @@ _CHI_PREFIX_TO_TYPE = {
     "Xpc": "path_cluster",
     "Xc": "cluster",
 }
+CONSTITUTIONAL_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
+CONSTITUTIONAL_FEATURE_NAMES = [
+    *[f"S{prop}" for prop in CONSTITUTIONAL_PROPERTIES],
+    *[f"M{prop}" for prop in CONSTITUTIONAL_PROPERTIES],
+]
 _CARBON = Atom(6)
 
 
@@ -241,7 +246,10 @@ def _autocorrelation_weights(mol: Mol) -> dict[str, np.ndarray]:
 
 
 def _centered_weights(weights: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    return {prop: values - values.mean() for prop, values in weights.items()}
+    return {
+        prop: values - values.mean() if len(values) else values.copy()
+        for prop, values in weights.items()
+    }
 
 
 def _property_values(mol: Mol, prop: str) -> np.ndarray:
@@ -536,6 +544,20 @@ def _chi_value(
     return value
 
 
+def _constitutional_values(mol: Mol) -> np.ndarray:
+    sums: list[float] = []
+    for prop in CONSTITUTIONAL_PROPERTIES:
+        carbon_value = _AUTOCORRELATION_PROPERTY_FUNCS[prop](_CARBON)
+        sums.append(float(np.sum(_property_values(mol, prop) / carbon_value)))
+
+    n_atoms = mol.GetNumAtoms()
+    means = (
+        [np.nan] * len(sums) if n_atoms == 0 else [value / n_atoms for value in sums]
+    )
+
+    return np.asarray([*sums, *means], dtype=np.float32)
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -559,6 +581,7 @@ class MordredMolCache:
     bcut_values: np.ndarray
     bond_count_values: np.ndarray
     chi_values: np.ndarray
+    constitutional_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
@@ -596,5 +619,6 @@ class MordredMolCache:
             bcut_values=_bcut_values(mol_regular, n_frags),
             bond_count_values=_bond_count_values(mol_regular, mol_kekulized),
             chi_values=_chi_values(mol_regular),
+            constitutional_values=_constitutional_values(mol_regular),
             mol_with_hydrogens=mol_with_hydrogens,
         )

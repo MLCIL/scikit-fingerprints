@@ -28,6 +28,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.bcut_values.shape == (24,)
     assert cache.bond_count_values.shape == (9,)
     assert cache.chi_values.shape == (56,)
+    assert cache.constitutional_values.shape == (16,)
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():

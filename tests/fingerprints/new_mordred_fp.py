@@ -6,6 +6,24 @@ from numpy.testing import assert_allclose, assert_equal
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
 
 NO_EXPLICIT_H_BOND_COUNT_FEATURES = ["nBonds", "nBondsS", "nBondsKS"]
+NO_EXPLICIT_H_CONSTITUTIONAL_FEATURES = [
+    "SZ",
+    "Sm",
+    "Sv",
+    "Sse",
+    "Spe",
+    "Sare",
+    "Sp",
+    "Si",
+    "MZ",
+    "Mm",
+    "Mv",
+    "Mse",
+    "Mpe",
+    "Mare",
+    "Mp",
+    "Mi",
+]
 
 
 @pytest.fixture(autouse=True)
@@ -137,12 +155,16 @@ def _parity_mask(X_new, X_old, feature_names):
     """
     Create the old-vs-new Mordred parity mask.
 
-    New Mordred BondCount descriptors intentionally keep 2D molecules
-    hydrogen-suppressed, while default Mordred adds explicit hydrogens for
-    these single-bond counts.
+    New Mordred BondCount and Constitutional descriptors intentionally keep 2D
+    molecules hydrogen-suppressed, while default Mordred adds explicit
+    hydrogens for nBonds/nBondsS/nBondsKS and the Constitutional descriptors
+    SZ/Sm/Sv/Sse/Spe/Sare/Sp/Si/MZ/Mm/Mv/Mse/Mpe/Mare/Mp/Mi.
     """
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
-    for name in NO_EXPLICIT_H_BOND_COUNT_FEATURES:
+    for name in [
+        *NO_EXPLICIT_H_BOND_COUNT_FEATURES,
+        *NO_EXPLICIT_H_CONSTITUTIONAL_FEATURES,
+    ]:
         mask[:, feature_names.tolist().index(name)] = False
 
     return mask
