@@ -25,6 +25,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     chi,
     constitutional,
     cpsa,
+    detour_matrix,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -76,6 +77,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         chi.calc(cache),
         constitutional.calc(cache),
         cpsa.calc_2d(cache),
+        detour_matrix.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(

@@ -31,6 +31,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.constitutional_values.shape == (16,)
     assert cache.cpsa_2d_values.shape == (2,)
     assert cache.cpsa_3d_values.shape == (41,)
+    assert cache.detour_matrix_values.shape == (14,)
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():

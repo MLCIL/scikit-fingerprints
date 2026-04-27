@@ -7,7 +7,9 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from time import monotonic
 
+import networkx as nx
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import GetMolFrags, Mol, rdPartialCharges
@@ -202,6 +204,22 @@ CPSA_FEATURE_NAMES = [
 CPSA_FEATURE_NAMES_2D = ["RNCG", "RPCG"]
 CPSA_FEATURE_NAMES_3D = [
     name for name in CPSA_FEATURE_NAMES if name not in CPSA_FEATURE_NAMES_2D
+]
+DETOUR_MATRIX_FEATURE_NAMES = [
+    "SpAbs_Dt",
+    "SpMax_Dt",
+    "SpDiam_Dt",
+    "SpAD_Dt",
+    "SpMAD_Dt",
+    "LogEE_Dt",
+    "SM1_Dt",
+    "VE1_Dt",
+    "VE2_Dt",
+    "VE3_Dt",
+    "VR1_Dt",
+    "VR2_Dt",
+    "VR3_Dt",
+    "DetourIndex",
 ]
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -879,6 +897,201 @@ def _cpsa_3d_values(mol: Mol | None) -> np.ndarray:
     return np.asarray(values, dtype=np.float32)
 
 
+class _DetourTimeoutError(TimeoutError):
+    """Raised when detour matrix enumeration exceeds the configured timeout."""
+
+
+class _LongestSimplePath:
+    """Compute longest simple-path distances in a biconnected component."""
+
+    def __init__(self, graph: nx.Graph, timeout_at: float | None):
+        self._graph = graph
+        self._timeout_at = timeout_at
+        self._neighbors = {node: list(graph[node]) for node in graph.nodes()}
+        self._start: int
+        self._result: dict[int, float]
+        self._visited: set[int]
+        self._distance: float
+
+    def _raise_if_timed_out(self) -> None:
+        if self._timeout_at is not None and monotonic() > self._timeout_at:
+            raise _DetourTimeoutError
+
+    def _search(self, node: int) -> None:
+        self._raise_if_timed_out()
+        self._visited.add(node)
+        for neighbor in self._neighbors[node]:
+            if neighbor in self._visited:
+                continue
+
+            self._visited.add(neighbor)
+            self._distance += 1.0
+
+            distance = self._distance
+            self._result[neighbor] = max(self._result[neighbor], distance)
+
+            self._search(neighbor)
+
+            self._visited.remove(neighbor)
+            self._distance -= 1.0
+
+    def _from_node(self, node: int) -> dict[int, float]:
+        self._start = node
+        self._result = dict.fromkeys(self._graph.nodes(), 0.0)
+        self._visited = set()
+        self._distance = 0.0
+        self._search(node)
+        return self._result
+
+    def __call__(self) -> dict[tuple[int, int], float]:
+        result: dict[tuple[int, int], float] = {}
+        for source in self._graph.nodes():
+            for target, distance in self._from_node(source).items():
+                key = (source, target) if source <= target else (target, source)
+                result[key] = distance
+
+        return result
+
+
+class _DetourMatrixBuilder:
+    """Merge biconnected-component detours through articulation points."""
+
+    def __init__(self, graph: nx.Graph, timeout: float | None):
+        self._graph = graph
+        self._timeout_at = None if timeout is None else monotonic() + timeout
+        self._n_nodes = graph.number_of_nodes()
+        self._queue: list[tuple[set[int], dict[tuple[int, int], float]]] = []
+        self._nodes: set[int]
+        self._distances: dict[tuple[int, int], float]
+
+    def _merge(self) -> None:
+        for queue_idx in range(1, len(self._queue) + 1):
+            new_nodes, new_distances = self._queue[-queue_idx]
+            common_nodes = new_nodes & self._nodes
+            if not common_nodes:
+                continue
+            if len(common_nodes) > 1:
+                raise ValueError("bug: multiple common nodes")
+
+            common_node = common_nodes.pop()
+            self._queue.pop(-queue_idx)
+            self._nodes.update(new_nodes)
+            break
+        else:
+            raise ValueError("bug: disconnected biconnected components")
+
+        merged: dict[tuple[int, int], float] = {}
+        for i in self._nodes:
+            for j in self._nodes:
+                if i > j:
+                    continue
+                merged[(i, j)] = self._merged_distance(
+                    i,
+                    j,
+                    common_node,
+                    new_distances,
+                )
+
+        self._distances = merged
+
+    def _merged_distance(
+        self,
+        i: int,
+        j: int,
+        common_node: int,
+        new_distances: dict[tuple[int, int], float],
+    ) -> float:
+        key = (i, j)
+        if key in self._distances:
+            return self._distances[key]
+        if key in new_distances:
+            return new_distances[key]
+        if i == j == common_node:
+            return max(new_distances[key], self._distances[key])
+
+        i_common = (i, common_node) if i <= common_node else (common_node, i)
+        j_common = (j, common_node) if j <= common_node else (common_node, j)
+
+        if i_common in self._distances and j_common in new_distances:
+            return self._distances[i_common] + new_distances[j_common]
+        if j_common in self._distances and i_common in new_distances:
+            return self._distances[j_common] + new_distances[i_common]
+
+        raise ValueError("bug: unknown detour distance")
+
+    def _add_biconnected_component(self, component: set[int]) -> None:
+        subgraph = self._graph.subgraph(component)
+        distances = _LongestSimplePath(subgraph, self._timeout_at)()
+        nodes: set[int] = set()
+        for i, j in distances:
+            nodes.add(i)
+            nodes.add(j)
+
+        self._queue.append((nodes, distances))
+
+    def __call__(self) -> np.ndarray:
+        if self._n_nodes == 1:
+            return np.array([[0.0]], dtype=float)
+
+        for component in nx.biconnected_components(self._graph):
+            self._add_biconnected_component(component)
+
+        self._nodes, self._distances = self._queue.pop()
+        while self._queue:
+            self._merge()
+
+        matrix = np.empty((self._n_nodes, self._n_nodes), dtype=float)
+        for i in range(self._n_nodes):
+            for j in range(i, self._n_nodes):
+                distance = self._distances[(i, j)]
+                matrix[i, j] = distance
+                matrix[j, i] = distance
+
+        return matrix
+
+
+def _detour_matrix(mol: Mol, timeout: float | None) -> np.ndarray:
+    graph = nx.Graph()
+    graph.add_nodes_from(atom.GetIdx() for atom in mol.GetAtoms())
+    graph.add_edges_from(
+        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
+    )
+
+    return _DetourMatrixBuilder(graph, timeout)()
+
+
+def _detour_matrix_values(
+    mol: Mol, n_frags: int, timeout: float | None = 60.0
+) -> np.ndarray:
+    if n_frags != 1:
+        return np.full(len(DETOUR_MATRIX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    try:
+        matrix = _detour_matrix(mol, timeout)
+    except _DetourTimeoutError:
+        return np.full(len(DETOUR_MATRIX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
+    values = [
+        attrs.graph_energy,
+        attrs.leading_eigenvalue,
+        attrs.spectral_diameter,
+        attrs.sp_ad,
+        attrs.sp_mad,
+        attrs.log_ee,
+        attrs.sm1,
+        attrs.ve1,
+        attrs.ve2,
+        attrs.ve3,
+        attrs.vr1,
+        attrs.vr2,
+        attrs.vr3,
+        int(0.5 * matrix.sum()),
+    ]
+
+    return np.asarray(values, dtype=np.float32)
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -905,10 +1118,13 @@ class MordredMolCache:
     constitutional_values: np.ndarray
     cpsa_2d_values: np.ndarray
     cpsa_3d_values: np.ndarray
+    detour_matrix_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
-    def from_mol(cls, mol: Mol, use_3D: bool) -> MordredMolCache:
+    def from_mol(
+        cls, mol: Mol, use_3D: bool, detour_timeout: float | None = 60.0
+    ) -> MordredMolCache:
         mol_regular = preprocess_mol(mol)
         mol_kekulized = preprocess_mol(mol, kekulize=True)
         mol_with_hydrogens = (
@@ -945,5 +1161,8 @@ class MordredMolCache:
             constitutional_values=_constitutional_values(mol_regular),
             cpsa_2d_values=_cpsa_2d_values(mol_regular),
             cpsa_3d_values=_cpsa_3d_values(mol_with_hydrogens),
+            detour_matrix_values=_detour_matrix_values(
+                mol_regular, n_frags, timeout=detour_timeout
+            ),
             mol_with_hydrogens=mol_with_hydrogens,
         )
