@@ -151,7 +151,9 @@ def calc_2d(
             _safe_value(lambda: Crippen.MolLogP(mol_regular)),
             _safe_value(lambda: Crippen.MolMR(mol_regular)),
             _safe_value(lambda: rdMolDescriptors.CalcTPSA(mol_regular)),
-            _safe_value(lambda: rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True)),
+            _safe_value(
+                lambda: rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True)
+            ),
             _safe_value(lambda: Descriptors.ExactMolWt(mol_with_hydrogens)),
             _safe_value(
                 lambda: Descriptors.ExactMolWt(mol_with_hydrogens)
