@@ -19,7 +19,7 @@ class DistanceMatrix:
     ):
         self.matrix: np.ndarray
         self.matrix = GetDistanceMatrix(
-            mol, useBO=use_bond_orders, useAtomWts=use_atom_weights
+            mol, useBO=use_bond_orders, useAtomWts=use_atom_weights, force=True
         )
 
     @cached_property

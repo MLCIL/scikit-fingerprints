@@ -221,6 +221,20 @@ DETOUR_MATRIX_FEATURE_NAMES = [
     "VR3_Dt",
     "DetourIndex",
 ]
+DISTANCE_MATRIX_FEATURE_NAMES = [
+    "SpAbs_D",
+    "SpMax_D",
+    "SpDiam_D",
+    "SpAD_D",
+    "SpMAD_D",
+    "LogEE_D",
+    "VE1_D",
+    "VE2_D",
+    "VE3_D",
+    "VR1_D",
+    "VR2_D",
+    "VR3_D",
+]
 _CARBON = Atom(6)
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
 
@@ -257,6 +271,38 @@ def _adjacency_matrix_values(
         hermitian=adjacency_matrix.hermitian,
         n_frags=n_frags,
     )
+    return np.asarray(
+        [
+            attrs.graph_energy,
+            attrs.leading_eigenvalue,
+            attrs.spectral_diameter,
+            attrs.sp_ad,
+            attrs.sp_mad,
+            attrs.log_ee,
+            attrs.ve1,
+            attrs.ve2,
+            attrs.ve3,
+            attrs.vr1,
+            attrs.vr2,
+            attrs.vr3,
+        ],
+        dtype=np.float32,
+    )
+
+
+def _distance_matrix_values(
+    mol: Mol, n_frags: int, distance_matrix: DistanceMatrix
+) -> np.ndarray:
+    if n_frags != 1:
+        return np.full(len(DISTANCE_MATRIX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    attrs = MatrixAttributes(
+        distance_matrix.matrix,
+        mol,
+        hermitian=distance_matrix.hermitian,
+        n_frags=n_frags,
+    )
+
     return np.asarray(
         [
             attrs.graph_energy,
@@ -1106,6 +1152,7 @@ class MordredMolCache:
     distance_matrix_regular: DistanceMatrix
     adjacency_matrix_regular: AdjacencyMatrix
     adjacency_matrix_values: np.ndarray
+    distance_matrix_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -1146,6 +1193,9 @@ class MordredMolCache:
             adjacency_matrix_regular=adjacency_matrix_regular,
             adjacency_matrix_values=_adjacency_matrix_values(
                 mol_regular, n_frags, adjacency_matrix_regular
+            ),
+            distance_matrix_values=_distance_matrix_values(
+                mol_regular, n_frags, distance_matrix_regular
             ),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
