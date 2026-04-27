@@ -99,6 +99,16 @@ def _append_moe_type_descriptors(values: list[float], mol: Mol) -> None:
         values.append(_safe_value(descriptor_func, mol))
 
 
+def _average_exact_mol_wt(mol: Mol) -> float:
+    """
+    Compute average exact molecular weight.
+
+    Mordred `AMW` is exact molecular weight divided by atom count on the
+    explicit-hydrogen molecule.
+    """
+    return Descriptors.ExactMolWt(mol) / mol.GetNumAtoms()
+
+
 def calc_2d(
     mol_regular: Mol,
     mol_with_hydrogens: Mol,
@@ -112,53 +122,53 @@ def calc_2d(
     topological polar surface area, and molecular weights.
     """
     values = [
-        _safe_value(lambda: rdMolDescriptors.CalcNumAtoms(mol_with_hydrogens)),
-        _safe_value(lambda: rdMolDescriptors.CalcNumHeavyAtoms(mol_regular)),
-        _safe_value(lambda: rdMolDescriptors.CalcNumSpiroAtoms(mol_regular)),
-        _safe_value(lambda: rdMolDescriptors.CalcNumBridgeheadAtoms(mol_regular)),
-        _safe_value(lambda: rdMolDescriptors.CalcNumHeteroatoms(mol_regular)),
-        _safe_value(lambda: rdMolDescriptors.CalcFractionCSP3(mol_regular)),
+        _safe_value(rdMolDescriptors.CalcNumAtoms, mol_with_hydrogens),
+        _safe_value(rdMolDescriptors.CalcNumHeavyAtoms, mol_regular),
+        _safe_value(rdMolDescriptors.CalcNumSpiroAtoms, mol_regular),
+        _safe_value(rdMolDescriptors.CalcNumBridgeheadAtoms, mol_regular),
+        _safe_value(rdMolDescriptors.CalcNumHeteroatoms, mol_regular),
+        _safe_value(rdMolDescriptors.CalcFractionCSP3, mol_regular),
         _safe_value(
-            lambda: GraphDescriptors.BalabanJ(
-                mol_regular, dMat=distance_matrix_regular.matrix
-            )
+            GraphDescriptors.BalabanJ,
+            mol_regular,
+            dMat=distance_matrix_regular.matrix,
         ),
         _safe_value(
-            lambda: GraphDescriptors.BertzCT(
-                mol_regular, dMat=distance_matrix_regular.matrix
-            )
+            GraphDescriptors.BertzCT,
+            mol_regular,
+            dMat=distance_matrix_regular.matrix,
         ),
-        _safe_value(lambda: rdMolDescriptors.CalcNumHBA(mol_regular)),
-        _safe_value(lambda: rdMolDescriptors.CalcNumHBD(mol_regular)),
-        _safe_value(lambda: MolSurf.LabuteASA(mol_regular)),
+        _safe_value(rdMolDescriptors.CalcNumHBA, mol_regular),
+        _safe_value(rdMolDescriptors.CalcNumHBD, mol_regular),
+        _safe_value(MolSurf.LabuteASA, mol_regular),
     ]
 
     _append_moe_type_descriptors(values, mol_regular)
 
     values.extend(
         [
-            _safe_value(lambda: rdMolDescriptors.CalcNumRings(mol_regular)),
-            _safe_value(lambda: rdMolDescriptors.CalcNumHeterocycles(mol_regular)),
-            _safe_value(lambda: rdMolDescriptors.CalcNumAromaticRings(mol_regular)),
             _safe_value(
-                lambda: rdMolDescriptors.CalcNumAromaticHeterocycles(mol_regular)
+                rdMolDescriptors.CalcNumRings,
+                mol_regular,
             ),
-            _safe_value(lambda: rdMolDescriptors.CalcNumAliphaticRings(mol_regular)),
             _safe_value(
-                lambda: rdMolDescriptors.CalcNumAliphaticHeterocycles(mol_regular)
+                rdMolDescriptors.CalcNumHeterocycles,
+                mol_regular,
             ),
-            _safe_value(lambda: rdMolDescriptors.CalcNumRotatableBonds(mol_regular)),
-            _safe_value(lambda: Crippen.MolLogP(mol_regular)),
-            _safe_value(lambda: Crippen.MolMR(mol_regular)),
-            _safe_value(lambda: rdMolDescriptors.CalcTPSA(mol_regular)),
             _safe_value(
-                lambda: rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True)
+                rdMolDescriptors.CalcNumAromaticRings,
+                mol_regular,
             ),
-            _safe_value(lambda: Descriptors.ExactMolWt(mol_with_hydrogens)),
-            _safe_value(
-                lambda: Descriptors.ExactMolWt(mol_with_hydrogens)
-                / mol_with_hydrogens.GetNumAtoms()
-            ),
+            _safe_value(rdMolDescriptors.CalcNumAromaticHeterocycles, mol_regular),
+            _safe_value(rdMolDescriptors.CalcNumAliphaticRings, mol_regular),
+            _safe_value(rdMolDescriptors.CalcNumAliphaticHeterocycles, mol_regular),
+            _safe_value(rdMolDescriptors.CalcNumRotatableBonds, mol_regular),
+            _safe_value(Crippen.MolLogP, mol_regular),
+            _safe_value(Crippen.MolMR, mol_regular),
+            _safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
+            _safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
+            _safe_value(Descriptors.ExactMolWt, mol_with_hydrogens),
+            _safe_value(_average_exact_mol_wt, mol_with_hydrogens),
         ]
     )
 
@@ -173,10 +183,10 @@ def calc_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
     (MOMI-X, MOMI-Y, MOMI-Z), which corresponds to RDKit PMI3, PMI2, and PMI1.
     """
     values = [
-        _safe_value(lambda: rdMolDescriptors.CalcPMI3(mol_with_3d_conformer)),
-        _safe_value(lambda: rdMolDescriptors.CalcPMI2(mol_with_3d_conformer)),
-        _safe_value(lambda: rdMolDescriptors.CalcPMI1(mol_with_3d_conformer)),
-        _safe_value(lambda: rdMolDescriptors.CalcPBF(mol_with_3d_conformer)),
+        _safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
+        _safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
+        _safe_value(rdMolDescriptors.CalcPMI1, mol_with_3d_conformer),
+        _safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
     ]
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES_3D
