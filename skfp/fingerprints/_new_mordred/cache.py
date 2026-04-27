@@ -14,7 +14,16 @@ from typing import Any
 import networkx as nx
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import EState, Get3DDistanceMatrix, GetMolFrags, Mol, rdPartialCharges
+from rdkit.Chem import (
+    Crippen,
+    Descriptors,
+    EState,
+    Get3DDistanceMatrix,
+    GetMolFrags,
+    Mol,
+    rdMolDescriptors,
+    rdPartialCharges,
+)
 from rdkit.Chem.rdchem import Atom, Bond, BondType
 from scipy.sparse.csgraph import floyd_warshall
 from scipy.spatial.distance import cdist
@@ -396,6 +405,7 @@ INFORMATION_CONTENT_FEATURE_NAMES = [
     for order in _INFORMATION_CONTENT_ORDERS
 ]
 KAPPA_SHAPE_INDEX_FEATURE_NAMES = ["Kier1", "Kier2", "Kier3"]
+LIPINSKI_FEATURE_NAMES = ["Lipinski", "GhoseFilter"]
 _CARBON = Atom(6)
 _FrameworkNode = tuple[str, int]
 _SPHERE_MESH_CACHE: dict[int, np.ndarray] = {}
@@ -1132,6 +1142,26 @@ def _kappa_shape_index(mol: Mol, n_atoms: int, order: int) -> float:
     else:
         p_max = 0.25 * (n_atoms - 1) * (n_atoms - 3)
     return 4 * p_max * p_min / n_paths**2
+
+
+def _lipinski_values(mol: Mol) -> np.ndarray:
+    exact_mol_wt = Descriptors.ExactMolWt(mol)
+    log_p = Crippen.MolLogP(mol)
+    mol_mr = Crippen.MolMR(mol)
+
+    lipinski = (
+        rdMolDescriptors.CalcNumHBD(mol) <= 5
+        and rdMolDescriptors.CalcNumHBA(mol) <= 10
+        and exact_mol_wt <= 500
+        and log_p <= 5
+    )
+    ghose_filter = (
+        160 <= exact_mol_wt <= 480
+        and 20 <= mol.GetNumAtoms() <= 70
+        and -0.4 <= log_p <= 5.6
+        and 40 <= mol_mr <= 130
+    )
+    return np.asarray([lipinski, ghose_filter], dtype=np.float32)
 
 
 def _aromatic_values(mol: Mol) -> np.ndarray:
@@ -1974,6 +2004,7 @@ class MordredMolCache:
     gravitational_index_values: np.ndarray
     information_content_values: np.ndarray
     kappa_shape_index_values: np.ndarray
+    lipinski_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
     autocorrelation_gsums: list[float]
@@ -2033,6 +2064,7 @@ class MordredMolCache:
             ),
             information_content_values=_information_content_values(mol_kekulized),
             kappa_shape_index_values=_kappa_shape_index_values(mol_regular),
+            lipinski_values=_lipinski_values(mol_regular),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
             autocorrelation_gsums=_autocorrelation_gsums(autocorrelation_gmats),
