@@ -20,6 +20,10 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.adjacency_matrix_values.shape == (12,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
+    assert len(cache.autocorrelation_gmats) == 9
+    assert len(cache.autocorrelation_gsums) == 9
+    assert cache.autocorrelation_weights["c"].shape == (3,)
+    assert cache.autocorrelation_centered_weights["c"].shape == (3,)
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():

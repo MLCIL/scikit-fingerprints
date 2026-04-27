@@ -56,6 +56,8 @@ ALLRED_ROCOW_EN = PeriodicTable.from_file("allred_rocow_electron_negativity.txt"
 POLARIZABILITY_94 = PeriodicTable.from_file("polarizalibity94.txt")
 POLARIZABILITY_78 = PeriodicTable.from_file("polarizalibity78.txt")
 IONIZATION_POTENTIAL = PeriodicTable.from_file("ionization_potential.txt")
+MASS = PeriodicTable.from_file("mass.txt")
+MORDRED_VDW_RADII = PeriodicTable.from_file("van_der_waals_radii.txt")
 MC_GOWAN_VOLUME = PeriodicTable.from_file("mc_gowan_volume.txt")
 
 PERIOD = PeriodicTable(
@@ -74,7 +76,7 @@ _RDKIT_PT = GetPeriodicTable()
 
 
 def mass(atomic_num: int) -> float:
-    return _RDKIT_PT.GetAtomicWeight(atomic_num)
+    return MASS[atomic_num]
 
 
 def vdw_radii(atomic_num: int) -> float:
@@ -82,4 +84,4 @@ def vdw_radii(atomic_num: int) -> float:
 
 
 def vdw_volume(atomic_num: int) -> float:
-    return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
+    return 4.0 / 3.0 * np.pi * MORDRED_VDW_RADII[atomic_num] ** 3

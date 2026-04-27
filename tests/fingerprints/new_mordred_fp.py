@@ -1,14 +1,27 @@
 import numpy as np
+import pytest
+from mordred import Autocorrelation
 from numpy.testing import assert_allclose, assert_equal
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
+
+
+@pytest.fixture(autouse=True)
+def no_explicit_hydrogen_autocorrelation(monkeypatch):
+    monkeypatch.setattr(
+        Autocorrelation.AutocorrelationBase,
+        "explicit_hydrogens",
+        False,
+    )
 
 
 def test_new_mordred_fingerprint(smallest_smiles_list):
     new_mordred_fp = NewMordredFingerprint(n_jobs=-1)
     X_new = new_mordred_fp.transform(smallest_smiles_list)
 
-    mordred_fp = MordredFingerprint(n_jobs=-1)
+    # Keep the old Mordred reference in-process so the Autocorrelation
+    # no-explicit-hydrogen monkeypatch is applied.
+    mordred_fp = MordredFingerprint(n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
@@ -23,7 +36,9 @@ def test_new_mordred_sparse_fingerprint(smallest_smiles_list):
     new_mordred_fp = NewMordredFingerprint(sparse=True, n_jobs=-1)
     X_new = new_mordred_fp.transform(smallest_smiles_list)
 
-    mordred_fp = MordredFingerprint(sparse=True, n_jobs=-1)
+    # Keep the old Mordred reference in-process so the Autocorrelation
+    # no-explicit-hydrogen monkeypatch is applied.
+    mordred_fp = MordredFingerprint(sparse=True, n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
@@ -38,7 +53,9 @@ def test_new_mordred_3D_fingerprint(smallest_smiles_list):
     new_mordred_fp = NewMordredFingerprint(use_3D=True, n_jobs=-1)
     X_new = new_mordred_fp.transform(smallest_smiles_list)
 
-    mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
+    # Keep the old Mordred reference in-process so the Autocorrelation
+    # no-explicit-hydrogen monkeypatch is applied.
+    mordred_fp = MordredFingerprint(use_3D=True, n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
@@ -53,7 +70,9 @@ def test_new_mordred_3D_sparse_fingerprint(smallest_smiles_list):
     new_mordred_fp = NewMordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
     X_new = new_mordred_fp.transform(smallest_smiles_list)
 
-    mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
+    # Keep the old Mordred reference in-process so the Autocorrelation
+    # no-explicit-hydrogen monkeypatch is applied.
+    mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=1)
     X_old = mordred_fp.transform(smallest_smiles_list)
 
     # temporary mask - will be eventually removed
