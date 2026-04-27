@@ -78,6 +78,7 @@ BARYSZ_ATTRIBUTES = [
     "VR2",
     "VR3",
 ]
+BCUT_PROPERTIES = ["c", "dv", "d", "s", "Z", "m", "v", "se", "pe", "are", "p", "i"]
 _CARBON = Atom(6)
 
 
@@ -253,6 +254,40 @@ def _barysz_values(mol: Mol, n_frags: int) -> np.ndarray:
     return np.asarray(values, dtype=np.float32)
 
 
+def _bcut_pair(mol: Mol, property_values: np.ndarray) -> list[float]:
+    if np.any(~np.isfinite(property_values)):
+        return [np.nan, np.nan]
+
+    n_atoms = mol.GetNumAtoms()
+    burden_matrix = np.full((n_atoms, n_atoms), 0.001, dtype=float)
+    np.fill_diagonal(burden_matrix, property_values)
+
+    for bond in mol.GetBonds():
+        begin_atom = bond.GetBeginAtom()
+        end_atom = bond.GetEndAtom()
+        i = begin_atom.GetIdx()
+        j = end_atom.GetIdx()
+        weight = bond.GetBondTypeAsDouble() / 10.0
+        if begin_atom.GetDegree() == 1 or end_atom.GetDegree() == 1:
+            weight += 0.01
+        burden_matrix[i, j] = weight
+        burden_matrix[j, i] = weight
+
+    eigenvalues = np.linalg.eigvalsh(burden_matrix)
+    return [float(eigenvalues[-1]), float(eigenvalues[0])]
+
+
+def _bcut_values(mol: Mol, n_frags: int) -> np.ndarray:
+    if n_frags != 1:
+        return np.full(len(BCUT_PROPERTIES) * 2, np.nan, dtype=np.float32)
+
+    values: list[float] = []
+    for prop in BCUT_PROPERTIES:
+        values.extend(_bcut_pair(mol, _property_values(mol, prop)))
+
+    return np.asarray(values, dtype=np.float32)
+
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -273,6 +308,7 @@ class MordredMolCache:
     autocorrelation_weights: dict[str, np.ndarray]
     autocorrelation_centered_weights: dict[str, np.ndarray]
     barysz_values: np.ndarray
+    bcut_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
@@ -307,5 +343,6 @@ class MordredMolCache:
                 autocorrelation_weights
             ),
             barysz_values=_barysz_values(mol_regular, n_frags),
+            bcut_values=_bcut_values(mol_regular, n_frags),
             mol_with_hydrogens=mol_with_hydrogens,
         )

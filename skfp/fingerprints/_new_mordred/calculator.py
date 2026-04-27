@@ -19,6 +19,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     atom_count,
     autocorrelation,
     barysz_matrix,
+    bcut,
     carbon_types,
     rdkit_descriptors,
     ring_count,
@@ -66,6 +67,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         aromatic.calc(cache),
         autocorrelation.calc(cache),
         barysz_matrix.calc(cache),
+        bcut.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(
