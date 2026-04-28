@@ -565,6 +565,30 @@ _VDW_VOLUME_ABC_ATOM_CONTRIB = {
 }
 
 VERTEX_ADJACENCY_INFORMATION_FEATURE_NAMES = ["VAdjMat"]
+
+WALK_COUNT_FEATURE_NAMES = [
+    "MWC01",
+    "MWC02",
+    "MWC03",
+    "MWC04",
+    "MWC05",
+    "MWC06",
+    "MWC07",
+    "MWC08",
+    "MWC09",
+    "MWC10",
+    "TMWC10",
+    "SRW02",
+    "SRW03",
+    "SRW04",
+    "SRW05",
+    "SRW06",
+    "SRW07",
+    "SRW08",
+    "SRW09",
+    "SRW10",
+    "TSRW10",
+]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1706,6 +1730,33 @@ def _vertex_adjacency_information_values(mol: Mol) -> np.ndarray:
     return np.asarray([value], dtype=np.float32)
 
 
+def _walk_count_values(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> np.ndarray:
+    adjacency = adjacency_matrix.order().astype(np.float64, copy=False)
+
+    power = adjacency
+    molecular_walk_counts: list[float] = []
+    self_returning_walk_counts: list[float] = []
+
+    for order in range(1, 11):
+        if order > 1:
+            power = power @ adjacency
+
+        if order == 1:
+            molecular_walk_counts.append(0.5 * float(power.sum()))
+        else:
+            molecular_walk_counts.append(log(float(power.sum()) + 1))
+            self_returning_walk_counts.append(log(float(np.trace(power)) + 1))
+
+    values = [
+        *molecular_walk_counts,
+        mol.GetNumAtoms() + sum(molecular_walk_counts),
+        *self_returning_walk_counts,
+        mol.GetNumAtoms() + sum(self_returning_walk_counts),
+    ]
+
+    return np.asarray(values, dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2597,6 +2648,7 @@ class MordredMolCache:
     topological_index_values: np.ndarray
     vdw_volume_abc_values: np.ndarray
     vertex_adjacency_information_values: np.ndarray
+    walk_count_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2674,6 +2726,7 @@ class MordredMolCache:
             vertex_adjacency_information_values=_vertex_adjacency_information_values(
                 mol_regular
             ),
+            walk_count_values=_walk_count_values(mol_regular, adjacency_matrix_regular),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,

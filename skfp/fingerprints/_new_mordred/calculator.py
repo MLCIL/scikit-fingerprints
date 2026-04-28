@@ -51,6 +51,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     topological_index,
     vdw_volume_abc,
     vertex_adjacency_information,
+    walk_count,
     wiener_index,
     zagreb_index,
 )
@@ -119,6 +120,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_index.calc(cache),
         vdw_volume_abc.calc(cache),
         vertex_adjacency_information.calc(cache),
+        walk_count.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(
