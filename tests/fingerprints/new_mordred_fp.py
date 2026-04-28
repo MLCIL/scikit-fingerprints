@@ -44,6 +44,7 @@ NO_EXPLICIT_H_INFORMATION_CONTENT_FEATURES = [
 NO_EXPLICIT_H_LIPINSKI_FEATURES = ["GhoseFilter"]
 NO_EXPLICIT_H_MCGOWAN_VOLUME_FEATURES = ["VMcGowan"]
 NO_EXPLICIT_H_POLARIZABILITY_FEATURES = ["apol", "bpol"]
+NO_EXPLICIT_H_VDW_VOLUME_ABC_FEATURES = ["Vabc"]
 
 
 @pytest.fixture(autouse=True)
@@ -189,6 +190,8 @@ def _parity_mask(X_new, X_old, feature_names):
     apol and bpol can differ because default Mordred Polarizability inherits
     explicit_hydrogens=True, while the new 2D descriptor policy does not add
     hydrogens.
+    Vabc can differ because default Mordred includes explicit hydrogen atom
+    volumes and bond corrections, while the new 2D descriptor policy does not.
     """
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
     for name in [
@@ -201,6 +204,7 @@ def _parity_mask(X_new, X_old, feature_names):
         *NO_EXPLICIT_H_LIPINSKI_FEATURES,
         *NO_EXPLICIT_H_MCGOWAN_VOLUME_FEATURES,
         *NO_EXPLICIT_H_POLARIZABILITY_FEATURES,
+        *NO_EXPLICIT_H_VDW_VOLUME_ABC_FEATURES,
     ]:
         mask[:, feature_names.tolist().index(name)] = False
 

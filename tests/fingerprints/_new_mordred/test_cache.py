@@ -17,38 +17,44 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.mol_kekulized.GetNumAtoms() == 3
     assert cache.distance_matrix_regular.matrix.shape == (3, 3)
     assert cache.adjacency_matrix_regular.order(1).shape == (3, 3)
-    assert cache.adjacency_matrix_values.shape == (12,)
-    assert cache.distance_matrix_values.shape == (12,)
-    assert cache.eccentric_connectivity_index_values.shape == (1,)
-    assert cache.estate_values.shape == (316,)
-    assert cache.extended_topochemical_atom_values.shape == (45,)
-    assert cache.fragment_complexity_values.shape == (1,)
-    assert cache.framework_values.shape == (1,)
-    assert cache.information_content_values.shape == (42,)
-    assert cache.kappa_shape_index_values.shape == (3,)
-    assert cache.lipinski_values.shape == (2,)
-    assert cache.logs_values.shape == (1,)
-    assert cache.mcgowan_volume_values.shape == (1,)
-    assert cache.molecular_distance_edge_values.shape == (19,)
-    assert cache.molecular_id_values.shape == (12,)
-    assert cache.path_count_values.shape == (21,)
-    assert cache.polarizability_values.shape == (2,)
-    assert cache.topological_charge_values.shape == (21,)
-    assert cache.topological_index_values.shape == (4,)
-    assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9
     assert len(cache.autocorrelation_gsums) == 9
     assert cache.autocorrelation_weights["c"].shape == (3,)
     assert cache.autocorrelation_centered_weights["c"].shape == (3,)
-    assert cache.barysz_values.shape == (104,)
-    assert cache.bcut_values.shape == (24,)
-    assert cache.bond_count_values.shape == (9,)
-    assert cache.chi_values.shape == (56,)
-    assert cache.constitutional_values.shape == (16,)
-    assert cache.cpsa_2d_values.shape == (2,)
-    assert cache.cpsa_3d_values.shape == (41,)
-    assert cache.detour_matrix_values.shape == (14,)
+
+    value_shapes = {
+        "adjacency_matrix_values": (12,),
+        "aromatic_values": (2,),
+        "barysz_values": (104,),
+        "bcut_values": (24,),
+        "bond_count_values": (9,),
+        "chi_values": (56,),
+        "constitutional_values": (16,),
+        "cpsa_2d_values": (2,),
+        "cpsa_3d_values": (41,),
+        "detour_matrix_values": (14,),
+        "distance_matrix_values": (12,),
+        "eccentric_connectivity_index_values": (1,),
+        "estate_values": (316,),
+        "extended_topochemical_atom_values": (45,),
+        "fragment_complexity_values": (1,),
+        "framework_values": (1,),
+        "information_content_values": (42,),
+        "kappa_shape_index_values": (3,),
+        "lipinski_values": (2,),
+        "logs_values": (1,),
+        "mcgowan_volume_values": (1,),
+        "molecular_distance_edge_values": (19,),
+        "molecular_id_values": (12,),
+        "path_count_values": (21,),
+        "polarizability_values": (2,),
+        "topological_charge_values": (21,),
+        "topological_index_values": (4,),
+        "vdw_volume_abc_values": (1,),
+    }
+    for attr, shape in value_shapes.items():
+        assert getattr(cache, attr).shape == shape
 
 
 def test_cache_prepares_3d_hydrogen_variant_when_requested():

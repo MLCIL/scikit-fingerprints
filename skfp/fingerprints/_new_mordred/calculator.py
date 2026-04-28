@@ -49,6 +49,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     rotatable_bond,
     topological_charge,
     topological_index,
+    vdw_volume_abc,
     wiener_index,
     zagreb_index,
 )
@@ -115,6 +116,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         polarizability.calc(cache),
         topological_charge.calc(cache),
         topological_index.calc(cache),
+        vdw_volume_abc.calc(cache),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         rdkit_descriptors.calc_2d(

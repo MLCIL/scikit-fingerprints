@@ -8,7 +8,7 @@ from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from itertools import groupby
-from math import log, sqrt
+from math import log, pi, sqrt
 from time import monotonic
 from typing import Any
 
@@ -546,6 +546,23 @@ TOPOLOGICAL_INDEX_FEATURE_NAMES = [
     "TopoShapeIndex",
     "PetitjeanIndex",
 ]
+
+VDW_VOLUME_ABC_FEATURE_NAMES = ["Vabc"]
+_VDW_VOLUME_ABC_ATOM_CONTRIB = {
+    1: 4.0 / 3.0 * pi * 1.20**3,
+    5: 4.0 / 3.0 * pi * 2.13**3,
+    6: 4.0 / 3.0 * pi * 1.70**3,
+    7: 4.0 / 3.0 * pi * 1.55**3,
+    8: 4.0 / 3.0 * pi * 1.52**3,
+    9: 4.0 / 3.0 * pi * 1.47**3,
+    14: 4.0 / 3.0 * pi * 2.10**3,
+    15: 4.0 / 3.0 * pi * 1.80**3,
+    16: 4.0 / 3.0 * pi * 1.80**3,
+    17: 4.0 / 3.0 * pi * 1.75**3,
+    33: 4.0 / 3.0 * pi * 1.85**3,
+    34: 4.0 / 3.0 * pi * 1.90**3,
+    35: 4.0 / 3.0 * pi * 1.85**3,
+}
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1634,6 +1651,37 @@ def _topological_index_values(distance_matrix: DistanceMatrix) -> np.ndarray:
     )
 
 
+def _vdw_volume_abc_sssr_ring_counts(mol: Mol) -> tuple[int, int]:
+    n_aromatic = 0
+    n_non_aromatic = 0
+    for ring in Chem.GetSymmSSSR(mol):
+        if all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring):
+            n_aromatic += 1
+        else:
+            n_non_aromatic += 1
+
+    return n_aromatic, n_non_aromatic
+
+
+def _vdw_volume_abc_values(mol: Mol) -> np.ndarray:
+    try:
+        atom_contrib = sum(
+            _VDW_VOLUME_ABC_ATOM_CONTRIB[atom.GetAtomicNum()] for atom in mol.GetAtoms()
+        )
+    except KeyError:
+        value = np.nan
+    else:
+        n_aromatic, n_non_aromatic = _vdw_volume_abc_sssr_ring_counts(mol)
+        value = (
+            atom_contrib
+            - 5.92 * mol.GetNumBonds()
+            - 14.7 * n_aromatic
+            - 3.8 * n_non_aromatic
+        )
+
+    return np.asarray([value], dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2523,6 +2571,7 @@ class MordredMolCache:
     polarizability_values: np.ndarray
     topological_charge_values: np.ndarray
     topological_index_values: np.ndarray
+    vdw_volume_abc_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2596,6 +2645,7 @@ class MordredMolCache:
                 distance_matrix_regular, adjacency_matrix_regular
             ),
             topological_index_values=_topological_index_values(distance_matrix_regular),
+            vdw_volume_abc_values=_vdw_volume_abc_values(mol_regular),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,
