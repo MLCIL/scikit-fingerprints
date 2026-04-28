@@ -563,6 +563,8 @@ _VDW_VOLUME_ABC_ATOM_CONTRIB = {
     34: 4.0 / 3.0 * pi * 1.90**3,
     35: 4.0 / 3.0 * pi * 1.85**3,
 }
+
+VERTEX_ADJACENCY_INFORMATION_FEATURE_NAMES = ["VAdjMat"]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1682,6 +1684,28 @@ def _vdw_volume_abc_values(mol: Mol) -> np.ndarray:
     return np.asarray([value], dtype=np.float32)
 
 
+def _vertex_adjacency_information_count_heavy_heavy_bonds(mol: Mol) -> int:
+    if mol.GetNumAtoms() == mol.GetNumHeavyAtoms():
+        return mol.GetNumBonds()
+
+    count = 0
+    for bond in mol.GetBonds():
+        if (
+            bond.GetBeginAtom().GetAtomicNum() != 1
+            and bond.GetEndAtom().GetAtomicNum() != 1
+        ):
+            count += 1
+
+    return count
+
+
+def _vertex_adjacency_information_values(mol: Mol) -> np.ndarray:
+    m = _vertex_adjacency_information_count_heavy_heavy_bonds(mol)
+    value = np.nan if m == 0 else 1 + np.log2(m)
+
+    return np.asarray([value], dtype=np.float32)
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2572,6 +2596,7 @@ class MordredMolCache:
     topological_charge_values: np.ndarray
     topological_index_values: np.ndarray
     vdw_volume_abc_values: np.ndarray
+    vertex_adjacency_information_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2646,6 +2671,9 @@ class MordredMolCache:
             ),
             topological_index_values=_topological_index_values(distance_matrix_regular),
             vdw_volume_abc_values=_vdw_volume_abc_values(mol_regular),
+            vertex_adjacency_information_values=_vertex_adjacency_information_values(
+                mol_regular
+            ),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,

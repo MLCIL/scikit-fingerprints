@@ -52,6 +52,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
         "topological_charge_values": (21,),
         "topological_index_values": (4,),
         "vdw_volume_abc_values": (1,),
+        "vertex_adjacency_information_values": (1,),
     }
     for attr, shape in value_shapes.items():
         assert getattr(cache, attr).shape == shape
