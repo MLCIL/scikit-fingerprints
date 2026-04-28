@@ -539,6 +539,13 @@ TOPOLOGICAL_CHARGE_FEATURE_NAMES = [
     "JGI10",
     "JGT10",
 ]
+
+TOPOLOGICAL_INDEX_FEATURE_NAMES = [
+    "Diameter",
+    "Radius",
+    "TopoShapeIndex",
+    "PetitjeanIndex",
+]
 _MOLECULAR_ID_EPS = 1e-10
 _MOLECULAR_ID_WEIGHT_LIMIT = int(1.0 / (_MOLECULAR_ID_EPS**2))
 _MOLECULAR_ID_HALOGENS = {9, 17, 35, 53, 85, 117}
@@ -1604,6 +1611,29 @@ def _topological_charge_values(
     return np.asarray(values, dtype=np.float32)
 
 
+def _topological_index_values(distance_matrix: DistanceMatrix) -> np.ndarray:
+    distances = distance_matrix.matrix
+    if distances.size == 0:
+        return np.full(len(TOPOLOGICAL_INDEX_FEATURE_NAMES), np.nan, dtype=np.float32)
+
+    eccentricities = np.max(distances, axis=0)
+    radius = int(np.min(eccentricities))
+    diameter = int(np.max(distances))
+
+    shape_index = np.nan if radius == 0 else (diameter - radius) / radius
+    petitjean_index = np.nan if diameter == 0 else (diameter - radius) / diameter
+
+    return np.asarray(
+        [
+            diameter,
+            radius,
+            shape_index,
+            petitjean_index,
+        ],
+        dtype=np.float32,
+    )
+
+
 def _morse_atomic_property_vector(mol: Mol, prop: str) -> np.ndarray:
     prop_func = _AUTOCORRELATION_PROPERTY_FUNCS[prop]
     carbon_value = prop_func(_CARBON)
@@ -2492,6 +2522,7 @@ class MordredMolCache:
     path_count_values: np.ndarray
     polarizability_values: np.ndarray
     topological_charge_values: np.ndarray
+    topological_index_values: np.ndarray
     morse_values: np.ndarray
     aromatic_values: np.ndarray
     autocorrelation_gmats: list[np.ndarray]
@@ -2564,6 +2595,7 @@ class MordredMolCache:
             topological_charge_values=_topological_charge_values(
                 distance_matrix_regular, adjacency_matrix_regular
             ),
+            topological_index_values=_topological_index_values(distance_matrix_regular),
             morse_values=_morse_values(mol_with_hydrogens),
             aromatic_values=_aromatic_values(mol_regular),
             autocorrelation_gmats=autocorrelation_gmats,

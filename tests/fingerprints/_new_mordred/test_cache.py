@@ -34,6 +34,7 @@ def test_cache_prepares_2d_dependencies_eagerly():
     assert cache.path_count_values.shape == (21,)
     assert cache.polarizability_values.shape == (2,)
     assert cache.topological_charge_values.shape == (21,)
+    assert cache.topological_index_values.shape == (4,)
     assert cache.aromatic_values.shape == (2,)
     assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
     assert len(cache.autocorrelation_gmats) == 9
