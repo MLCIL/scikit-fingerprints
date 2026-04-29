@@ -633,13 +633,13 @@ def zagreb_index_m1(
 
     modified : bool, default=False
         Whether to use the modified Zagreb index. If True, the modified Zagreb index
-        is calculated.
+        is calculated. Returns ``np.nan`` when True and the molecule contains at
+        least one atom with degree 0.
 
     Returns
     -------
     float
-        Descriptor value. Returns ``np.nan`` when ``modified=True`` and the molecule
-        contains at least one atom with degree 0.
+        Descriptor value.
 
     References
     ----------
@@ -706,13 +706,13 @@ def zagreb_index_m2(
 
     modified : bool, default=False
         Whether to use the modified Zagreb index. If True, the modified Zagreb index
-        is calculated.
+        is calculated. Returns ``np.nan`` when True and the molecule contains at
+        least one atom with degree 0.
 
     Returns
     -------
     float
-        Descriptor value. Returns ``np.nan`` when ``modified=True`` and the molecule
-        contains at least one atom with degree 0.
+        Descriptor value.
 
     References
     ----------
