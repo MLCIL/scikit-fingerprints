@@ -33,3 +33,8 @@ from .usr import USRFingerprint
 from .usrcat import USRCATFingerprint
 from .vsa import VSAFingerprint
 from .whim import WHIMFingerprint
+
+try:
+    from .neural import CLAMPFingerprint
+except ImportError:
+    pass

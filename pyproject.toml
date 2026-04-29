@@ -46,6 +46,9 @@ repository = "https://github.com/scikit-fingerprints/scikit-fingerprints"
 documentation = "https://scikit-fingerprints.readthedocs.io/latest"
 "Bug Tracker" = "https://github.com/scikit-fingerprints/scikit-fingerprints/issues"
 
+[project.optional-dependencies]
+neural = ["torch>=2.0.0"]
+
 [dependency-groups]
 dev = [
     "coverage",
@@ -65,7 +68,8 @@ test = [
     "ruff",
     "pre-commit",
     "pytest",
-    "pytest-rerunfailures"
+    "pytest-rerunfailures",
+    "zizmor",
 ]
 
 docs = [

@@ -56,6 +56,14 @@ You can install from PyPI, using `pip` or `uv`.
 pip install scikit-fingerprints
 ```
 
+If you want to use neural fingerprints (embeddings from pretrained neural networks), install optional dependencies with:
+
+```bash
+pip install "scikit-fingerprints[neural]"
+```
+
+See [INSTALL.md](INSTALL.md) for more details.
+
 If you need bleeding-edge features and don't mind potentially unstable or undocumented functionalities, you can also install directly from GitHub:
 
 ```bash
