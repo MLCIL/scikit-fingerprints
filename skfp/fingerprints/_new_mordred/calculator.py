@@ -10,12 +10,19 @@
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol
 
-from skfp.fingerprints._new_mordred.descriptors import abc_index
+from skfp.fingerprints._new_mordred.descriptors import (
+    abc_index,
+    wiener_index,
+    zagreb_index,
+)
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
 )
-from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
+from skfp.fingerprints._new_mordred.utils.graph_matrix import (
+    AdjacencyMatrix,
+    DistanceMatrix,
+)
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 _FEATURE_NAME_TO_IDX_2D = {name: i for i, name in enumerate(FEATURE_NAMES_2D)}
@@ -40,10 +47,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
+    adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
     # 2D descriptors
     descriptors_2d = [
         abc_index.calc(mol_regular, distance_matrix_regular),
+        wiener_index.calc(mol_regular, distance_matrix_regular),
+        zagreb_index.calc(mol_regular, adjacency_matrix_regular),
     ]
 
     for values, feature_names in descriptors_2d:
