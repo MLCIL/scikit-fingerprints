@@ -58,7 +58,7 @@ class AdjacencyMatrix:
         bond counts as one edge. In that case, atom degree equals the atom
         valence, i.e. the number of bonds each atom forms.
         """
-        return self._base.sum(axis=0)
+        return self._base.sum(axis=0, dtype=float)
 
 
 class DistanceMatrix3D:
