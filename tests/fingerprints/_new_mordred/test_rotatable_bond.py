@@ -9,7 +9,7 @@ from skfp.fingerprints._new_mordred.descriptors import rotatable_bond
 from skfp.fingerprints._new_mordred.utils.feature_names import FEATURE_NAMES_2D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
-FEATURE_NAMES = ["RotRatio"]
+FEATURE_NAMES = ["nRot", "RotRatio"]
 
 SMILES = ["CC", "CCCC", "CCO", "c1ccccc1", "CC(=O)OC1=CC=CC=C1C(=O)O"]
 

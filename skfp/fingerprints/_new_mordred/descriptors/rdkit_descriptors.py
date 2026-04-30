@@ -1,4 +1,5 @@
-"""Mordred descriptors implemented as direct RDKit wrappers.
+"""
+Mordred descriptors implemented as direct RDKit wrappers.
 
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
@@ -23,12 +24,6 @@ from rdkit.Chem.EState import EState_VSA
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 FEATURE_NAMES_2D = [
-    "nAtom",
-    "nHeavyAtom",
-    "nSpiro",
-    "nBridgehead",
-    "nHetero",
-    "FCSP3",
     "BalabanJ",
     "BertzCT",
     "nHBAcc",
@@ -39,13 +34,6 @@ FEATURE_NAMES_2D = [
     *[f"SlogP_VSA{i}" for i in range(1, 12)],
     *[f"EState_VSA{i}" for i in range(1, 11)],
     *[f"VSA_EState{i}" for i in range(1, 10)],
-    "nRing",
-    "nHRing",
-    "naRing",
-    "naHRing",
-    "nARing",
-    "nAHRing",
-    "nRot",
     "SLogP",
     "SMR",
     "TopoPSA(NO)",
@@ -115,18 +103,8 @@ def calc_2d(
 ) -> tuple[np.ndarray, list[str]]:
     """
     Compute 2D Mordred descriptors available as direct RDKit calls.
-
-    The returned descriptors include atom counts, graph descriptors, hydrogen
-    bond counts, MOE-type VSA descriptors, ring counts, Crippen descriptors,
-    topological polar surface area, and molecular weights.
     """
     values = [
-        _safe_value(rdMolDescriptors.CalcNumAtoms, mol_regular),
-        _safe_value(rdMolDescriptors.CalcNumHeavyAtoms, mol_regular),
-        _safe_value(rdMolDescriptors.CalcNumSpiroAtoms, mol_regular),
-        _safe_value(rdMolDescriptors.CalcNumBridgeheadAtoms, mol_regular),
-        _safe_value(rdMolDescriptors.CalcNumHeteroatoms, mol_regular),
-        _safe_value(rdMolDescriptors.CalcFractionCSP3, mol_regular),
         _safe_value(
             GraphDescriptors.BalabanJ,
             mol_regular,
@@ -146,22 +124,6 @@ def calc_2d(
 
     values.extend(
         [
-            _safe_value(
-                rdMolDescriptors.CalcNumRings,
-                mol_regular,
-            ),
-            _safe_value(
-                rdMolDescriptors.CalcNumHeterocycles,
-                mol_regular,
-            ),
-            _safe_value(
-                rdMolDescriptors.CalcNumAromaticRings,
-                mol_regular,
-            ),
-            _safe_value(rdMolDescriptors.CalcNumAromaticHeterocycles, mol_regular),
-            _safe_value(rdMolDescriptors.CalcNumAliphaticRings, mol_regular),
-            _safe_value(rdMolDescriptors.CalcNumAliphaticHeterocycles, mol_regular),
-            _safe_value(rdMolDescriptors.CalcNumRotatableBonds, mol_regular),
             _safe_value(Crippen.MolLogP, mol_regular),
             _safe_value(Crippen.MolMR, mol_regular),
             _safe_value(rdMolDescriptors.CalcTPSA, mol_regular),

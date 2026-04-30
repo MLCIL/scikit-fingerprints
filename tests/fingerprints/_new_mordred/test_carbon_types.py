@@ -20,6 +20,7 @@ FEATURE_NAMES = [
     "C3SP3",
     "C4SP3",
     "HybRatio",
+    "FCSP3",
 ]
 
 SMILES = [

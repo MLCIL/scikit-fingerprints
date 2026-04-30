@@ -1,4 +1,5 @@
-"""Ring count descriptors implemented with RDKit SSSR rings.
+"""
+Ring count descriptors implemented with RDKit SSSR rings.
 
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
@@ -10,14 +11,15 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
 
-_ALREADY_IMPLEMENTED = {
-    "nRing",
-    "nHRing",
-    "naRing",
-    "naHRing",
-    "nARing",
-    "nAHRing",
-}
+_GENERAL_RING_SPECS = [
+    ("nRing", None, False, False, None, None),
+    ("nHRing", None, False, False, None, True),
+    ("naRing", None, False, False, True, None),
+    ("naHRing", None, False, False, True, True),
+    ("nARing", None, False, False, False, None),
+    ("nAHRing", None, False, False, False, True),
+]
+_GENERAL_RING_NAMES = {spec[0] for spec in _GENERAL_RING_SPECS}
 
 
 def _feature_name(
@@ -52,14 +54,16 @@ def _feature_specs() -> list[
     tuple[str, int | None, bool, bool, bool | None, bool | None]
 ]:
     """
-    Generate remaining Mordred RingCount feature specs in Mordred preset order.
+    Generate Mordred RingCount feature specs in Mordred preset order.
     """
-    specs: list[tuple[str, int | None, bool, bool, bool | None, bool | None]] = []
+    specs: list[tuple[str, int | None, bool, bool, bool | None, bool | None]] = [
+        *_GENERAL_RING_SPECS
+    ]
     for fused in [False, True]:
         for aromatic in [None, True, False]:
             for hetero in [None, True]:
                 name = _feature_name(None, False, fused, aromatic, hetero)
-                if name not in _ALREADY_IMPLEMENTED:
+                if name not in _GENERAL_RING_NAMES:
                     specs.append((name, None, False, fused, aromatic, hetero))
 
                 start = 4 if fused else 3
@@ -152,7 +156,7 @@ def _matches_hetero(mol: Mol, ring: frozenset[int], hetero: bool | None) -> bool
 
 def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute remaining Mordred RingCount descriptors from RDKit SSSR rings.
+    Compute Mordred RingCount descriptors from RDKit SSSR rings.
     """
     simple_rings = _rings(mol_regular)
     fused_rings = _fused_rings(simple_rings)
