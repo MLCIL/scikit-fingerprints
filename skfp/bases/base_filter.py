@@ -274,6 +274,8 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
 
         if self.return_type == "condition_indicators":
             filter_indicators = np.vstack(filter_indicators)
+        elif not isinstance(filter_indicators, np.ndarray):
+            filter_indicators = np.array(filter_indicators, dtype=bool)
 
         return filter_indicators
 
