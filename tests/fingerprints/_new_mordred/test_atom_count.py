@@ -9,6 +9,11 @@ from skfp.fingerprints._new_mordred.descriptors import atom_count
 from skfp.fingerprints._new_mordred.utils.feature_names import FEATURE_NAMES_2D
 
 FEATURE_NAMES = [
+    "nAtom",
+    "nHeavyAtom",
+    "nSpiro",
+    "nBridgehead",
+    "nHetero",
     "nH",
     "nB",
     "nC",

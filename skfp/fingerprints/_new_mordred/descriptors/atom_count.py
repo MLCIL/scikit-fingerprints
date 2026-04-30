@@ -1,4 +1,5 @@
-"""Atom count descriptors implemented with direct RDKit atom access.
+"""
+Atom count descriptors implemented with direct RDKit atom access.
 
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
@@ -7,9 +8,14 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit.Chem import Mol, rdMolDescriptors
 
 FEATURE_NAMES = [
+    "nAtom",
+    "nHeavyAtom",
+    "nSpiro",
+    "nBridgehead",
+    "nHetero",
     "nH",
     "nB",
     "nC",
@@ -24,36 +30,39 @@ FEATURE_NAMES = [
     "nX",
 ]
 
-_ELEMENTS = {
-    "nB": 5,
-    "nC": 6,
-    "nN": 7,
-    "nO": 8,
-    "nS": 16,
-    "nP": 15,
-    "nF": 9,
-    "nCl": 17,
-    "nBr": 35,
-    "nI": 53,
-}
+_ELEMENT_ATOMIC_NUMBERS = [
+    5,  # B
+    6,  # C
+    7,  # N
+    8,  # O
+    16,  # S
+    15,  # P
+    9,  # F
+    17,  # Cl
+    35,  # Br
+    53,  # I
+]
 _HALOGENS = {9, 17, 35, 53}
 
 
 def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute the remaining Mordred atom count descriptors.
-
-    Hydrogen counts use RDKit's total hydrogen count on each atom, so implicit
-    hydrogens are included without adding explicit hydrogen atoms to the
-    molecule. Heavy-element counts are taken from the molecule's atom list.
+    Compute Mordred atom count descriptors.
     """
     atoms = mol.GetAtoms()
-    atomic_nums = [atom.GetAtomicNum() for atom in atoms]
-    values = [sum(atom.GetTotalNumHs() for atom in atoms)]
+    atomic_numbers = [atom.GetAtomicNum() for atom in atoms]
+    values = [
+        rdMolDescriptors.CalcNumAtoms(mol),
+        rdMolDescriptors.CalcNumHeavyAtoms(mol),
+        rdMolDescriptors.CalcNumSpiroAtoms(mol),
+        rdMolDescriptors.CalcNumBridgeheadAtoms(mol),
+        rdMolDescriptors.CalcNumHeteroatoms(mol),
+        sum(atom.GetTotalNumHs() for atom in atoms),
+    ]
     values.extend(
-        sum(atomic_num == _ELEMENTS[name] for atomic_num in atomic_nums)
-        for name in FEATURE_NAMES[1:-1]
+        sum(atomic_number == element_atomic_number for atomic_number in atomic_numbers)
+        for element_atomic_number in _ELEMENT_ATOMIC_NUMBERS
     )
-    values.append(sum(atomic_num in _HALOGENS for atomic_num in atomic_nums))
+    values.append(sum(atomic_number in _HALOGENS for atomic_number in atomic_numbers))
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

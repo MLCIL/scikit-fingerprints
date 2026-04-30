@@ -9,6 +9,14 @@ from skfp.fingerprints._new_mordred.descriptors import ring_count
 from skfp.fingerprints._new_mordred.utils.feature_names import FEATURE_NAMES_2D
 
 FEATURE_NAMES = ring_count.FEATURE_NAMES
+GENERAL_RING_FEATURE_NAMES = [
+    "nRing",
+    "nHRing",
+    "naRing",
+    "naHRing",
+    "nARing",
+    "nAHRing",
+]
 
 SMILES = [
     "C1CC1",
@@ -48,6 +56,12 @@ def test_ring_count_matches_mordred(smiles, mordred_2d_calc):
 
     assert feature_names == FEATURE_NAMES
     assert_allclose(values, expected, rtol=1e-6, atol=1e-6)
+
+
+def test_ring_count_includes_general_ring_descriptors():
+    assert ring_count.FEATURE_NAMES[: len(GENERAL_RING_FEATURE_NAMES)] == (
+        GENERAL_RING_FEATURE_NAMES
+    )
 
 
 def test_calculator_fills_ring_count_columns(mordred_2d_calc):
