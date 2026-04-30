@@ -274,6 +274,12 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
 
         if self.return_type == "condition_indicators":
             filter_indicators = np.vstack(filter_indicators)
+        elif not isinstance(filter_indicators, np.ndarray):
+            # run_in_parallel returns a Python list when flatten_results=True;
+            # the return contract of this method (and the caller's typing) is
+            # np.ndarray, so wrap it. Single-job and verbose paths above
+            # already produce ndarrays directly.
+            filter_indicators = np.asarray(filter_indicators, dtype=bool)
 
         return filter_indicators
 

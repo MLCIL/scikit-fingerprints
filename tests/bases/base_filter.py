@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from numpy.testing import assert_equal
 from sklearn.utils._param_validation import InvalidParameterError
@@ -37,3 +38,18 @@ def test_base_verbose(n_jobs, smiles_list, capsys):
     output = capsys.readouterr().err
     assert "100%" in output
     assert "it/s" in output
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_indicators_are_ndarray(n_jobs, smiles_list):
+    """Filter indicators must be np.ndarray regardless of n_jobs (#557).
+
+    Previously the multi-job path returned a Python list because
+    run_in_parallel(flatten_results=True) yields a list and the
+    per-condition vstack only ran for the condition_indicators branch.
+    """
+    filt = LipinskiFilter(n_jobs=n_jobs, return_type="indicators")
+    out = filt.transform(smiles_list)
+    assert isinstance(out, np.ndarray)
+    assert out.dtype == bool
+    assert out.shape == (len(smiles_list),)
