@@ -1,0 +1,31 @@
+import numpy as np
+from rdkit import Chem
+
+from skfp.fingerprints._new_mordred.cache import MordredMolCache
+
+
+def test_cache_prepares_2d_dependencies_eagerly():
+    mol = Chem.MolFromSmiles("CCO")
+
+    cache = MordredMolCache.from_mol(mol, use_3D=False)
+
+    assert cache.original_mol is mol
+    assert cache.use_3d is False
+    assert cache.mol_with_hydrogens is None
+    assert cache.n_frags == 1
+    assert cache.mol_regular.GetNumAtoms() == 3
+    assert cache.mol_kekulized.GetNumAtoms() == 3
+    assert cache.distance_matrix_regular.matrix.shape == (3, 3)
+    assert cache.adjacency_matrix_regular.order(1).shape == (3, 3)
+    assert np.allclose(np.diag(cache.distance_matrix_regular.matrix), 0)
+
+
+def test_cache_prepares_3d_hydrogen_variant_when_requested():
+    mol = Chem.MolFromSmiles("O")
+
+    cache = MordredMolCache.from_mol(mol, use_3D=True)
+
+    assert cache.use_3d is True
+    assert cache.mol_with_hydrogens is not None
+    assert cache.mol_regular.GetNumAtoms() == 1
+    assert cache.mol_with_hydrogens.GetNumAtoms() == 3
