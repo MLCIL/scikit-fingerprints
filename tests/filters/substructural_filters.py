@@ -44,7 +44,7 @@ def _get_substructural_filter_classes_and_num_conditions() -> list[tuple[type, i
         (MLSMRFilter, 116),
         (NIBRFilter, 337),
         (NIHFilter, 180),
-        (PAINSFilter, 16),
+        (PAINSFilter, 480),  # all filters, A+B+C
         (SureChEMBLFilter, 166),
         (ZINCBasicFilter, 50),
     ]

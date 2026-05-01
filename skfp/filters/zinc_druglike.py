@@ -61,15 +61,6 @@ class ZINCDruglikeFilter(BaseFilter):
           filter conditions in columns, and 0/1 indicators whether a given condition was
           fulfilled by a given molecule
 
-    return_indicators : bool, default=False
-        Whether to return a binary vector with indicators which molecules pass the
-        filter, instead of list of molecules.
-
-        .. deprecated:: 1.17
-            ``return_indicators`` is deprecated and will be removed in version 2.0.
-            Use ``return_type`` instead. If ``return_indicators`` is set to ``True``,
-            it will take precedence over ``return_type``.
-
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform_x_y` and
         :meth:`transform` are parallelized over the input molecules. ``None`` means 1
@@ -112,7 +103,6 @@ class ZINCDruglikeFilter(BaseFilter):
         self,
         allow_one_violation: bool = False,
         return_type: str = "mol",
-        return_indicators: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int = 0,
@@ -136,7 +126,6 @@ class ZINCDruglikeFilter(BaseFilter):
             condition_names=condition_names,
             allow_one_violation=allow_one_violation,
             return_type=return_type,
-            return_indicators=return_indicators,
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
