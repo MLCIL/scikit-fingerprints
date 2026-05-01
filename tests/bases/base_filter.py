@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from numpy.testing import assert_equal
 from sklearn.utils._param_validation import InvalidParameterError
@@ -37,3 +38,12 @@ def test_base_verbose(n_jobs, smiles_list, capsys):
     output = capsys.readouterr().err
     assert "100%" in output
     assert "it/s" in output
+
+
+def test_base_parallel_filter_indicators_return_array(smiles_list):
+    filt = LipinskiFilter(return_type="indicators", n_jobs=2, batch_size=1)
+
+    filter_indicators = filt.transform(smiles_list)
+
+    assert isinstance(filter_indicators, np.ndarray)
+    assert np.issubdtype(filter_indicators.dtype, bool)
