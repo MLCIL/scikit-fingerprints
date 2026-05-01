@@ -1,7 +1,5 @@
 version: 2
 formats: [htmlzip]
-sphinx:
-   configuration: docs/conf.py
 
 build:
   os: ubuntu-24.04
@@ -14,3 +12,6 @@ python:
       command: sync
       groups:
         - docs
+
+sphinx:
+   configuration: docs/conf.py
