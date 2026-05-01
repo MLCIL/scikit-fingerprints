@@ -14,7 +14,5 @@ build:
   jobs:
     build:
       html:
-        - echo $READTHEDOCS_OUTPUT/html/
-        - mkdir -p $READTHEDOCS_OUTPUT/html/
-        - uv run make -C docs html
+        - uv run make -C docs html SPHINXBUILD="uv run sphinx-build"
         - cp -r docs/_build/html $READTHEDOCS_OUTPUT
