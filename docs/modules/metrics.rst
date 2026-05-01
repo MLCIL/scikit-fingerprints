@@ -16,7 +16,6 @@ General metrics:
     :nosignatures:
     :toctree: generated/
 
-    auroc_score
     spearman_correlation
 
 Multioutput metrics:
