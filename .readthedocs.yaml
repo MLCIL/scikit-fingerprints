@@ -16,5 +16,5 @@ build:
       html:
         - echo $READTHEDOCS_OUTPUT/html/
         - mkdir -p $READTHEDOCS_OUTPUT/html/
-        - make -C docs html
+        - uv run make -C docs html
         - cp -r docs/_build/html $READTHEDOCS_OUTPUT
