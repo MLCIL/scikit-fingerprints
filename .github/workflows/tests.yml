@@ -64,6 +64,10 @@ jobs:
 
       - name: Run tests with pytest
         run: uv run make test
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # faster datasets download
 
       - name: Run docstring tests
         run: uv run make -C docs doctest
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # faster datasets download

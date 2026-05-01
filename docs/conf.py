@@ -25,6 +25,8 @@ extensions = [
     "nbsphinx",
 ]
 
+autodoc_mock_imports = ["torch"]
+
 autodoc_default_options = {
     "inherited-members": True,
     "members": "fit,fit_transform,transform",
@@ -65,6 +67,7 @@ html_theme_options = {
 }
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+
 
 # Sphinx cannot reach outside to parallel dirs, so we copy "examples" directory
 # we copy "examples" directory from project root to docs/examples
