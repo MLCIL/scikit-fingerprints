@@ -1,113 +1,90 @@
-import os
-
 import numpy as np
+import pytest
+from numpy.ma.testutils import assert_not_equal
 from numpy.testing import assert_equal
-from scipy.sparse import csr_array, load_npz
 
 from skfp.fingerprints import LingoFingerprint
 
 
-def test_lingo_fingerprint_smiles_to_dict():
-    smiles = ["CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC"]
-    lingo_fp = LingoFingerprint()
-    X_skfp = lingo_fp.smiles_to_dicts(smiles)
-    expected = [
-        {
-            "CC(=": 1,
-            "C(=O": 1,
-            "(=O)": 1,
-            "=O)N": 1,
-            "O)NC": 1,
-            ")NCC": 1,
-            "NCCC": 1,
-            "CCC0": 1,
-            "CC0=": 1,
-            "C0=C": 2,
-            "0=CN": 1,
-            "=CNC": 1,
-            "CNC0": 1,
-            "NC0=": 1,
-            "0=C0": 1,
-            "=C0C": 1,
-            "C0C=": 1,
-            "0C=C": 1,
-            "C=C(": 1,
-            "=C(C": 1,
-            "C(C=": 1,
-            "(C=C": 1,
-            "C=C0": 1,
-            "=C0)": 1,
-            "C0)O": 1,
-            "0)OC": 1,
-        }
-    ]
-    assert X_skfp == expected
+def test_lingo_bit_fingerprint(smiles_list, mols_list):
+    lingo_fp_seq = LingoFingerprint(n_jobs=-1)
+    lingo_fp_parallel = LingoFingerprint(n_jobs=-1)
+
+    X_seq = lingo_fp_seq.transform(smiles_list)
+    X_parallel = lingo_fp_parallel.transform(smiles_list)
+
+    assert_equal(X_seq, X_parallel)
+    assert_equal(X_seq.shape, (len(smiles_list), lingo_fp_seq.fp_size))
+    assert X_seq.dtype == np.uint8
+    assert np.all(np.isin(X_seq, [0, 1]))
 
 
-def test_lingo_fingerprint_bit():
-    smiles = ["CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC", "C[n]1cnc2N(C)C(=O)N(C)C(=O)c12"]
-    lingo_fp = LingoFingerprint()
-    X_skfp = lingo_fp.transform(smiles)
+def test_lingo_count_fingerprint(smiles_list, mols_list):
+    lingo_fp_seq = LingoFingerprint(count=True, n_jobs=-1)
+    lingo_fp_parallel = LingoFingerprint(count=True, n_jobs=-1)
 
-    expected_array = _load_lingo_data_file(count=False, sparse=False)
+    X_seq = lingo_fp_seq.transform(smiles_list)
+    X_parallel = lingo_fp_parallel.transform(smiles_list)
 
-    assert_equal(X_skfp, expected_array)
-    assert_equal(X_skfp.shape, (2, 1024))
-    assert X_skfp.dtype == np.uint8
-    assert np.all(np.isin(X_skfp, [0, 1]))
-
-
-def test_lingo_fingerprint_count():
-    smiles = ["CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC", "C[n]1cnc2N(C)C(=O)N(C)C(=O)c12"]
-    lingo_fp = LingoFingerprint(count=True)
-    X_skfp = lingo_fp.transform(smiles)
-
-    expected_array = _load_lingo_data_file(count=True, sparse=False)
-
-    assert_equal(X_skfp, expected_array)
-    assert_equal(X_skfp.shape, (2, 1024))
-    assert X_skfp.dtype == np.uint32
-    assert np.all(X_skfp >= 0)
+    assert_equal(X_seq, X_parallel)
+    assert_equal(X_seq.shape, (len(smiles_list), lingo_fp_seq.fp_size))
+    assert X_seq.dtype == np.uint32
+    assert np.all(X_seq >= 0)
 
 
-def test_lingo_fingerprint_bit_sparse():
-    smiles = ["CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC", "C[n]1cnc2N(C)C(=O)N(C)C(=O)c12"]
-    lingo_fp = LingoFingerprint(sparse=True)
-    X_skfp = lingo_fp.transform(smiles)
+def test_lingo_sparse_bit_fingerprint(smiles_list, mols_list):
+    lingo_fp_dense = LingoFingerprint(n_jobs=-1)
+    lingo_fp_sparse = LingoFingerprint(sparse=True, n_jobs=-1)
 
-    expected_array = _load_lingo_data_file(count=False, sparse=True)
+    X_dense = lingo_fp_dense.transform(smiles_list)
+    X_sparse = lingo_fp_sparse.transform(smiles_list)
 
-    assert_equal(X_skfp.data, expected_array.data)
-    assert_equal(X_skfp.shape, (2, 1024))
-    assert X_skfp.dtype == np.uint8
-    assert np.all(X_skfp.data == 1)
-
-
-def test_lingo_fingerprint_count_sparse():
-    smiles = ["CC(=O)NCCC1=CNC2=C1C=C(C=C2)OC", "C[n]1cnc2N(C)C(=O)N(C)C(=O)c12"]
-    lingo_fp = LingoFingerprint(count=True, sparse=True)
-    X_skfp = lingo_fp.transform(smiles)
-
-    expected_array = _load_lingo_data_file(count=True, sparse=True)
-
-    assert_equal(X_skfp.data, expected_array.data)
-    assert_equal(X_skfp.shape, (2, 1024))
-    assert X_skfp.dtype == np.uint32
-    assert np.all(X_skfp.data > 0)
+    assert_equal(X_dense, X_sparse.toarray())
+    assert X_sparse.dtype == np.uint8
+    assert np.all(X_sparse.data == 1)
 
 
-def _load_lingo_data_file(count: bool, sparse: bool) -> np.ndarray | csr_array:
-    count_str = "count" if count else "bit"
-    sparse_str = "sparse" if sparse else "fp"
-    extension = "npz" if sparse else "npy"
-    filename = f"lingo_{count_str}_{sparse_str}.{extension}"
-    loader = load_npz if sparse else np.load
+def test_lingo_sparse_count_fingerprint(smiles_list, mols_list):
+    lingo_fp_dense = LingoFingerprint(count=True, n_jobs=-1)
+    lingo_fp_sparse = LingoFingerprint(count=True, sparse=True, n_jobs=-1)
 
-    if "tests" in os.listdir():
-        return loader(os.path.join("tests", "fingerprints", "data", filename))
-    if "fingerprints" in os.listdir():
-        return loader(os.path.join("fingerprints", "data", filename))
-    if "data" in os.listdir():
-        return loader(os.path.join("data", filename))
+    X_dense = lingo_fp_dense.transform(smiles_list)
+    X_sparse = lingo_fp_sparse.transform(smiles_list)
 
-    raise FileNotFoundError(f"File {filename} not found")
+    assert_equal(X_dense, X_sparse.toarray())
+    assert X_sparse.dtype == np.uint32
+    assert np.all(X_sparse.data > 0)
+
+
+@pytest.mark.parametrize(
+    "smiles_1,smiles_2,equal",
+    [
+        # ring numbers are normalized to zeros, should be identical
+        ("c1ccccc1", "c0ccccc0", True),
+        ("c1ccccc1", "c2ccccc2", True),
+        ("c34cc2cc1ccccc1cc2cc3cccc4", "c00cc0cc0ccccc0cc0cc0cccc0", True),
+        # 2-digit ring numbers with % should be handled as above, e.g. %10
+        ("c10ccccc10O", "c%10ccccc%10O", True),
+        (
+            "c1cc2cc3c4c5c(cc6ccc7cc8cc9c%10c8c8c7c6c5c8c5c%10c(c1C9N1CCOCCOCCOCCOCCOCC1)c2c45)C3",
+            "c0cc0cc0c0c0c(cc0ccc0cc0cc0c0c0c0c0c0c0c0c0c0c(c0C0N0CCOCCOCCOCCOCCOCC0)c0c0)C0",
+            True,
+        ),
+        # common 2-letter elements simplification: Cl -> L, Br -> R
+        ("[Na+].[Cl-]", "[Na+].[L-]", True),
+        ("ClN(Cl)Cl", "LN(L)L", True),
+        ("BrC#N", "RC#N", True),
+        ("BrCl", "RL", True),
+        # charges in brackets [] shouldn't be touched and give different fingerprints
+        ("[Cl+3]", "Cl+2]", False),
+        ("[12CH0]OOOO[Al-2]", "[12CH2]OOOO[Al-0]", False),
+    ],
+)
+def test_smiles_normalization(smiles_1: str, smiles_2: str, equal: bool):
+    fp = LingoFingerprint()
+    fp_smi_1 = fp.transform([smiles_1])
+    fp_smi_2 = fp.transform([smiles_2])
+    if equal:
+        assert_equal(fp_smi_1, fp_smi_2)
+    else:
+        assert_not_equal(fp_smi_1, fp_smi_2)

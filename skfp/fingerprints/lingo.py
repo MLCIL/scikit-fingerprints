@@ -1,6 +1,7 @@
+import functools
 import hashlib
 import re
-from collections import defaultdict
+from collections import Counter
 from collections.abc import Sequence
 from numbers import Integral
 
@@ -128,41 +129,30 @@ class LingoFingerprint(BaseFingerprintTransformer):
         """
         return super().transform(X, copy)
 
-    def smiles_to_dicts(self, X: Sequence[str | Mol]) -> list[dict[str, int]]:
-        """
-        Convert SMILES strings to dictionaries of substring counts.
+    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
+        X = self._smiles_to_dicts(X)
+        X = self._dicts_to_array(X)
+        return csr_array(X) if self.sparse else X
 
-        Parameters
-        ----------
-        X: {sequence, array-like} of shape (n_samples,)
-            Sequence containing SMILES strings or RDKit ``Mol`` objects.
-
-        Returns
-        -------
-        result: list[dict[str, int]]
-            List of dictionaries containing substring counts.
-        """
+    def _smiles_to_dicts(self, X: Sequence[str | Mol]) -> list[dict[str, int]]:
+        # SMILES -> dictionary of substring counts
         X = ensure_smiles(X)
 
         # based on the original paper, we reduce the number of possible substrings
         # to improve statistical sampling in the QSPR models
-        X = [re.sub(r"[123456789]", "0", smi) for smi in X]
-        X = [re.sub(r"Cl", "L", smi) for smi in X]
-        X = [re.sub(r"Br", "R", smi) for smi in X]
 
-        result = []
-        for smi in X:
-            result_dict: defaultdict[str, int] = defaultdict(int)
-            for i in range(len(smi) - self.substring_length + 1):
-                result_dict[smi[i : i + self.substring_length]] += 1
-            result.append(dict(result_dict))
+        # replace numbers for rings, but not charges in []
+        # we use negative lookback/lookahead in regex
+        X = [re.sub(r"(?<!\[)%?\d+(?!\])", "0", smi) for smi in X]
+        X = [
+            smi.replace("Cl", "L").replace("Br", "R")
+            if "Cl" in smi or "Br" in smi
+            else smi
+            for smi in X
+        ]
 
-        return result
-
-    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
-        X = self.smiles_to_dicts(X)
-        X = self._dicts_to_array(X)
-        return csr_array(X) if self.sparse else X
+        k = self.substring_length
+        return [Counter(smi[i : i + k] for i in range(len(smi) - k + 1)) for smi in X]
 
     def _dicts_to_array(self, X: list[dict[str, int]]) -> np.ndarray:
         dtype = np.uint32 if self.count else np.uint8
@@ -170,12 +160,16 @@ class LingoFingerprint(BaseFingerprintTransformer):
 
         for i, dictionary in enumerate(X):
             for key, value in dictionary.items():
-                string_bytes = key.encode("utf-8")
-                hash_bytes = hashlib.sha1(string_bytes, usedforsecurity=False).digest()
-                hash_index = int.from_bytes(hash_bytes, byteorder="big") % self.fp_size
+                hash_index = self._get_hash_index(key, self.fp_size)
                 if self.count:
                     result[i, hash_index] += value
                 else:
                     result[i, hash_index] = 1
 
         return result
+
+    @staticmethod
+    @functools.cache
+    def _get_hash_index(key: str, fp_size: int) -> int:
+        hash_bytes = hashlib.sha1(key.encode("utf-8"), usedforsecurity=False).digest()
+        return int.from_bytes(hash_bytes, byteorder="big") % fp_size
