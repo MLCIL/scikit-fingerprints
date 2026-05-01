@@ -258,7 +258,7 @@ def dice_count_similarity(
     else:
         dot_ab = vec_a.multiply(vec_b).sum()
         dot_aa = vec_a.multiply(vec_a).sum()
-        dot_bb = vec_b.multiply(vec_b).sum()
+        dot_bb = vec_b.multiply(vec_b).sum()  # type: ignore
 
     denominator = dot_aa + dot_bb
     sim = 2 * dot_ab / denominator if denominator >= 1e-8 else 1

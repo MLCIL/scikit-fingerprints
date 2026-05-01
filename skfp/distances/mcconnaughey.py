@@ -93,7 +93,7 @@ def mcconnaughey_binary_similarity(
         vec_b_ones = np.sum(vec_b)
     else:
         vec_a_idxs = set(vec_a.indices)
-        vec_b_idxs = set(vec_b.indices)
+        vec_b_idxs = set(vec_b.indices)  # type: ignore
 
         num_common = len(vec_a_idxs & vec_b_idxs)
         vec_a_ones = len(vec_a_idxs)
