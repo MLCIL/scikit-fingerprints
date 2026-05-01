@@ -21,15 +21,11 @@ try:
 except ImportError:
     from functools import partial
 
-    from sklearn.metrics import mean_squared_error
-
     root_mean_squared_error = partial(mean_squared_error, squared=False)
 
 from sklearn.utils._param_validation import validate_params
 
-from skfp.metrics.auroc import auroc_score
 from skfp.metrics.spearman import spearman_correlation
-from skfp.utils.functions import _get_sklearn_version
 
 
 @validate_params(
@@ -163,13 +159,13 @@ def multioutput_auroc_score(
     >>> multioutput_auroc_score(y_true, y_score)
     0.5
     """
-    if _get_sklearn_version() < 1.6:
-        func = auroc_score
-    else:
-        func = roc_auc_score
-
     return _safe_multioutput_metric(
-        func, y_true, y_score, *args, suppress_warnings=suppress_warnings, **kwargs
+        roc_auc_score,
+        y_true,
+        y_score,
+        *args,
+        suppress_warnings=suppress_warnings,
+        **kwargs,
     )
 
 

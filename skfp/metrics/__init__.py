@@ -1,4 +1,3 @@
-from .auroc import auroc_score
 from .multioutput import (
     multioutput_accuracy_score,
     multioutput_auprc_score,
