@@ -1,4 +1,12 @@
 version: 2
+formats: [htmlzip]
+sphinx:
+   configuration: docs/conf.py
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.10"
 
 python:
   install:
@@ -6,13 +14,3 @@ python:
       command: sync
       groups:
         - docs
-
-build:
-  os: ubuntu-24.04
-  tools:
-    python: "3.10"
-  jobs:
-    build:
-      html:
-        - uv run make -C docs html SPHINXBUILD="uv run sphinx-build"
-        - cp -r docs/_build/html $READTHEDOCS_OUTPUT
