@@ -69,3 +69,5 @@ jobs:
 
       - name: Run docstring tests
         run: uv run make -C docs doctest
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}  # faster datasets download
