@@ -144,12 +144,7 @@ class LingoFingerprint(BaseFingerprintTransformer):
         # replace numbers for rings, but not charges in []
         # we use negative lookback/lookahead in regex
         X = [re.sub(r"(?<!\[)%?\d+(?!\])", "0", smi) for smi in X]
-        X = [
-            smi.replace("Cl", "L").replace("Br", "R")
-            if "Cl" in smi or "Br" in smi
-            else smi
-            for smi in X
-        ]
+        X = [smi.replace("Cl", "L").replace("Br", "R") for smi in X]
 
         k = self.substring_length
         return [Counter(smi[i : i + k] for i in range(len(smi) - k + 1)) for smi in X]

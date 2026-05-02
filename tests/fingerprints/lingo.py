@@ -7,7 +7,7 @@ from skfp.fingerprints import LingoFingerprint
 
 
 def test_lingo_bit_fingerprint(smiles_list, mols_list):
-    lingo_fp_seq = LingoFingerprint(n_jobs=-1)
+    lingo_fp_seq = LingoFingerprint(n_jobs=1)
     lingo_fp_parallel = LingoFingerprint(n_jobs=-1)
 
     X_seq = lingo_fp_seq.transform(smiles_list)
@@ -20,7 +20,7 @@ def test_lingo_bit_fingerprint(smiles_list, mols_list):
 
 
 def test_lingo_count_fingerprint(smiles_list, mols_list):
-    lingo_fp_seq = LingoFingerprint(count=True, n_jobs=-1)
+    lingo_fp_seq = LingoFingerprint(count=True, n_jobs=1)
     lingo_fp_parallel = LingoFingerprint(count=True, n_jobs=-1)
 
     X_seq = lingo_fp_seq.transform(smiles_list)
@@ -76,7 +76,7 @@ def test_lingo_sparse_count_fingerprint(smiles_list, mols_list):
         ("BrC#N", "RC#N", True),
         ("BrCl", "RL", True),
         # charges in brackets [] shouldn't be touched and give different fingerprints
-        ("[Cl+3]", "Cl+2]", False),
+        ("[Cl+3]", "[Cl+2]", False),
         ("[12CH0]OOOO[Al-2]", "[12CH2]OOOO[Al-0]", False),
     ],
 )
