@@ -1,4 +1,3 @@
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from copy import deepcopy
@@ -52,15 +51,6 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
           filter conditions in columns, and 0/1 indicators whether a given condition was
           fulfilled by a given molecule
 
-    return_indicators : bool, default=False
-        Whether to return a binary vector with indicators which molecules pass the
-        filter, instead of list of molecules.
-
-        .. deprecated:: 1.17
-            ``return_indicators`` is deprecated and will be removed in version 2.0.
-            Use ``return_type`` instead. If ``return_indicators`` is set to ``True``,
-            it will take precedence over ``return_type``.
-
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform_x_y` and
         :meth:`transform` are parallelized over the input molecules. ``None`` means 1
@@ -81,7 +71,6 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
     _parameter_constraints: dict = {
         "allow_one_violation": ["boolean"],
         "return_type": [StrOptions({"mol", "indicators", "condition_indicators"})],
-        "return_indicators": ["boolean"],
         "n_jobs": [Integral, None],
         "batch_size": [Integral, None],
         "verbose": ["verbose", dict],
@@ -92,7 +81,6 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
         condition_names: list[str],
         allow_one_violation: bool = False,
         return_type: str = "mol",
-        return_indicators: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
@@ -100,16 +88,9 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
         self.condition_names = condition_names
         self.allow_one_violation = allow_one_violation
         self.return_type = return_type
-        self.return_indicators = return_indicators
         self.n_jobs = n_jobs
         self.batch_size = batch_size
         self.verbose = verbose
-
-        if return_indicators:
-            warnings.warn(
-                "return_indicators is deprecated and will be removed in 2.0, "
-                "use return_type instead"
-            )
 
     def __sklearn_is_fitted__(self) -> bool:
         """
@@ -200,12 +181,10 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
         """
         filter_ind = self._get_filter_indicators(X, copy)
 
-        if self.return_indicators:
-            return filter_ind
-        elif self.return_type == "mol":
+        if self.return_type == "mol":
             return [mol for idx, mol in enumerate(X) if filter_ind[idx]]
         else:
-            return filter_ind
+            return np.asarray(filter_ind)
 
     def transform_x_y(
         self, X: Sequence[str | Mol], y: np.ndarray, copy: bool = False
@@ -236,9 +215,7 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
         """
         filter_ind = self._get_filter_indicators(X, copy)
 
-        if self.return_indicators:
-            return filter_ind, y
-        elif self.return_type == "mol":
+        if self.return_type == "mol":
             mols = [mol for idx, mol in enumerate(X) if filter_ind[idx]]
             y = y[filter_ind]
             return mols, y
@@ -282,9 +259,7 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
 
         filter_indicators = [self._apply_mol_filter(mol) for mol in mols]
 
-        if self.return_indicators:
-            filter_indicators = np.array(filter_indicators, dtype=bool)
-        elif self.return_type == "condition_indicators":
+        if self.return_type == "condition_indicators":
             filter_indicators = np.vstack(filter_indicators)
         else:
             filter_indicators = np.array(filter_indicators, dtype=bool)

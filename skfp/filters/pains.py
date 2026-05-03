@@ -1,6 +1,6 @@
 from rdkit.Chem import FilterCatalog
 from rdkit.Chem.rdfiltercatalog import FilterCatalogParams
-from sklearn.utils._param_validation import InvalidParameterError, StrOptions
+from sklearn.utils._param_validation import StrOptions
 
 from skfp.bases.base_filter import BaseFilter
 from skfp.bases.base_substructure_filter import BaseSubstructureFilter
@@ -21,8 +21,9 @@ class PAINSFilter(BaseSubstructureFilter):
 
     Parameters
     ----------
-    variant : {"A", "B", "C"}, default="A"
-        PAINS filter set.
+    variant : {"all", "A", "B", "C"}, default="all"
+        PAINS filter set. ``"all"`` means applying all three sets, commonly denoted
+        as just "PAINS filters".
 
     allow_one_violation : bool, default=False
         Whether to allow violating one of the rules for a molecule. This makes the
@@ -37,15 +38,6 @@ class PAINSFilter(BaseSubstructureFilter):
         - ``"condition_indicators"`` - return a Pandas DataFrame with molecules in rows,
           filter conditions in columns, and 0/1 indicators whether a given condition was
           fulfilled by a given molecule
-
-    return_indicators : bool, default=False
-        Whether to return a binary vector with indicators which molecules pass the
-        filter, instead of list of molecules.
-
-        .. deprecated:: 1.17
-            ``return_indicators`` is deprecated and will be removed in version 2.0.
-            Use ``return_type`` instead. If ``return_indicators`` is set to ``True``,
-            it will take precedence over ``return_type``.
 
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform_x_y` and
@@ -94,15 +86,14 @@ class PAINSFilter(BaseSubstructureFilter):
 
     _parameter_constraints = {
         **BaseFilter._parameter_constraints,
-        "variant": [StrOptions({"A", "B", "C"})],
+        "variant": [StrOptions({"all", "A", "B", "C"})],
     }
 
     def __init__(
         self,
-        variant: str = "A",
+        variant: str = "all",
         allow_one_violation: bool = False,
         return_type: str = "mol",
-        return_indicators: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
@@ -111,25 +102,23 @@ class PAINSFilter(BaseSubstructureFilter):
         super().__init__(
             allow_one_violation=allow_one_violation,
             return_type=return_type,
-            return_indicators=return_indicators,
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
         )
 
     def _load_filters(self) -> FilterCatalog:
-        if self.variant == "A":
-            filter_rules = FilterCatalogParams.FilterCatalogs.PAINS_A
-        elif self.variant == "B":
-            filter_rules = FilterCatalogParams.FilterCatalogs.PAINS_B
-        elif self.variant == "C":
-            filter_rules = FilterCatalogParams.FilterCatalogs.PAINS_C
-        else:
-            raise InvalidParameterError(
-                f'PAINS variant must be "A", "B" or "C", got {self.variant}'
-            )
-
         params = FilterCatalog.FilterCatalogParams()
-        params.AddCatalog(filter_rules)
+        if self.variant == "all":
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_A)
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_B)
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_C)
+        elif self.variant == "A":
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_A)
+        elif self.variant == "B":
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_B)
+        else:  # self.variant == "C"
+            params.AddCatalog(FilterCatalogParams.FilterCatalogs.PAINS_C)
+
         filters = FilterCatalog.FilterCatalog(params)
         return filters
