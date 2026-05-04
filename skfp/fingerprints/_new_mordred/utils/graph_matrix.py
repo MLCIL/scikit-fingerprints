@@ -28,7 +28,7 @@ class DistanceMatrix:
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricities().min()
+        return self.eccentricities.min()
 
     @cached_property
     def diameter(self) -> np.floating:
@@ -40,7 +40,7 @@ class AdjacencyMatrix:
 
     def __init__(self, mol: Mol, use_bond_orders: bool = False):
         self._base: np.ndarray
-        self._base = GetAdjacencyMatrix(mol, useBO=use_bond_orders)
+        self._base = GetAdjacencyMatrix(mol, useBO=use_bond_orders, force=True)
         self._orders = [self._base]
 
     # TODO(Aleksander Jóźwik): check if caching all intermediate orders is necessary or if # noqa: TD003, FIX002
@@ -72,7 +72,7 @@ class DistanceMatrix3D:
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricities().min()
+        return self.eccentricities.min()
 
     @cached_property
     def diameter(self) -> np.floating:
