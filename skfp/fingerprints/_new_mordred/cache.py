@@ -30,6 +30,7 @@ ADJACENCY_MATRIX_FEATURE_NAMES = [
     "VR2_A",
     "VR3_A",
 ]
+AROMATIC_FEATURE_NAMES = ["nAromAtom", "nAromBond"]
 
 
 def _adjacency_matrix_values(
@@ -63,6 +64,15 @@ def _adjacency_matrix_values(
     )
 
 
+def _aromatic_values(mol: Mol) -> np.ndarray:
+    return np.asarray(
+        [
+            sum(1 for atom in mol.GetAtoms() if atom.GetIsAromatic()),
+            sum(1 for bond in mol.GetBonds() if bond.GetIsAromatic()),
+        ],
+        dtype=np.float32,
+    )
+
 @dataclass(frozen=True, slots=True)
 class MordredMolCache:
     """
@@ -77,6 +87,7 @@ class MordredMolCache:
     distance_matrix_regular: DistanceMatrix
     adjacency_matrix_regular: AdjacencyMatrix
     adjacency_matrix_values: np.ndarray
+    aromatic_values: np.ndarray
     mol_with_hydrogens: Mol | None
 
     @classmethod
@@ -95,6 +106,7 @@ class MordredMolCache:
             adjacency_matrix_values=_adjacency_matrix_values(
                 mol_regular, n_frags, adjacency_matrix_regular
             ),
+            aromatic_values=_aromatic_values(mol_regular),
             mol_with_hydrogens=(
                 preprocess_mol(mol, explicit_hydrogens=True) if use_3D else None
             ),
