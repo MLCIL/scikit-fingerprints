@@ -31,7 +31,7 @@ RDKIT_2D_FEATURE_NAMES = [
     "AMW",
 ]
 
-RDKIT_3D_FEATURE_NAMES = ["MOMI-X", "MOMI-Y", "MOMI-Z", "PBF"]
+RDKIT_3D_FEATURE_NAMES = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
 
 
 def test_rdkit_descriptors_avoid_lambda_wrappers():

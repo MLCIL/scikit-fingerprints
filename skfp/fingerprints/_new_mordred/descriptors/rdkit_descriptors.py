@@ -42,7 +42,7 @@ FEATURE_NAMES_2D = [
     "AMW",
 ]
 
-FEATURE_NAMES_3D = ["MOMI-X", "MOMI-Y", "MOMI-Z", "PBF"]
+FEATURE_NAMES_3D = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
 
 
 def _safe_value(func: Callable[..., float | int], *args: Any, **kwargs: Any) -> float:
@@ -139,14 +139,11 @@ def calc_2d(
 def calc_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
     """
     Compute 3D Mordred descriptors available as direct RDKit calls.
-
-    The moment of inertia descriptors are returned in Mordred axis order
-    (MOMI-X, MOMI-Y, MOMI-Z), which corresponds to RDKit PMI3, PMI2, and PMI1.
     """
     values = [
-        _safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
-        _safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
         _safe_value(rdMolDescriptors.CalcPMI1, mol_with_3d_conformer),
+        _safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
+        _safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
         _safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
     ]
 
