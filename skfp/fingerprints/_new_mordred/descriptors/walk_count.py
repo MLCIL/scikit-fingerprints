@@ -1,5 +1,6 @@
 import numpy as np
 from rdkit.Chem import Mol
+
 from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
 
 """
