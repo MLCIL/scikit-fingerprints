@@ -10,6 +10,8 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 import numpy as np
 from rdkit.Chem import Mol, rdMolDescriptors
 
+from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
+
 FEATURE_NAMES = [
     "nAtom",
     "nHeavyAtom",
@@ -42,7 +44,6 @@ _ELEMENT_ATOMIC_NUMBERS = [
     35,  # Br
     53,  # I
 ]
-_HALOGENS = {9, 17, 35, 53}
 
 
 def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
@@ -63,6 +64,8 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         sum(atomic_number == element_atomic_number for atomic_number in atomic_numbers)
         for element_atomic_number in _ELEMENT_ATOMIC_NUMBERS
     )
-    values.append(sum(atomic_number in _HALOGENS for atomic_number in atomic_numbers))
+    values.append(
+        sum(atomic_number in HALOGEN_ATOMIC_NUMS for atomic_number in atomic_numbers)
+    )
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

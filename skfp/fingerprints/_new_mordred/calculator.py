@@ -1,7 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit.Chem import GetMolFrags, Mol
 
-from skfp.fingerprints._new_mordred.cache import MordredMolCache
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
@@ -22,6 +21,7 @@ from skfp.fingerprints._new_mordred.utils.feature_names import (
     FEATURE_NAMES_2D,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
+    AdjacencyMatrix,
     DistanceMatrix,
     DistanceMatrix3D,
 )
@@ -45,20 +45,15 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     idx_map = _FEATURE_NAME_TO_IDX_ALL if use_3D else _FEATURE_NAME_TO_IDX_2D
     result = np.full(n_features, np.nan, dtype=np.float32)
 
-    # cache
-    cache = MordredMolCache.from_mol(mol, use_3D=use_3D)
-
     # dependencies
-    n_frags = cache.n_frags  # noqa: F841
-    mol_regular = cache.mol_regular
-    mol_kekulized = cache.mol_kekulized
-    distance_matrix_regular = cache.distance_matrix_regular
-    adjacency_matrix_regular = cache.adjacency_matrix_regular
+    n_frags = len(GetMolFrags(mol))  # noqa: F841
+    mol_regular = preprocess_mol(mol)
+    mol_kekulized = preprocess_mol(mol, kekulize=True)
+    distance_matrix_regular = DistanceMatrix(mol_regular)
+    adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
     # hydrogen-explicit molecule
-    mol_hydrogens = cache.mol_with_hydrogens or preprocess_mol(
-        mol, explicit_hydrogens=True
-    )
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # 2D descriptors

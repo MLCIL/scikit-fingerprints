@@ -47,15 +47,17 @@ def test_rdkit_descriptors_avoid_lambda_wrappers():
 
 
 def test_2d_calculator_does_not_add_explicit_hydrogens(monkeypatch):
-    from skfp.fingerprints._new_mordred import cache, calculator
+    from skfp.fingerprints._new_mordred import calculator
 
-    original_preprocess_mol = cache.preprocess_mol
+    original_preprocess_mol = calculator.preprocess_mol
 
     def preprocess_without_explicit_hydrogens(*args, **kwargs):
         assert kwargs.get("explicit_hydrogens", False) is False
         return original_preprocess_mol(*args, **kwargs)
 
-    monkeypatch.setattr(cache, "preprocess_mol", preprocess_without_explicit_hydrogens)
+    monkeypatch.setattr(
+        calculator, "preprocess_mol", preprocess_without_explicit_hydrogens
+    )
 
     calculator.compute(Chem.MolFromSmiles("CCO"), use_3D=False)
 
