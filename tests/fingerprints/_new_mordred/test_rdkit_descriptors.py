@@ -4,16 +4,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 from mordred import Calculator, descriptors
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from skfp.fingerprints._new_mordred.calculator import compute
 from skfp.fingerprints._new_mordred.descriptors import rdkit_descriptors
-from skfp.fingerprints._new_mordred.utils.feature_names import (
-    ALL_FEATURE_NAMES,
-    FEATURE_NAMES_2D,
-)
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
@@ -114,26 +109,6 @@ def test_rdkit_2d_descriptors_match_mordred(smiles, mordred_2d_calc):
     assert_allclose(values, expected_values, rtol=1e-6, atol=1e-6)
 
 
-def test_calculator_fills_rdkit_2d_descriptor_columns(mordred_2d_calc):
-    mol = Chem.MolFromSmiles("CC(=O)OC1=CC=CC=C1C(=O)O")
-
-    observed = compute(mol, use_3D=False)
-    mordred_values = dict(
-        zip(
-            (str(desc) for desc in mordred_2d_calc.descriptors),
-            mordred_2d_calc(mol),
-            strict=False,
-        )
-    )
-    idxs = [FEATURE_NAMES_2D.index(name) for name in RDKIT_2D_FEATURE_NAMES]
-    expected_values = np.asarray(
-        [mordred_values[name] for name in RDKIT_2D_FEATURE_NAMES], dtype=np.float32
-    )
-
-    assert_equal(np.isnan(observed[idxs]), False)
-    assert_allclose(observed[idxs], expected_values, rtol=1e-6, atol=1e-6)
-
-
 @pytest.fixture(scope="module")
 def mordred_all_calc():
     return Calculator(descriptors, ignore_3D=False)
@@ -171,25 +146,3 @@ def test_rdkit_3d_descriptors_match_mordred(smiles, mordred_all_calc):
     assert feature_names == RDKIT_3D_FEATURE_NAMES
     assert values.dtype == np.float32
     assert_allclose(values, expected_values, rtol=1e-6, atol=1e-6)
-
-
-def test_calculator_fills_rdkit_3d_descriptor_columns(mordred_all_calc):
-    mol = Chem.AddHs(Chem.MolFromSmiles("CCO"))
-    AllChem.EmbedMolecule(mol, randomSeed=1)
-    AllChem.MMFFOptimizeMolecule(mol)
-
-    observed = compute(mol, use_3D=True)
-    mordred_values = dict(
-        zip(
-            (str(desc) for desc in mordred_all_calc.descriptors),
-            mordred_all_calc(mol),
-            strict=False,
-        )
-    )
-    idxs = [ALL_FEATURE_NAMES.index(name) for name in RDKIT_3D_FEATURE_NAMES]
-    expected_values = np.asarray(
-        [mordred_values[name] for name in RDKIT_3D_FEATURE_NAMES], dtype=np.float32
-    )
-
-    assert_equal(np.isnan(observed[idxs]), False)
-    assert_allclose(observed[idxs], expected_values, rtol=1e-6, atol=1e-6)

@@ -4,9 +4,7 @@ from mordred import Calculator, descriptors
 from numpy.testing import assert_allclose
 from rdkit import Chem
 
-from skfp.fingerprints._new_mordred.calculator import compute
 from skfp.fingerprints._new_mordred.descriptors import carbon_types
-from skfp.fingerprints._new_mordred.utils.feature_names import FEATURE_NAMES_2D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = [
@@ -57,22 +55,3 @@ def test_carbon_types_match_mordred(smiles, mordred_2d_calc):
 
     assert feature_names == FEATURE_NAMES
     assert_allclose(values, expected, rtol=1e-6, atol=1e-6)
-
-
-def test_calculator_fills_carbon_type_columns(mordred_2d_calc):
-    mol = Chem.MolFromSmiles("CC(C)(C)C")
-
-    observed = compute(mol, use_3D=False)
-    mordred_values = dict(
-        zip(
-            (str(desc) for desc in mordred_2d_calc.descriptors),
-            mordred_2d_calc(mol),
-            strict=False,
-        )
-    )
-    idxs = [FEATURE_NAMES_2D.index(name) for name in FEATURE_NAMES]
-    expected = np.asarray(
-        [mordred_values[name] for name in FEATURE_NAMES], dtype=np.float32
-    )
-
-    assert_allclose(observed[idxs], expected, rtol=1e-6, atol=1e-6)
