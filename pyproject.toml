@@ -103,7 +103,7 @@ filterwarnings = [
 [tool.mypy]
 python_version = "3.10"
 check_untyped_defs = true  # check all functions, this fixes some tests
-allow_redefinition = true  # we redefine variables a lot for efficiency
+allow_redefinition_old = true  # we redefine variables a lot for efficiency
 # most libraries used are not properly typed in Python, particularly RDKit
 ignore_missing_imports = true
 disable_error_code = ["import-untyped"]

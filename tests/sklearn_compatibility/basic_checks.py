@@ -1,10 +1,12 @@
 import inspect
 import pickle
+from collections.abc import Sequence
 from functools import partial
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
+from rdkit.Chem import Mol
 from sklearn import clone
 from sklearn.utils._testing import create_memmap_backed_data, set_random_state
 from sklearn.utils.estimator_checks import (
@@ -29,7 +31,7 @@ to work with our inputs (SMILES strings or RDKit molecules).
 
 # global test data
 n_samples = 10
-X = []
+X: Sequence[str | Mol] = []
 y = None
 
 
