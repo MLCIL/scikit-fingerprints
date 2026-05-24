@@ -13,8 +13,8 @@ from rdkit.Chem import GetMolFrags, Mol
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
-    walk_count,
     adjacency_matrix,
+    walk_count,
     wiener_index,
     zagreb_index,
 )

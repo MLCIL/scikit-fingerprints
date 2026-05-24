@@ -35,13 +35,14 @@ def calc(
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
+    adj_matrix = adjacency_matrix.matrix
     attrs = MatrixAttributes(
-        adjacency_matrix.order(),  # base adjacency matrix A^1
+        adj_matrix,
         mol_regular,
         hermitian=adjacency_matrix.hermitian,
         n_frags=n_frags,
     )
-    return np.asarray(
+    values = np.asarray(
         [
             attrs.graph_energy,  # SpAbs_A
             attrs.leading_eigenvalue,  # SpMax_A
@@ -57,4 +58,5 @@ def calc(
             attrs.vr3,  # VR3_A
         ],
         dtype=np.float32,
-    ), FEATURE_NAMES
+    )
+    return values, FEATURE_NAMES
