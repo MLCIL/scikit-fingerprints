@@ -14,6 +14,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     walk_count,
+    adjacency_matrix,
     wiener_index,
     zagreb_index,
 )
@@ -45,7 +46,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     result = np.full(n_features, np.nan, dtype=np.float32)
 
     # dependencies
-    n_frags = len(GetMolFrags(mol))  # noqa: F841
+    n_frags = len(GetMolFrags(mol))  
 
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
@@ -55,6 +56,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     descriptors_2d = [
         abc_index.calc(mol_regular, distance_matrix_regular),
         walk_count.calc(mol_regular, adjacency_matrix_regular),
+        adjacency_matrix.calc(mol_regular, n_frags, adjacency_matrix_regular),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         acid_base.calc(mol_regular),

@@ -152,4 +152,6 @@ class MatrixAttributes:
         """
         Logarithmic Randic-like eigenvector-based index.
         """
+        if self.vr1 <= 0:
+            return np.nan
         return np.log(0.1 * self._n_atoms * self.vr1)
