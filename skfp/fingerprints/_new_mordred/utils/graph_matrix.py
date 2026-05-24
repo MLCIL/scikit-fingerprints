@@ -43,8 +43,6 @@ class AdjacencyMatrix:
         self._base = GetAdjacencyMatrix(mol, useBO=use_bond_orders)
         self._orders = [self._base]
 
-    # TODO(Aleksander Jóźwik): check if caching all intermediate orders is necessary or if # noqa: TD003, FIX002
-    # WalkCount can be simplified to avoid the extra memory usage
     def order(self, n: int = 1) -> np.ndarray:
         while len(self._orders) < n:
             self._orders.append(self._orders[-1].dot(self._base))
