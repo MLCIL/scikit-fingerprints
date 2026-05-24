@@ -37,16 +37,15 @@ FEATURE_NAMES = [
     "TSRW10",
 ]
 
-def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> tuple[np.ndarray, list[str]]:
-    adjacency = adjacency_matrix.order().astype(np.float64)
 
-    power = adjacency
+def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> tuple[np.ndarray, list[str]]:
+    power = adjacency_matrix.order()
     molecular_walk_counts: list[float] = []
     self_returning_walk_counts: list[float] = []
 
     for num_order in range(1, 11):
         if num_order > 1:
-            power = adjacency_matrix.order(num_order).astype(np.float64)
+            power = adjacency_matrix.order(num_order)
 
         if num_order == 1:
             molecular_walk_counts.append(0.5 * float(power.sum()))
