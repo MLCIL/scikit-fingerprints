@@ -654,7 +654,7 @@ def zagreb_index_m1(
     >>> from skfp.descriptors import zagreb_index_m1
     >>> mol = MolFromSmiles("C1=CC=CC=C1")  # Benzene
     >>> zagreb_index_m1(mol)
-    24
+    24.0
     """
     exponent = -2 if modified else 2
 
@@ -727,7 +727,7 @@ def zagreb_index_m2(
     >>> from skfp.descriptors import zagreb_index_m2
     >>> mol = MolFromSmiles("C1=CC=CC=C1")  # Benzene
     >>> zagreb_index_m2(mol)
-    24
+    24.0
     """
     exponent = -1 if modified else 1
 
