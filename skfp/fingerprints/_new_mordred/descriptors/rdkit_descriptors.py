@@ -7,9 +7,6 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-from collections.abc import Callable
-from typing import Any
-
 import numpy as np
 from rdkit.Chem import (
     Crippen,
@@ -21,6 +18,7 @@ from rdkit.Chem import (
 )
 from rdkit.Chem.EState import EState_VSA
 
+from skfp.fingerprints._new_mordred.utils.calculation import safe_value
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 FEATURE_NAMES_2D = [
@@ -45,106 +43,86 @@ FEATURE_NAMES_2D = [
 FEATURE_NAMES_3D = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
 
 
-def _safe_value(func: Callable[..., float | int], *args: Any, **kwargs: Any) -> float:
+def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
     """
-    Execute a direct RDKit descriptor function and normalize its result.
+    Compute RDKit MOE-type VSA descriptors.
 
-    Mordred reports missing descriptor values as NaN when a calculation cannot
-    be performed for a molecule. This helper mirrors that behavior for RDKit
-    calls that fail with known numerical or chemistry-related exceptions.
+    Each VSA group splits approximate molecular surface area into bins based on
+    atom-level properties such as partial charge, molar refractivity, logP, and
+    E-State values.
     """
-    try:
-        return float(func(*args, **kwargs))
-    except (ArithmeticError, RuntimeError, ValueError, ZeroDivisionError):
-        return np.nan
-
-
-def _append_moe_type_descriptors(values: list[float], mol: Mol) -> None:
-    """
-    Append RDKit MOE-type VSA descriptors to an existing value list.
-
-    This covers the Mordred MoeType descriptor family implemented directly by
-    RDKit: PEOE_VSA, SMR_VSA, SlogP_VSA, EState_VSA, and VSA_EState.
-    """
-    for idx in range(1, 14):
-        descriptor_func = getattr(MolSurf, f"PEOE_VSA{idx}")
-        values.append(_safe_value(descriptor_func, mol))
-
-    for idx in range(1, 10):
-        descriptor_func = getattr(MolSurf, f"SMR_VSA{idx}")
-        values.append(_safe_value(descriptor_func, mol))
-
-    for idx in range(1, 12):
-        descriptor_func = getattr(MolSurf, f"SlogP_VSA{idx}")
-        values.append(_safe_value(descriptor_func, mol))
-
-    for idx in range(1, 11):
-        descriptor_func = getattr(EState_VSA, f"EState_VSA{idx}")
-        values.append(_safe_value(descriptor_func, mol))
-
-    for idx in range(1, 10):
-        descriptor_func = getattr(EState_VSA, f"VSA_EState{idx}")
-        values.append(_safe_value(descriptor_func, mol))
+    return [
+        *[safe_value(getattr(MolSurf, f"PEOE_VSA{idx}"), mol) for idx in range(1, 14)],
+        *[safe_value(getattr(MolSurf, f"SMR_VSA{idx}"), mol) for idx in range(1, 10)],
+        *[safe_value(getattr(MolSurf, f"SlogP_VSA{idx}"), mol) for idx in range(1, 12)],
+        *[
+            safe_value(getattr(EState_VSA, f"EState_VSA{idx}"), mol)
+            for idx in range(1, 11)
+        ],
+        *[
+            safe_value(getattr(EState_VSA, f"VSA_EState{idx}"), mol)
+            for idx in range(1, 10)
+        ],
+    ]
 
 
 def _average_exact_mol_wt(mol: Mol) -> float:
     """
     Compute average exact molecular weight.
 
-    Mordred `AMW` is exact molecular weight divided by total atom count,
-    including implicit hydrogens.
+    The AMW descriptor is exact molecular weight divided by total atom count,
+    including implicit hydrogens in the atom denominator.
     """
     return Descriptors.ExactMolWt(mol) / rdMolDescriptors.CalcNumAtoms(mol)
 
 
-def calc_2d(
+def calc_rdkit_2d(
     mol_regular: Mol,
     distance_matrix_regular: DistanceMatrix,
 ) -> tuple[np.ndarray, list[str]]:
     """
-    Compute 2D Mordred descriptors available as direct RDKit calls.
+    Compute 2D descriptors that map directly to RDKit descriptor functions.
     """
     values = [
-        _safe_value(
+        safe_value(
             GraphDescriptors.BalabanJ,
             mol_regular,
             dMat=distance_matrix_regular.matrix,
         ),
-        _safe_value(
+        safe_value(
             GraphDescriptors.BertzCT,
             mol_regular,
             dMat=distance_matrix_regular.matrix,
         ),
-        _safe_value(rdMolDescriptors.CalcNumHBA, mol_regular),
-        _safe_value(rdMolDescriptors.CalcNumHBD, mol_regular),
-        _safe_value(MolSurf.LabuteASA, mol_regular),
+        safe_value(rdMolDescriptors.CalcNumHBA, mol_regular),
+        safe_value(rdMolDescriptors.CalcNumHBD, mol_regular),
+        safe_value(MolSurf.LabuteASA, mol_regular),
     ]
-
-    _append_moe_type_descriptors(values, mol_regular)
 
     values.extend(
         [
-            _safe_value(Crippen.MolLogP, mol_regular),
-            _safe_value(Crippen.MolMR, mol_regular),
-            _safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
-            _safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
-            _safe_value(Descriptors.ExactMolWt, mol_regular),
-            _safe_value(_average_exact_mol_wt, mol_regular),
+            *_calc_moe_type_descriptors(mol_regular),
+            safe_value(Crippen.MolLogP, mol_regular),
+            safe_value(Crippen.MolMR, mol_regular),
+            safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
+            safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
+            safe_value(Descriptors.ExactMolWt, mol_regular),
+            safe_value(_average_exact_mol_wt, mol_regular),
         ]
     )
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES_2D
 
 
-def calc_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
+def calc_rdkit_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute 3D Mordred descriptors available as direct RDKit calls.
+    Compute 3D descriptors that map directly to RDKit descriptor functions.
     """
     values = [
-        _safe_value(rdMolDescriptors.CalcPMI1, mol_with_3d_conformer),
-        _safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
-        _safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
-        _safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
+        safe_value(rdMolDescriptors.CalcPMI1, mol_with_3d_conformer),
+        safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
+        safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
+        safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
     ]
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES_3D

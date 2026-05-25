@@ -66,7 +66,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         acid_base.calc(mol_regular),
         autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate.calc(mol_regular),
-        rdkit_descriptors.calc_2d(
+        rdkit_descriptors.calc_rdkit_2d(
             mol_regular,
             distance_matrix_regular,
         ),
@@ -86,7 +86,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
         descriptors_3d: list = [
             morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors.calc_3d(mol_hydrogens),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
         ]
 
         for values, feature_names in descriptors_3d:

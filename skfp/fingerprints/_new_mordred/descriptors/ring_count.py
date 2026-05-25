@@ -7,36 +7,64 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+from dataclasses import dataclass
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
 
-_GENERAL_RING_SPECS = [
-    ("nRing", None, False, False, None, None),
-    ("nHRing", None, False, False, None, True),
-    ("naRing", None, False, False, True, None),
-    ("naHRing", None, False, False, True, True),
-    ("nARing", None, False, False, False, None),
-    ("nAHRing", None, False, False, False, True),
+
+@dataclass(frozen=True, slots=True)
+class RingCountFeature:
+    name: str
+    size: int | None
+    match_size_or_larger: bool
+    use_fused_rings: bool
+    required_aromatic: bool | None
+    required_hetero: bool | None
+
+
+@dataclass(slots=True)
+class RingProperties:
+    atoms: set[int]
+    is_aromatic: bool
+    has_hetero: bool
+
+    @property
+    def size(self) -> int:
+        return len(self.atoms)
+
+
+_GENERAL_RING_FEATURES = [
+    RingCountFeature("nRing", None, False, False, None, None),
+    RingCountFeature("nHRing", None, False, False, None, True),
+    RingCountFeature("naRing", None, False, False, True, None),
+    RingCountFeature("naHRing", None, False, False, True, True),
+    RingCountFeature("nARing", None, False, False, False, None),
+    RingCountFeature("nAHRing", None, False, False, False, True),
 ]
-_GENERAL_RING_NAMES = {spec[0] for spec in _GENERAL_RING_SPECS}
+_GENERAL_RING_NAMES = {feature.name for feature in _GENERAL_RING_FEATURES}
 
 
 def _feature_name(
-    order: int | None,
-    greater: bool,
+    size: int | None,
+    match_size_or_larger: bool,
     fused: bool,
     aromatic: bool | None,
     hetero: bool | None,
 ) -> str:
     """
-    Build the Mordred feature name for a ring count parameter combination.
+    Build the descriptor name from the ring filters encoded in the feature.
+
+    `G` means "size greater than or equal to", `F` means fused ring system,
+    lowercase `a` means aromatic, uppercase `A` means non-aromatic, and `H`
+    means at least one heteroatom.
     """
     attrs = []
-    if greater:
+    if match_size_or_larger:
         attrs.append("G")
-    if order is not None:
-        attrs.append(str(order))
+    if size is not None:
+        attrs.append(str(size))
     if fused:
         attrs.append("F")
     if aromatic is True:
@@ -50,47 +78,53 @@ def _feature_name(
     return f"n{''.join(attrs)}Ring"
 
 
-def _feature_specs() -> list[
-    tuple[str, int | None, bool, bool, bool | None, bool | None]
-]:
+def _ring_count_features() -> list[RingCountFeature]:
     """
-    Generate Mordred RingCount feature specs in Mordred preset order.
+    Generate all ring counters in the order exposed by the public feature list.
     """
-    specs: list[tuple[str, int | None, bool, bool, bool | None, bool | None]] = [
-        *_GENERAL_RING_SPECS
-    ]
+    features = [*_GENERAL_RING_FEATURES]
     for fused in [False, True]:
         for aromatic in [None, True, False]:
             for hetero in [None, True]:
+                # Start each fused/aromatic/hetero block with the all-size count,
+                # unless it is one of the general features already listed above.
                 name = _feature_name(None, False, fused, aromatic, hetero)
                 if name not in _GENERAL_RING_NAMES:
-                    specs.append((name, None, False, fused, aromatic, hetero))
+                    features.append(
+                        RingCountFeature(name, None, False, fused, aromatic, hetero)
+                    )
 
                 start = 4 if fused else 3
-                for order in range(start, 13):
-                    name = _feature_name(order, False, fused, aromatic, hetero)
-                    specs.append((name, order, False, fused, aromatic, hetero))
+                for size in range(start, 13):
+                    # Then add exact-size counts: simple rings start at 3 atoms,
+                    # fused ring systems start at 4 atoms.
+                    name = _feature_name(size, False, fused, aromatic, hetero)
+                    features.append(
+                        RingCountFeature(name, size, False, fused, aromatic, hetero)
+                    )
 
                 name = _feature_name(12, True, fused, aromatic, hetero)
-                specs.append((name, 12, True, fused, aromatic, hetero))
+                features.append(
+                    RingCountFeature(name, 12, True, fused, aromatic, hetero)
+                )
 
-    return specs
-
-
-FEATURE_SPECS = _feature_specs()
-FEATURE_NAMES = [spec[0] for spec in FEATURE_SPECS]
+    return features
 
 
-def _rings(mol: Mol) -> list[frozenset[int]]:
+RING_COUNT_FEATURES = _ring_count_features()
+FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
+
+
+def _ring_atom_sets(mol: Mol) -> list[set[int]]:
     """
-    Return RDKit SSSR rings as atom-index sets, matching Mordred `Rings`.
+    Return RDKit SSSR rings as atom-index sets.
     """
-    return [frozenset(ring) for ring in Chem.GetSymmSSSR(mol)]
+    return [set(ring) for ring in Chem.GetSymmSSSR(mol)]
 
 
-def _fused_rings(rings: list[frozenset[int]]) -> list[frozenset[int]]:
+def _fused_ring_atom_sets(rings: list[set[int]]) -> list[set[int]]:
     """
-    Return fused ring components, matching Mordred `FusedRings`.
+    Return fused ring components.
     """
     if len(rings) < 2:
         return []
@@ -122,56 +156,71 @@ def _fused_rings(rings: list[frozenset[int]]) -> list[frozenset[int]]:
         root = find(idx)
         components.setdefault(root, set()).update(ring)
 
-    return [frozenset(component) for component in components.values()]
+    return list(components.values())
 
 
-def _matches_order(ring: frozenset[int], order: int | None, greater: bool) -> bool:
+def _ring_properties(mol: Mol, ring_atom_sets: list[set[int]]) -> list[RingProperties]:
     """
-    Check the Mordred ring-size predicate.
+    Cache ring size, aromaticity, and heteroatom presence once per ring.
     """
-    if order is None:
+    return [
+        RingProperties(
+            ring,
+            all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring),
+            any(mol.GetAtomWithIdx(idx).GetAtomicNum() != 6 for idx in ring),
+        )
+        for ring in ring_atom_sets
+    ]
+
+
+def _matches_size(ring: RingProperties, feature: RingCountFeature) -> bool:
+    """
+    Check whether a ring has any size, an exact size, or a minimum size.
+    """
+    if feature.size is None:
         return True
-    return len(ring) >= order if greater else len(ring) == order
+    if feature.match_size_or_larger:
+        return ring.size >= feature.size
+    return ring.size == feature.size
 
 
-def _matches_aromaticity(mol: Mol, ring: frozenset[int], aromatic: bool | None) -> bool:
+def _matches_aromaticity(ring: RingProperties, required: bool | None) -> bool:
     """
-    Check the Mordred aromatic/aliphatic ring predicate.
+    Check aromaticity only when the feature requires aromatic or aliphatic rings.
     """
-    if aromatic is None:
+    if required is None:
         return True
-    is_aromatic = all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring)
-    return is_aromatic if aromatic else not is_aromatic
+    return ring.is_aromatic if required else not ring.is_aromatic
 
 
-def _matches_hetero(mol: Mol, ring: frozenset[int], hetero: bool | None) -> bool:
+def _matches_hetero(ring: RingProperties, required: bool | None) -> bool:
     """
-    Check the Mordred hetero ring predicate.
+    Check heteroatom content only when the feature requires hetero or carbocyclic rings.
     """
-    if hetero is None:
+    if required is None:
         return True
-    has_hetero = any(mol.GetAtomWithIdx(idx).GetAtomicNum() != 6 for idx in ring)
-    return has_hetero if hetero else not has_hetero
+    return ring.has_hetero if required else not ring.has_hetero
 
 
 def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute Mordred RingCount descriptors from RDKit SSSR rings.
+    Count simple and fused rings across size, aromaticity, and heteroatom filters.
     """
-    simple_rings = _rings(mol_regular)
-    fused_rings = _fused_rings(simple_rings)
+    simple_ring_atom_sets = _ring_atom_sets(mol_regular)
+    fused_ring_atom_sets = _fused_ring_atom_sets(simple_ring_atom_sets)
+    simple_rings = _ring_properties(mol_regular, simple_ring_atom_sets)
+    fused_rings = _ring_properties(mol_regular, fused_ring_atom_sets)
     ring_sets = {False: simple_rings, True: fused_rings}
 
-    values = []
-    for _, order, greater, fused, aromatic, hetero in FEATURE_SPECS:
-        values.append(
-            sum(
-                1
-                for ring in ring_sets[fused]
-                if _matches_order(ring, order, greater)
-                and _matches_aromaticity(mol_regular, ring, aromatic)
-                and _matches_hetero(mol_regular, ring, hetero)
-            )
+    values = [
+        sum(
+            1
+            for ring in ring_sets[feature.use_fused_rings]
+            if _matches_size(ring, feature)
+            and _matches_aromaticity(ring, feature.required_aromatic)
+            and _matches_hetero(ring, feature.required_hetero)
         )
+        for feature in RING_COUNT_FEATURES
+    ]
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

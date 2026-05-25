@@ -92,7 +92,9 @@ def test_rdkit_2d_descriptors_match_mordred(smiles, mordred_2d_calc):
     mol_regular = preprocess_mol(mol)
     distance_matrix = DistanceMatrix(mol_regular)
 
-    values, feature_names = rdkit_descriptors.calc_2d(mol_regular, distance_matrix)
+    values, feature_names = rdkit_descriptors.calc_rdkit_2d(
+        mol_regular, distance_matrix
+    )
     mordred_values = dict(
         zip(
             (str(desc) for desc in mordred_2d_calc.descriptors),
@@ -131,7 +133,7 @@ def test_rdkit_3d_descriptors_match_mordred(smiles, mordred_all_calc):
     AllChem.EmbedMolecule(mol, randomSeed=1)
     AllChem.MMFFOptimizeMolecule(mol)
 
-    values, feature_names = rdkit_descriptors.calc_3d(mol)
+    values, feature_names = rdkit_descriptors.calc_rdkit_3d(mol)
     mordred_values = dict(
         zip(
             (str(desc) for desc in mordred_all_calc.descriptors),

@@ -7,6 +7,8 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+from collections import Counter
+
 import numpy as np
 from rdkit.Chem import Mol, rdMolDescriptors
 
@@ -48,10 +50,11 @@ _ELEMENT_ATOMIC_NUMBERS = [
 
 def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute Mordred atom count descriptors.
+    Count atoms by common element and structural category.
     """
     atoms = mol.GetAtoms()
     atomic_numbers = [atom.GetAtomicNum() for atom in atoms]
+    atomic_number_counts = Counter(atomic_numbers)
     values = [
         rdMolDescriptors.CalcNumAtoms(mol),
         rdMolDescriptors.CalcNumHeavyAtoms(mol),
@@ -61,7 +64,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         sum(atom.GetTotalNumHs() for atom in atoms),
     ]
     values.extend(
-        sum(atomic_number == element_atomic_number for atomic_number in atomic_numbers)
+        atomic_number_counts[element_atomic_number]
         for element_atomic_number in _ELEMENT_ATOMIC_NUMBERS
     )
     values.append(

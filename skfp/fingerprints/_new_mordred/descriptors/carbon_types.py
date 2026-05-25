@@ -46,10 +46,10 @@ _FEATURE_TO_COUNTS = {
 
 def calc(mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
     """
-    Compute Mordred carbon type descriptors.
+    Count carbon atoms by carbon-neighbor degree and hybridization.
     """
-    counts: defaultdict[tuple[int, HybridizationType], int] = defaultdict(int)
-    hybridization_counts: defaultdict[HybridizationType, int] = defaultdict(int)
+    counts = defaultdict(int)  # type: ignore[var-annotated]
+    hybridization_counts = defaultdict(int)  # type: ignore[var-annotated]
     num_carbons = 0
 
     for atom in mol_kekulized.GetAtoms():
@@ -67,10 +67,7 @@ def calc(mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
         counts[(carbon_neighbors, hybridization)] += 1
         hybridization_counts[hybridization] += 1
 
-    values: list[float] = []
-    for name in FEATURE_NAMES[:-2]:
-        carbon_neighbors, hybridization = _FEATURE_TO_COUNTS[name]
-        values.append(counts[(carbon_neighbors, hybridization)])
+    values = [counts[_FEATURE_TO_COUNTS[name]] for name in FEATURE_NAMES[:-2]]
 
     num_sp3 = hybridization_counts[HybridizationType.SP3]
     num_sp2 = hybridization_counts[HybridizationType.SP2]

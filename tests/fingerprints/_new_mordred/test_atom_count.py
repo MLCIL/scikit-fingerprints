@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from mordred import Calculator, descriptors
 from numpy.testing import assert_allclose
-from rdkit import Chem
+from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors import atom_count
 
@@ -26,24 +26,25 @@ FEATURE_NAMES = [
     "nX",
 ]
 
-SMILES = [
-    "CCO",
-    "c1ccccc1",
-    "C(F)(Cl)(Br)I",
-    "O=P(O)(O)O",
-    "CS(=O)(=O)N",
-    "C[N+](C)(C)C",
-]
-
 
 @pytest.fixture(scope="module")
 def mordred_2d_calc():
     return Calculator(descriptors, ignore_3D=True)
 
 
-@pytest.mark.parametrize("smiles", SMILES)
+@pytest.mark.parametrize(
+    "smiles",
+    [
+        "CCO",
+        "c1ccccc1",
+        "C(F)(Cl)(Br)I",
+        "O=P(O)(O)O",
+        "CS(=O)(=O)N",
+        "C[N+](C)(C)C",
+    ],
+)
 def test_atom_count_matches_mordred(smiles, mordred_2d_calc):
-    mol = Chem.MolFromSmiles(smiles)
+    mol = MolFromSmiles(smiles)
 
     values, feature_names = atom_count.calc(mol)
     mordred_values = dict(
