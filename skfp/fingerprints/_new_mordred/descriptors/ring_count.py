@@ -80,7 +80,10 @@ def _feature_name(
 
 def _ring_count_features() -> list[RingCountFeature]:
     """
-    Generate all ring counters in the order exposed by the public feature list.
+    Generate descriptor definitions in the order exposed by the public feature list.
+
+    Each definition stores the descriptor name and the ring filters used to count
+    matching rings.
     """
     features = [*_GENERAL_RING_FEATURES]
     for fused in [False, True]:
@@ -113,6 +116,30 @@ def _ring_count_features() -> list[RingCountFeature]:
 
 RING_COUNT_FEATURES = _ring_count_features()
 FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
+
+
+def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
+    """
+    Count simple and fused rings across size, aromaticity, and heteroatom filters.
+    """
+    simple_ring_atom_sets = _ring_atom_sets(mol_regular)
+    fused_ring_atom_sets = _fused_ring_atom_sets(simple_ring_atom_sets)
+    simple_rings = _ring_properties(mol_regular, simple_ring_atom_sets)
+    fused_rings = _ring_properties(mol_regular, fused_ring_atom_sets)
+    ring_sets = {False: simple_rings, True: fused_rings}
+
+    values = [
+        sum(
+            1
+            for ring in ring_sets[feature.use_fused_rings]
+            if _matches_size(ring, feature)
+            and _matches_aromaticity(ring, feature.required_aromatic)
+            and _matches_hetero(ring, feature.required_hetero)
+        )
+        for feature in RING_COUNT_FEATURES
+    ]
+
+    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
 
 def _ring_atom_sets(mol: Mol) -> list[set[int]]:
@@ -200,27 +227,3 @@ def _matches_hetero(ring: RingProperties, required: bool | None) -> bool:
     if required is None:
         return True
     return ring.has_hetero if required else not ring.has_hetero
-
-
-def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
-    """
-    Count simple and fused rings across size, aromaticity, and heteroatom filters.
-    """
-    simple_ring_atom_sets = _ring_atom_sets(mol_regular)
-    fused_ring_atom_sets = _fused_ring_atom_sets(simple_ring_atom_sets)
-    simple_rings = _ring_properties(mol_regular, simple_ring_atom_sets)
-    fused_rings = _ring_properties(mol_regular, fused_ring_atom_sets)
-    ring_sets = {False: simple_rings, True: fused_rings}
-
-    values = [
-        sum(
-            1
-            for ring in ring_sets[feature.use_fused_rings]
-            if _matches_size(ring, feature)
-            and _matches_aromaticity(ring, feature.required_aromatic)
-            and _matches_hetero(ring, feature.required_hetero)
-        )
-        for feature in RING_COUNT_FEATURES
-    ]
-
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES

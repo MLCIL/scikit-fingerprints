@@ -14,6 +14,7 @@ from rdkit.Chem import Mol, rdMolDescriptors
 
 from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
 
+# Mordred exposes count descriptors with n* names; keep these strings unchanged.
 FEATURE_NAMES = [
     "nAtom",
     "nHeavyAtom",
