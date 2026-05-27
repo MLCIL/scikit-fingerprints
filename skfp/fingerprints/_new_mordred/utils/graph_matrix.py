@@ -43,6 +43,10 @@ class AdjacencyMatrix:
         self._base = GetAdjacencyMatrix(mol, useBO=use_bond_orders)
         self._orders = [self._base]
 
+    @property
+    def matrix(self) -> np.ndarray:
+        return self._base
+
     def order(self, n: int = 1) -> np.ndarray:
         while len(self._orders) < n:
             self._orders.append(self._orders[-1].dot(self._base))
