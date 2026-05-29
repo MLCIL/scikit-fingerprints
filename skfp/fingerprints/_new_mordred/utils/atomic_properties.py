@@ -3,14 +3,13 @@ from rdkit import Chem
 from rdkit.Chem.rdchem import Atom, Bond
 
 from .periodic_table import (
-    ALLRED_ROCOW_EN,
+    ALLRED_ROCHOW_ELECTRONEGATIVITY,
     IONIZATION_POTENTIAL,
     MC_GOWAN_VOLUME,
-    PAULING_EN,
+    PAULING_ELECTRONEGATIVITY,
     PERIOD,
     POLARIZABILITY_94,
-    SANDERSON_EN,
-    mass,
+    SANDERSON_ELECTRONEGATIVITY,
     vdw_volume,
 )
 
@@ -33,24 +32,28 @@ def get_atomic_number_from_symbol(symbol: str) -> int:
     return _TABLE.GetAtomicNumber(symbol)
 
 
+def get_atomic_number(atom: Atom) -> int:
+    return atom.GetAtomicNum()
+
+
 def get_mass(atom: Atom) -> float:
-    return mass(atom.GetAtomicNum())
+    return atom.GetMass()
 
 
-def get_vdw_volume(atom: Atom) -> float:
+def get_van_der_waals_volume(atom: Atom) -> float:
     return vdw_volume(atom.GetAtomicNum())
 
 
-def get_sanderson_en(atom: Atom) -> float:
-    return SANDERSON_EN[atom.GetAtomicNum()]
+def get_sanderson_electronegativity(atom: Atom) -> float:
+    return SANDERSON_ELECTRONEGATIVITY[atom.GetAtomicNum()]
 
 
-def get_pauling_en(atom: Atom) -> float:
-    return PAULING_EN[atom.GetAtomicNum()]
+def get_pauling_electronegativity(atom: Atom) -> float:
+    return PAULING_ELECTRONEGATIVITY[atom.GetAtomicNum()]
 
 
-def get_allred_rocow_en(atom: Atom) -> float:
-    return ALLRED_ROCOW_EN[atom.GetAtomicNum()]
+def get_allred_rochow_electronegativity(atom: Atom) -> float:
+    return ALLRED_ROCHOW_ELECTRONEGATIVITY[atom.GetAtomicNum()]
 
 
 def get_polarizability(atom: Atom) -> float:

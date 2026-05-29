@@ -50,9 +50,13 @@ class PeriodicTable:
             return np.nan
 
 
-SANDERSON_EN = PeriodicTable.from_file("sanderson_electron_negativity.txt")
-PAULING_EN = PeriodicTable.from_file("pauling_electron_negativity.txt")
-ALLRED_ROCOW_EN = PeriodicTable.from_file("allred_rocow_electron_negativity.txt")
+SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
+    "sanderson_electron_negativity.txt"
+)
+PAULING_ELECTRONEGATIVITY = PeriodicTable.from_file("pauling_electron_negativity.txt")
+ALLRED_ROCHOW_ELECTRONEGATIVITY = PeriodicTable.from_file(
+    "allred_rocow_electron_negativity.txt"
+)
 POLARIZABILITY_94 = PeriodicTable.from_file("polarizalibity94.txt")
 POLARIZABILITY_78 = PeriodicTable.from_file("polarizalibity78.txt")
 IONIZATION_POTENTIAL = PeriodicTable.from_file("ionization_potential.txt")
@@ -71,10 +75,6 @@ PERIOD = PeriodicTable(
 HALOGEN_ATOMIC_NUMS: frozenset[int] = frozenset({9, 17, 35, 53, 85, 117})
 
 _RDKIT_PT = GetPeriodicTable()
-
-
-def mass(atomic_num: int) -> float:
-    return _RDKIT_PT.GetAtomicWeight(atomic_num)
 
 
 def vdw_radii(atomic_num: int) -> float:
