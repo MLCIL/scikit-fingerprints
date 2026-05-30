@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from rdkit import Chem
+from rdkit.Chem import Mol, SDMolSupplier
 
 from skfp.fingerprints._new_mordred.utils.sasa import SurfaceArea
 
@@ -16,9 +16,9 @@ SDF_FILE = os.path.join(os.path.dirname(__file__), "references", "structures.sdf
 
 
 @pytest.fixture(scope="module")
-def sdf_mols() -> dict[str, Chem.Mol]:
+def sdf_mols() -> dict[str, Mol]:
     mols = {}
-    for mol in Chem.SDMolSupplier(SDF_FILE, removeHs=False):
+    for mol in SDMolSupplier(SDF_FILE, removeHs=False):
         if mol is not None:
             mols[mol.GetProp("_Name")] = mol
     return mols

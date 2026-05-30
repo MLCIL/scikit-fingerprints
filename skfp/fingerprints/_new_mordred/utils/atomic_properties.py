@@ -5,12 +5,13 @@ from rdkit.Chem.rdchem import Atom, Bond
 from .periodic_table import (
     ALLRED_ROCHOW_ELECTRONEGATIVITY,
     IONIZATION_POTENTIAL,
+    MASS,
     MC_GOWAN_VOLUME,
     PAULING_ELECTRONEGATIVITY,
     PERIOD,
     POLARIZABILITY_94,
     SANDERSON_ELECTRONEGATIVITY,
-    vdw_volume,
+    VAN_DER_WAALS_RADII,
 )
 
 """
@@ -37,11 +38,15 @@ def get_atomic_number(atom: Atom) -> int:
 
 
 def get_mass(atom: Atom) -> float:
-    return atom.GetMass()
+    return MASS[atom.GetAtomicNum()]
+
+
+def get_van_der_waals_radius(atom: Atom) -> float:
+    return VAN_DER_WAALS_RADII[atom.GetAtomicNum()]
 
 
 def get_van_der_waals_volume(atom: Atom) -> float:
-    return vdw_volume(atom.GetAtomicNum())
+    return 4.0 / 3.0 * np.pi * VAN_DER_WAALS_RADII[atom.GetAtomicNum()] ** 3
 
 
 def get_sanderson_electronegativity(atom: Atom) -> float:

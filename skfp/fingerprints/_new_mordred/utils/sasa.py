@@ -1,7 +1,9 @@
 from rdkit.Chem import Mol
 from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
 
-from skfp.fingerprints._new_mordred.utils.periodic_table import vdw_radii
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    get_van_der_waals_radius,
+)
 
 
 class SurfaceArea:
@@ -43,7 +45,7 @@ class SurfaceArea:
             Solvent probe radius, in angstroms, added to each atomic van der
             Waals radius. The default corresponds to a water probe.
         """
-        radii = [vdw_radii(atom.GetAtomicNum()) for atom in mol.GetAtoms()]
+        radii = [get_van_der_waals_radius(atom) for atom in mol.GetAtoms()]
 
         opts = SASAOpts()
         opts.algorithm = SASAAlgorithm.ShrakeRupley

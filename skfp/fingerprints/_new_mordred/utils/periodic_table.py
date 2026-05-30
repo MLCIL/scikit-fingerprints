@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import numpy as np
-from rdkit.Chem import GetPeriodicTable
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -50,17 +49,19 @@ class PeriodicTable:
             return np.nan
 
 
-SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
-    "sanderson_electron_negativity.txt"
-)
-PAULING_ELECTRONEGATIVITY = PeriodicTable.from_file("pauling_electron_negativity.txt")
 ALLRED_ROCHOW_ELECTRONEGATIVITY = PeriodicTable.from_file(
     "allred_rocow_electron_negativity.txt"
 )
-POLARIZABILITY_94 = PeriodicTable.from_file("polarizalibity94.txt")
-POLARIZABILITY_78 = PeriodicTable.from_file("polarizalibity78.txt")
 IONIZATION_POTENTIAL = PeriodicTable.from_file("ionization_potential.txt")
+MASS = PeriodicTable.from_file("mass.txt")
 MC_GOWAN_VOLUME = PeriodicTable.from_file("mc_gowan_volume.txt")
+PAULING_ELECTRONEGATIVITY = PeriodicTable.from_file("pauling_electron_negativity.txt")
+POLARIZABILITY_78 = PeriodicTable.from_file("polarizalibity78.txt")
+POLARIZABILITY_94 = PeriodicTable.from_file("polarizalibity94.txt")
+SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
+    "sanderson_electron_negativity.txt"
+)
+VAN_DER_WAALS_RADII = PeriodicTable.from_file("van_der_waals_radii.txt")
 
 PERIOD = PeriodicTable(
     [1.0] * 2
@@ -73,13 +74,3 @@ PERIOD = PeriodicTable(
 )
 
 HALOGEN_ATOMIC_NUMS: frozenset[int] = frozenset({9, 17, 35, 53, 85, 117})
-
-_RDKIT_PT = GetPeriodicTable()
-
-
-def vdw_radii(atomic_num: int) -> float:
-    return _RDKIT_PT.GetRvdw(atomic_num)
-
-
-def vdw_volume(atomic_num: int) -> float:
-    return 4.0 / 3.0 * np.pi * vdw_radii(atomic_num) ** 3
