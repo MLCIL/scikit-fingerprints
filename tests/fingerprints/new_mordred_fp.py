@@ -74,6 +74,11 @@ def test_new_mordred_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
+    # we exclude changed feature names
+    changed_name = np.array(["autocorr" in feature for feature in feature_names_new])
+    feature_names_new = feature_names_new[~changed_name]
+    feature_names_old = feature_names_old[~changed_name]
+
     assert_equal(feature_names_new, feature_names_old)
 
 
@@ -86,5 +91,10 @@ def test_new_mordred_3D_feature_names():
 
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
+
+    # we exclude changed feature names
+    changed_name = np.array(["autocorr" in feature for feature in feature_names_new])
+    feature_names_new = feature_names_new[~changed_name]
+    feature_names_old = feature_names_old[~changed_name]
 
     assert_equal(feature_names_new, feature_names_old)
