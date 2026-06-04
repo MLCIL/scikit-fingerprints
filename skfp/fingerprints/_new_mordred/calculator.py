@@ -49,9 +49,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # dependencies
     n_frags = len(GetMolFrags(mol))
 
+    # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
+
+    # hydrogen-explicit moleculr
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # 2D descriptors
     descriptors_2d = [
@@ -61,7 +66,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         acid_base.calc(mol_regular),
-        autocorrelation.calc(mol_regular, distance_matrix_regular),
+        autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate.calc(mol_regular),
     ]
 

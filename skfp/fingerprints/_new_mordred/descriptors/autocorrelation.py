@@ -34,8 +34,8 @@ _PROPS_NAMES = [
     "Allred_Rochow_electronegativity",
     "polarizability",
     "ionization_potential",
-    "valence_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
-    "sigma_electrons",
+    "sigma_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
+    "valence_electrons",
     "intrinsic_state",  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
 ]
 _PROPS_FUNCS = [
@@ -75,26 +75,33 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol: Mol, distance_matrix: DistanceMatrix) -> tuple[np.ndarray, list[str]]:
+def calc(
+    mol_hydrogens: Mol, distance_matrix_hydrogens: DistanceMatrix
+) -> tuple[np.ndarray, list[str]]:
     """
     Autocorrelation descriptors.
 
     Quantifies correlation of atomic properties of atoms with the shortest
     path of length k between them. This is realized as a weighted sum
     of shortest path lengths.
+
+    Following the original Mordred implementation, this function uses hydrogen-explicit
+    molecule and distance matrix.
     """
-    atoms = list(mol.GetAtoms())
+    atoms = list(mol_hydrogens.GetAtoms())
     atomic_props = {}
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
         atomic_props[name] = np.array([func(atom) for atom in atoms], dtype=np.float64)
 
     atomic_props["gasteiger_charge"] = atomic_partial_charges(
-        mol, partial_charge_model="Gasteiger", charge_errors="ignore"
+        mol_hydrogens, partial_charge_model="Gasteiger", charge_errors="ignore"
     )
 
     # one-hot stack of distance masks for d = 1...8, shape (8, n, n)
     # allows bulk tensor computation
-    dist_stack = np.stack([(distance_matrix.matrix == d) for d in range(1, 9)], axis=0)
+    dist_stack = np.stack(
+        [(distance_matrix_hydrogens.matrix == d) for d in range(1, 9)], axis=0
+    )
 
     # number of unordered pairs at each distance (0.5 * count of True), shape (8,)
     pair_counts = 0.5 * dist_stack.sum(axis=(1, 2))

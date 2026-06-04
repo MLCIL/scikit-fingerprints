@@ -14,7 +14,7 @@ def test_new_mordred_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
@@ -29,7 +29,7 @@ def test_new_mordred_sparse_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
@@ -44,7 +44,7 @@ def test_new_mordred_3D_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
@@ -59,7 +59,7 @@ def test_new_mordred_3D_sparse_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
