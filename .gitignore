@@ -33,3 +33,5 @@ tests/preprocessing/input_output/data/mol_out.sdf
 *.tsv
 *.gz
 *.zip
+
+*tmp*
