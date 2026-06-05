@@ -103,6 +103,7 @@ class MolFromSDFTransformer(BasePreprocessor):
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
 
+        self._set_default_conf_ids(mols)
         return mols
 
     def _transform_batch(self, X):
@@ -162,6 +163,15 @@ class MolFromSDFTransformer(BasePreprocessor):
             removeHs=self.remove_hydrogens,
         )
         return list(supplier)
+
+    def _set_default_conf_ids(self, mols: list[Mol]) -> None:
+        for mol in mols:
+            if (
+                mol is not None
+                and mol.GetNumConformers() > 0
+                and not mol.HasProp("conf_id")
+            ):
+                mol.SetIntProp("conf_id", 0)
 
 
 class MolToSDFTransformer(BasePreprocessor):
