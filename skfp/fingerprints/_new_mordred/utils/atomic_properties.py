@@ -3,15 +3,15 @@ from rdkit import Chem
 from rdkit.Chem.rdchem import Atom, Bond
 
 from .periodic_table import (
-    ALLRED_ROCOW_EN,
+    ALLRED_ROCHOW_ELECTRONEGATIVITY,
     IONIZATION_POTENTIAL,
+    MASS,
     MC_GOWAN_VOLUME,
-    PAULING_EN,
+    PAULING_ELECTRONEGATIVITY,
     PERIOD,
     POLARIZABILITY_94,
-    SANDERSON_EN,
-    mass,
-    vdw_volume,
+    SANDERSON_ELECTRONEGATIVITY,
+    VAN_DER_WAALS_RADII,
 )
 
 """
@@ -22,35 +22,49 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-_TABLE = Chem.GetPeriodicTable()
+_RDKIT_PERIODIC_TABLE = Chem.GetPeriodicTable()
 
 
 def get_element_symbol(atomic_num: int) -> str:
-    return _TABLE.GetElementSymbol(atomic_num)
+    return _RDKIT_PERIODIC_TABLE.GetElementSymbol(atomic_num)
 
 
 def get_atomic_number_from_symbol(symbol: str) -> int:
-    return _TABLE.GetAtomicNumber(symbol)
+    return _RDKIT_PERIODIC_TABLE.GetAtomicNumber(symbol)
+
+
+def get_atomic_number(atom: Atom) -> int:
+    return atom.GetAtomicNum()
 
 
 def get_mass(atom: Atom) -> float:
-    return mass(atom.GetAtomicNum())
+    return MASS[atom.GetAtomicNum()]
 
 
-def get_vdw_volume(atom: Atom) -> float:
-    return vdw_volume(atom.GetAtomicNum())
+def get_van_der_waals_radius_rdkit(atom: Atom) -> float:
+    # radius used by RDKit
+    return _RDKIT_PERIODIC_TABLE.GetRvdw(atom.GetAtomicNum())
 
 
-def get_sanderson_en(atom: Atom) -> float:
-    return SANDERSON_EN[atom.GetAtomicNum()]
+def get_van_der_waals_radius(atom: Atom) -> float:
+    # radius used by Mordred & PaDEL-Descriptor
+    return VAN_DER_WAALS_RADII[atom.GetAtomicNum()]
 
 
-def get_pauling_en(atom: Atom) -> float:
-    return PAULING_EN[atom.GetAtomicNum()]
+def get_van_der_waals_volume(atom: Atom) -> float:
+    return 4.0 / 3.0 * np.pi * VAN_DER_WAALS_RADII[atom.GetAtomicNum()] ** 3
 
 
-def get_allred_rocow_en(atom: Atom) -> float:
-    return ALLRED_ROCOW_EN[atom.GetAtomicNum()]
+def get_sanderson_electronegativity(atom: Atom) -> float:
+    return SANDERSON_ELECTRONEGATIVITY[atom.GetAtomicNum()]
+
+
+def get_pauling_electronegativity(atom: Atom) -> float:
+    return PAULING_ELECTRONEGATIVITY[atom.GetAtomicNum()]
+
+
+def get_allred_rochow_electronegativity(atom: Atom) -> float:
+    return ALLRED_ROCHOW_ELECTRONEGATIVITY[atom.GetAtomicNum()]
 
 
 def get_polarizability(atom: Atom) -> float:
@@ -93,7 +107,7 @@ def get_valence_electrons(atom: Atom) -> float:
     N = atom.GetAtomicNum()
     if N == 1:
         return 0.0
-    Zv = _TABLE.GetNOuterElecs(N) - atom.GetFormalCharge()
+    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(N) - atom.GetFormalCharge()
     Z = N - atom.GetFormalCharge()
     h = atom.GetTotalNumHs() + sum(
         1 for a in atom.GetNeighbors() if a.GetAtomicNum() == 1
@@ -123,7 +137,7 @@ def get_core_count(atom: Atom) -> float:
     Z = atom.GetAtomicNum()
     if Z == 1:
         return 0.0
-    Zv = _TABLE.GetNOuterElecs(Z)
+    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(Z)
     PN = PERIOD[Z]
     return (Z - Zv) / (Zv * (PN - 1))
 
@@ -133,7 +147,7 @@ def get_eta_epsilon(atom: Atom) -> float:
     ETA electronegativity-like measure (epsilon) for a single atom.
     Differences in epsilon between bonded atoms encode bond polarity.
     """
-    Zv = _TABLE.GetNOuterElecs(atom.GetAtomicNum())
+    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
     return 0.3 * Zv - get_core_count(atom)
 
 
@@ -191,7 +205,9 @@ def get_eta_beta_delta(atom: Atom) -> float:
     if (
         atom.GetIsAromatic()
         or atom.IsInRing()
-        or _TABLE.GetNOuterElecs(atom.GetAtomicNum()) - atom.GetTotalValence() <= 0
+        or _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
+        - atom.GetTotalValence()
+        <= 0
     ):
         return 0.0
 

@@ -1,12 +1,3 @@
-# This code has been adapted from mordred-community:
-# https://github.com/JacksonBurns/mordred-community
-#
-# Copyright (c) 2023, Jackson Burns and the mordredcommunity Team
-# All rights reserved.
-# Licensed under the BSD 3-Clause License.
-#
-# See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
-
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol
 
@@ -14,6 +5,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     adjacency_matrix,
+    autocorrelation,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -27,6 +19,13 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
 
 _FEATURE_NAME_TO_IDX_2D = {name: i for i, name in enumerate(FEATURE_NAMES_2D)}
 _FEATURE_NAME_TO_IDX_ALL = {name: i for i, name in enumerate(ALL_FEATURE_NAMES)}
@@ -48,9 +47,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # dependencies
     n_frags = len(GetMolFrags(mol))
 
+    # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
+
+    # hydrogen-explicit molecule
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # 2D descriptors
     descriptors_2d = [
@@ -60,6 +64,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         acid_base.calc(mol_regular),
+        autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
     ]
 
     for values, feature_names in descriptors_2d:

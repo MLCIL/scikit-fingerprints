@@ -1,7 +1,6 @@
 import pytest
 from numpy.testing import assert_almost_equal
-from rdkit import Chem
-from rdkit.Chem import Atom
+from rdkit.Chem import AddHs, Atom, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_intrinsic_state,
@@ -48,9 +47,9 @@ def get_atom():
     }
 
     def _get(label: str, explicit_hs: bool) -> Atom:
-        mol = Chem.MolFromSmiles(smiles[label])
+        mol = MolFromSmiles(smiles[label])
         if explicit_hs:
-            mol = Chem.AddHs(mol)
+            mol = AddHs(mol)
         return mol.GetAtomWithIdx(1)
 
     return _get
