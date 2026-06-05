@@ -52,7 +52,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # hydrogen-explicit moleculr
+    # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
