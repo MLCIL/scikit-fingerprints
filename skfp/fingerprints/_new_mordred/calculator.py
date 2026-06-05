@@ -28,7 +28,6 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-
 _FEATURE_NAME_TO_IDX_2D = {name: i for i, name in enumerate(FEATURE_NAMES_2D)}
 _FEATURE_NAME_TO_IDX_ALL = {name: i for i, name in enumerate(ALL_FEATURE_NAMES)}
 
@@ -54,7 +53,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # hydrogen-explicit moleculr
+    # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
