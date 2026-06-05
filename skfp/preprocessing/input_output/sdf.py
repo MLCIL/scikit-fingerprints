@@ -1,4 +1,4 @@
-import os.path
+import os
 import warnings
 from collections.abc import Sequence
 from numbers import Integral
@@ -73,14 +73,14 @@ class MolFromSDFTransformer(BasePreprocessor):
         self.sanitize = sanitize
         self.remove_hydrogens = remove_hydrogens
 
-    def transform(self, X: str, copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
+    def transform(self, X: str | os.PathLike[str], copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
         """
         Create RDKit ``Mol`` objects from SDF file.
 
         Parameters
         ----------
-        X : str
-            Path to SDF file.
+        X : {str, path-like}
+            Path to SDF file, or raw SDF text as a string.
 
         copy : bool, default=False
             Unused, kept for scikit-learn compatibility.
@@ -92,7 +92,13 @@ class MolFromSDFTransformer(BasePreprocessor):
         """
         self._validate_params()
 
-        if X.endswith(".sdf"):
+        if isinstance(X, os.PathLike):
+            filepath = os.fspath(X)
+            if not os.path.exists(filepath):
+                raise FileNotFoundError(f"SDF file at path '{filepath}' not found")
+
+            mols = self._read_sdf_file(filepath)
+        elif X.endswith(".sdf"):
             if not os.path.exists(X):
                 raise FileNotFoundError(f"SDF file at path '{X}' not found")
 
@@ -108,7 +114,8 @@ class MolFromSDFTransformer(BasePreprocessor):
     def _transform_batch(self, X):
         pass  # unused
 
-    def _read_sdf_file(self, filepath: str) -> list[Mol]:
+    def _read_sdf_file(self, filepath: str | os.PathLike[str]) -> list[Mol]:
+        filepath = os.fspath(filepath)
         n_jobs = effective_n_jobs(self.n_jobs)
 
         if n_jobs > 1:
@@ -130,9 +137,12 @@ class MolFromSDFTransformer(BasePreprocessor):
             )
         )
 
-    def _read_sdf_file_parallel(self, filepath: str, n_jobs: int) -> list[Mol]:
+    def _read_sdf_file_parallel(
+        self, filepath: str | os.PathLike[str], n_jobs: int
+    ) -> list[Mol]:
         from rdkit.Chem import MultithreadedSDMolSupplier
 
+        filepath = os.fspath(filepath)
         with MultithreadedSDMolSupplier(
             filepath,
             sanitize=self.sanitize,
@@ -178,9 +188,9 @@ class MolToSDFTransformer(BasePreprocessor):
 
     Parameters
     ----------
-    filepath : string, default="mols.sdf"
-        A string with file path location to save the SDF file. It should be a valid
-        file path with ``.sdf`` extension.
+    filepath : str or path-like, default="mols.sdf"
+        File path location to save the SDF file. It should be a valid file path
+        with ``.sdf`` extension.
 
     kekulize : bool, default=True
         Whether to kekulize molecules before writing them to SDF file.
@@ -207,14 +217,14 @@ class MolToSDFTransformer(BasePreprocessor):
     """
 
     _parameter_constraints: dict = {
-        "filepath": [str],
+        "filepath": [str, os.PathLike],
         "kekulize": ["boolean"],
         "force_V3000": ["boolean"],
     }
 
     def __init__(
         self,
-        filepath: str = "mols.sdf",
+        filepath: str | os.PathLike[str] = "mols.sdf",
         kekulize: bool = True,
         force_V3000: bool = False,
     ):

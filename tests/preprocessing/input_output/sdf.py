@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 from numpy.testing import assert_equal
@@ -28,11 +29,27 @@ def test_mol_from_sdf(sdf_in_file_path):
     assert all(isinstance(x, Mol) for x in mols)
 
 
+def test_mol_from_sdf_pathlike(sdf_in_file_path):
+    mol_from_sdf = MolFromSDFTransformer()
+    mols = mol_from_sdf.transform(Path(sdf_in_file_path))
+
+    assert_equal(len(mols), 1)
+    assert all(isinstance(x, Mol) for x in mols)
+
+
 def test_mol_to_sdf(mols_list, sdf_out_file_path):
     mol_to_sdf = MolToSDFTransformer(sdf_out_file_path)
     mol_to_sdf.transform(mols_list)
 
     assert os.path.exists(sdf_out_file_path)
+
+
+def test_mol_to_sdf_pathlike(mols_list, tmp_path):
+    sdf_file_path = tmp_path / "mol_out.sdf"
+    mol_to_sdf = MolToSDFTransformer(sdf_file_path)
+    mol_to_sdf.transform(mols_list)
+
+    assert sdf_file_path.exists()
 
 
 def test_mol_to_and_from_sdf(mols_list, sdf_out_file_path):
