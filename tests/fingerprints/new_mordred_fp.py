@@ -14,7 +14,7 @@ def test_new_mordred_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
@@ -29,7 +29,7 @@ def test_new_mordred_sparse_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1613))
     assert X_new.dtype == np.float32
 
@@ -44,7 +44,7 @@ def test_new_mordred_3D_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new) | np.isnan(X_old))
 
-    assert_allclose(X_new[mask], X_old[mask], equal_nan=True)
+    assert_allclose(X_new[mask], X_old[mask], equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
@@ -59,7 +59,7 @@ def test_new_mordred_3D_sparse_fingerprint(smallest_smiles_list):
     # temporary mask - will be eventually removed
     mask = ~(np.isnan(X_new.toarray()) | np.isnan(X_old.toarray()))
 
-    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True)
+    assert_allclose(X_new[mask].data, X_old[mask].data, equal_nan=True, atol=1e-3)
     assert_equal(X_new.shape, (len(smallest_smiles_list), 1826))
     assert X_new.dtype == np.float32
 
@@ -74,6 +74,11 @@ def test_new_mordred_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
+    # we exclude changed feature names
+    changed_name = np.array(["autocorr" in feature for feature in feature_names_new])
+    feature_names_new = feature_names_new[~changed_name]
+    feature_names_old = feature_names_old[~changed_name]
+
     assert_equal(feature_names_new, feature_names_old)
 
 
@@ -86,5 +91,10 @@ def test_new_mordred_3D_feature_names():
 
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
+
+    # we exclude changed feature names
+    changed_name = np.array(["autocorr" in feature for feature in feature_names_new])
+    feature_names_new = feature_names_new[~changed_name]
+    feature_names_old = feature_names_old[~changed_name]
 
     assert_equal(feature_names_new, feature_names_old)

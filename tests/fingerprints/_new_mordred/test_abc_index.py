@@ -1,6 +1,6 @@
 import pytest
 from numpy.testing import assert_almost_equal
-from rdkit import Chem
+from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.abc_index import (
     _calc_abc_index,
@@ -35,8 +35,10 @@ def test_abc_index_reference_values(abc_reference):
     :doi:`10.2298/JSC150901093F`.
     """
     smi, expected_abc, expected_abcgg = abc_reference
-    mol = Chem.MolFromSmiles(smi)
-    dm = DistanceMatrix(mol)
+    mol = MolFromSmiles(smi)
+    distance_matrix = DistanceMatrix(mol)
 
     assert_almost_equal(_calc_abc_index(mol), expected_abc, decimal=2)
-    assert_almost_equal(_calc_abcgg_index(mol, dm), expected_abcgg, decimal=2)
+    assert_almost_equal(
+        _calc_abcgg_index(mol, distance_matrix), expected_abcgg, decimal=2
+    )
