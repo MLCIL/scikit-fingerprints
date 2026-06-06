@@ -60,15 +60,32 @@ def require_mols(X: Sequence[Any]) -> None:
 def require_mols_with_conf_ids(X: Sequence[Any]) -> Sequence[Mol]:
     """
     Check that all inputs are RDKit ``Mol`` objects with ``"conf_id"`` property
-    set, i.e. with conformers computed and properly identified. Raises TypeError
+    set or with conformers available for the default ``conf_id=0``. Raises TypeError
     otherwise.
     """
-    if not all(isinstance(x, (Mol, PropertyMol)) and x.HasProp("conf_id") for x in X):
+    if not all(isinstance(x, (Mol, PropertyMol)) for x in X):
         raise TypeError(
             "Passed data must be molecules (RDKit Mol objects) "
             "and each must have conf_id property set. "
             "You can use ConformerGenerator to add them."
         )
+
+    mols_without_conf_id = []
+    for mol in X:
+        if mol.HasProp("conf_id"):
+            continue
+        if mol.GetNumConformers() == 0:
+            raise TypeError(
+                "Passed data must be molecules (RDKit Mol objects) "
+                "and each must have conf_id property set, or have at least one "
+                "conformer to use the default conf_id=0. "
+                "You can use ConformerGenerator to add them."
+            )
+        mols_without_conf_id.append(mol)
+
+    for mol in mols_without_conf_id:
+        mol.SetIntProp("conf_id", 0)
+
     return X
 
 

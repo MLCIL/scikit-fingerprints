@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
+from rdkit.Chem.PropertyMol import PropertyMol
 from rdkit.Chem.rdMolDescriptors import GetUSR
 
 from skfp.fingerprints import USRFingerprint
@@ -25,6 +26,20 @@ def test_usr_bit_fingerprint(mols_conformers_3_plus_atoms):
     assert_allclose(X_skfp, X_rdkit, atol=1e-3)
     assert_equal(X_skfp.shape, (len(mols_conformers_3_plus_atoms), 12))
     assert np.issubdtype(X_skfp.dtype, np.floating)
+
+
+def test_usr_bit_fingerprint_default_conf_id(mols_conformers_3_plus_atoms):
+    mols = [PropertyMol(mol) for mol in mols_conformers_3_plus_atoms]
+    for mol in mols:
+        mol.ClearProp("conf_id")
+
+    usr_fp = USRFingerprint()
+    X_skfp = usr_fp.transform(mols)
+
+    X_rdkit = np.array([GetUSR(mol, confId=0) for mol in mols])
+
+    assert_allclose(X_skfp, X_rdkit, atol=1e-3)
+    assert all(mol.GetIntProp("conf_id") == 0 for mol in mols)
 
 
 def test_usr_bit_fingerprint_transform_x_y(mols_conformers_3_plus_atoms):

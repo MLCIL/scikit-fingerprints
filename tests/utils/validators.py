@@ -1,5 +1,6 @@
 import pytest
 from rdkit.Chem import MolFromSmiles
+from rdkit.Chem.PropertyMol import PropertyMol
 
 from skfp.fingerprints import AtomPairFingerprint
 from skfp.utils.validators import (
@@ -83,6 +84,27 @@ def test_require_mols_with_conf_ids(mols_conformers_list, mols_list):
     with pytest.raises(TypeError) as exc_info:
         require_mols_with_conf_ids(mols_conformers_list + mols_list)
     assert "each must have conf_id property set" in str(exc_info)
+
+
+def test_require_mols_with_conf_ids_default(mols_conformers_list):
+    mols = [PropertyMol(mol) for mol in mols_conformers_list[:2]]
+    for mol in mols:
+        mol.ClearProp("conf_id")
+
+    require_mols_with_conf_ids(mols)
+
+    assert all(mol.GetIntProp("conf_id") == 0 for mol in mols)
+
+
+def test_require_mols_with_conf_ids_default_no_partial_mutation(mols_conformers_list):
+    mol_with_conformer = PropertyMol(mols_conformers_list[0])
+    mol_with_conformer.ClearProp("conf_id")
+    mol_without_conformer = MolFromSmiles("O")
+
+    with pytest.raises(TypeError):
+        require_mols_with_conf_ids([mol_with_conformer, mol_without_conformer])
+
+    assert not mol_with_conformer.HasProp("conf_id")
 
 
 @pytest.mark.parametrize(
