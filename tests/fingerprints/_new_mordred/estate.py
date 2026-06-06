@@ -1,0 +1,40 @@
+import pytest
+from numpy.testing import assert_allclose
+from rdkit.Chem import MolFromSmiles
+
+from skfp.fingerprints._new_mordred.descriptors.estate import calc
+
+
+@pytest.fixture(scope="module")
+def histidine_estate_features() -> dict[str, float]:
+    mol = MolFromSmiles("NC(Cc1c[nH]cn1)C(=O)O")  # histidine
+    values, feature_names = calc(mol)
+    return dict(zip(feature_names, values, strict=True))
+
+
+@pytest.mark.parametrize(
+    "feature_name, expected_value",
+    [
+        ("NdO", 1),
+        ("NsOH", 1),
+        ("NsNH2", 1),
+        ("NaaN", 1),
+        ("NaaNH", 1),
+        ("NaaCH", 2),
+        ("NaasC", 1),
+        ("NsssCH", 1),
+        ("SdO", 10.263),
+        ("SsOH", 8.418),
+        ("SsNH2", 5.257),
+        ("SaaN", 3.840),
+        ("SaaNH", 2.714),
+        ("SaasC", 0.666),
+        ("SsssCH", -0.863),
+        ("SdssC", -1.006),
+        ("SsCH3", 0),
+    ],
+)
+def test_estate_reference_values(
+    feature_name, expected_value, histidine_estate_features
+):
+    assert_allclose(histidine_estate_features[feature_name], expected_value, atol=1e-2)

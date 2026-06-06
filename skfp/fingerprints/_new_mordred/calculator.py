@@ -19,6 +19,7 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from tests.fingerprints._new_mordred import estate
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -65,6 +66,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         acid_base.calc(mol_regular),
         autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
+        estate.calc(mol_regular),
     ]
 
     for values, feature_names in descriptors_2d:
