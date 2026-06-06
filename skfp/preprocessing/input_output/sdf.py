@@ -103,10 +103,17 @@ class MolFromSDFTransformer(BasePreprocessor):
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
 
+        self._set_conf_ids(mols)
         return mols
 
     def _transform_batch(self, X):
         pass  # unused
+
+    @staticmethod
+    def _set_conf_ids(mols: list[Mol]) -> None:
+        for mol in mols:
+            if mol is not None and mol.GetNumConformers() > 0:
+                mol.SetIntProp("conf_id", mol.GetConformers()[0].GetId())
 
     def _read_sdf_file(self, filepath: str) -> list[Mol]:
         n_jobs = effective_n_jobs(self.n_jobs)

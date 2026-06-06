@@ -26,6 +26,7 @@ def test_mol_from_sdf(sdf_in_file_path):
 
     assert_equal(len(mols), 1)
     assert all(isinstance(x, Mol) for x in mols)
+    _assert_conf_ids_set(mols)
 
 
 def test_mol_to_sdf(mols_list, sdf_out_file_path):
@@ -52,6 +53,7 @@ def test_mol_from_sdf_parallel_from_file(sdf_in_file_path):
 
     assert_equal(len(mols), 1)
     assert all(isinstance(x, Mol) for x in mols)
+    _assert_conf_ids_set(mols)
 
 
 def test_mol_from_sdf_parallel_warns_for_raw_text(sdf_in_file_path):
@@ -67,6 +69,7 @@ def test_mol_from_sdf_parallel_warns_for_raw_text(sdf_in_file_path):
 
     assert_equal(len(mols), 1)
     assert all(isinstance(x, Mol) for x in mols)
+    _assert_conf_ids_set(mols)
 
 
 def test_mol_from_sdf_parallel_preserves_order(mols_list, tmp_path):
@@ -119,3 +122,10 @@ def _get_sdf_file_path(filename: str) -> str:
     if "input_output" in os.listdir():
         return os.path.join("input_output", "data", filename)
     raise FileNotFoundError(f"File {filename} not found")
+
+
+def _assert_conf_ids_set(mols: list[Mol]) -> None:
+    assert all(mol.HasProp("conf_id") for mol in mols)
+    assert all(
+        mol.GetIntProp("conf_id") == mol.GetConformers()[0].GetId() for mol in mols
+    )
