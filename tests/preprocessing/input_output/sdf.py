@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 from numpy.testing import assert_equal
@@ -23,6 +24,14 @@ def sdf_out_file_path():
 def test_mol_from_sdf(sdf_in_file_path):
     mol_from_sdf = MolFromSDFTransformer()
     mols = mol_from_sdf.transform(sdf_in_file_path)
+
+    assert_equal(len(mols), 1)
+    assert all(isinstance(x, Mol) for x in mols)
+
+
+def test_mol_from_sdf_path(sdf_in_file_path):
+    mol_from_sdf = MolFromSDFTransformer()
+    mols = mol_from_sdf.transform(Path(sdf_in_file_path))
 
     assert_equal(len(mols), 1)
     assert all(isinstance(x, Mol) for x in mols)

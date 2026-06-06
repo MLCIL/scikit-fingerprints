@@ -73,14 +73,14 @@ class MolFromSDFTransformer(BasePreprocessor):
         self.sanitize = sanitize
         self.remove_hydrogens = remove_hydrogens
 
-    def transform(self, X: str, copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
+    def transform(self, X: str | os.PathLike[str], copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
         """
         Create RDKit ``Mol`` objects from SDF file.
 
         Parameters
         ----------
-        X : str
-            Path to SDF file.
+        X : str or path-like
+            Path to SDF file, or raw SDF text.
 
         copy : bool, default=False
             Unused, kept for scikit-learn compatibility.
@@ -92,13 +92,20 @@ class MolFromSDFTransformer(BasePreprocessor):
         """
         self._validate_params()
 
-        if X.endswith(".sdf"):
-            if not os.path.exists(X):
-                raise FileNotFoundError(f"SDF file at path '{X}' not found")
-
-            mols = self._read_sdf_file(X)
+        if isinstance(X, os.PathLike):
+            sdf_input = os.fspath(X)
+            is_file_path = True
         else:
-            mols = self._read_sdf_text(X)
+            sdf_input = X
+            is_file_path = sdf_input.endswith(".sdf")
+
+        if is_file_path:
+            if not os.path.exists(sdf_input):
+                raise FileNotFoundError(f"SDF file at path '{sdf_input}' not found")
+
+            mols = self._read_sdf_file(sdf_input)
+        else:
+            mols = self._read_sdf_text(sdf_input)
 
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
