@@ -673,6 +673,7 @@ def zagreb_index_m1(
             return np.nan
 
 
+@np.errstate(divide="raise", invalid="raise")
 def zagreb_index_m2(
     mol: Mol,
     degree_vector: np.ndarray[np.floating] | None = None,
@@ -736,22 +737,18 @@ def zagreb_index_m2(
             [atom.GetDegree() for atom in mol.GetAtoms()], dtype=float
         )
 
-    if modified and np.any(degree_vector == 0):
-        return np.nan
-
-    with np.errstate(divide="raise", invalid="raise"):
-        try:
-            return float(
-                sum(
+    try:
+        return float(
+            sum(
+                (
                     (
-                        (
-                            degree_vector[bond.GetBeginAtomIdx()]
-                            * degree_vector[bond.GetEndAtomIdx()]
-                        )
-                        ** exponent
+                        degree_vector[bond.GetBeginAtomIdx()]
+                        * degree_vector[bond.GetEndAtomIdx()]
                     )
-                    for bond in mol.GetBonds()
+                    ** exponent
                 )
+                for bond in mol.GetBonds()
             )
-        except (FloatingPointError, ZeroDivisionError):
-            return np.nan
+        )
+    except (FloatingPointError, ZeroDivisionError):
+        return np.nan

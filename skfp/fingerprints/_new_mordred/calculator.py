@@ -76,11 +76,11 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        mol_3d = mol.GetConformer(mol.GetIntProp("conf_id"))
-        distance_matrix_3d = DistanceMatrix3D(mol_3d)
+        conf_id = mol_hydrogens.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
 
         descriptors_3d: list = [
-            morse.calc(mol_3d, distance_matrix_3d),
+            morse.calc(mol_hydrogens, distance_matrix_3d),
         ]
 
         for values, feature_names in descriptors_3d:

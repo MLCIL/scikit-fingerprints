@@ -24,11 +24,12 @@ _PROPS = [
     ("Sanderson_electronegativity", get_sanderson_electronegativity),
     ("polarizability", get_polarizability),
 ]
+_DISTANCES = range(1, 33)
 
 FEATURE_NAMES = [
     f"MoRSE_{prop_name}_dist_{dist}"
     for prop_name, prop_func in _PROPS
-    for dist in range(1, 33)
+    for dist in _DISTANCES
 ]
 
 
@@ -49,28 +50,30 @@ def calc(
     if num_atoms < 2:
         return np.full(160, np.nan, dtype=np.float32), FEATURE_NAMES
 
-    values = []
+    kernels = []
+    for distance in _DISTANCES:
+        if distance == 1:
+            n = np.ones((num_atoms, num_atoms), dtype=np.float32)
+        else:
+            sr = (distance - 1) * distance_matrix_3d.matrix
+            np.fill_diagonal(sr, 1.0)
+            n = np.sin(sr) / sr
+        np.fill_diagonal(n, 0.0)
+        kernels.append(n)
+
+    prop_vectors = []
     for name, func in _PROPS:
-        for distance in range(1, 33):
-            if name == "unweighted":
-                props = np.ones(num_atoms)
-            else:
-                props = np.asarray([func(atom) for atom in atoms])  # type: ignore
-                carbon_prop = func(Atom(6))  # type: ignore
-                props = props / carbon_prop
+        if name == "unweighted":
+            props = np.ones(num_atoms)
+        else:
+            props = np.fromiter(
+                (func(a) for a in atoms),  # type: ignore
+                dtype=np.float32,
+                count=num_atoms,
+            )
+            props = props / func(Atom(6))  # type: ignore
+        prop_vectors.append(props)
 
-            props = props.reshape(1, -1)
+    values = [0.5 * (props @ n @ props) for props in prop_vectors for n in kernels]
 
-            if distance == 1:
-                n = np.ones((num_atoms, num_atoms), dtype=np.float32)
-            else:
-                sr = (distance - 1) * distance_matrix_3d.matrix
-                np.fill_diagonal(sr, 1)
-                n = np.sin(sr) / sr
-
-            np.fill_diagonal(n, 0)
-
-            value = 0.5 * np.ravel(props.dot(n).dot(props.T))[0]
-            values.append(value)
-
-    return np.asarray(values, np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
