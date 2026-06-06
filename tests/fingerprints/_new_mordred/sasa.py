@@ -2,7 +2,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.utils.sasa import SurfaceArea
-from tests.fingerprints._new_mordred.utils import mordred_test_mols_hydrogens_3d
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.

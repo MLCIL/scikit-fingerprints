@@ -3,7 +3,6 @@ from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.morse import calc
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
-from tests.fingerprints._new_mordred.utils import mordred_test_mols_hydrogens_3d
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
