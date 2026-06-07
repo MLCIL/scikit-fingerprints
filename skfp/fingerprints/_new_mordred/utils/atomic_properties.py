@@ -1,5 +1,7 @@
 import numpy as np
 from rdkit import Chem
+from collections.abc import Callable
+
 from rdkit.Chem.rdchem import Atom, Bond
 
 from .periodic_table import (
@@ -228,6 +230,18 @@ def get_eta_beta_non_sigma(atom: Atom) -> float:
         for b in atom.GetBonds()
         if get_other_bond_atom(b, atom).GetAtomicNum() != 1
     )
+
+
+PROPERTY_FUNCS: dict[str, Callable[[Atom], float]] = {
+    "Z":   get_atomic_number,
+    "m":   get_mass,
+    "v":   get_van_der_waals_volume,
+    "se":  get_sanderson_electronegativity,
+    "pe":  get_pauling_electronegativity,
+    "are": get_allred_rochow_electronegativity,
+    "p":   get_polarizability,
+    "i":   get_ionization_potential,
+}
 
 
 def get_eta_gamma(atom: Atom) -> float:
