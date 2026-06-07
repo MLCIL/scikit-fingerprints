@@ -90,9 +90,9 @@ def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
 
 
 def _barysz_matrix_attribute_values(
-    mol: Mol, matrix: np.ndarray
+    mol: Mol, n_frags: int, matrix: np.ndarray
 ) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=1)
+    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
     return [
         attrs.graph_energy,
         attrs.leading_eigenvalue,
@@ -122,6 +122,6 @@ def _barysz_values(mol: Mol, n_frags: int) -> np.ndarray:
         if matrix is None:
             values.extend([np.nan] * len(_BARYSZ_ATTRIBUTES))
         else:
-            values.extend(_barysz_matrix_attribute_values(mol, matrix))
+            values.extend(_barysz_matrix_attribute_values(mol, n_frags, matrix))
 
     return np.asarray(values, dtype=np.float32)
