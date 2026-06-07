@@ -28,6 +28,27 @@ def test_mol_from_sdf(sdf_in_file_path):
     assert all(isinstance(x, Mol) for x in mols)
 
 
+def test_mol_from_sdf_sets_conf_id(sdf_in_file_path):
+    mol_from_sdf = MolFromSDFTransformer()
+    mols = mol_from_sdf.transform(sdf_in_file_path)
+
+    for mol in mols:
+        assert mol.HasProp("conf_id")
+        assert_equal(mol.GetIntProp("conf_id"), mol.GetConformer(0).GetId())
+
+
+def test_mol_from_sdf_sets_conf_id_for_raw_text(sdf_in_file_path):
+    with open(sdf_in_file_path) as file:
+        sdf_text = file.read()
+
+    mol_from_sdf = MolFromSDFTransformer()
+    mols = mol_from_sdf.transform(sdf_text)
+
+    for mol in mols:
+        assert mol.HasProp("conf_id")
+        assert_equal(mol.GetIntProp("conf_id"), mol.GetConformer(0).GetId())
+
+
 def test_mol_to_sdf(mols_list, sdf_out_file_path):
     mol_to_sdf = MolToSDFTransformer(sdf_out_file_path)
     mol_to_sdf.transform(mols_list)
