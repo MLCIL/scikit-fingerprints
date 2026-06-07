@@ -13,9 +13,9 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-BARYSZ_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
+_BARYSZ_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
 
-BARYSZ_ATTRIBUTES = [
+_BARYSZ_ATTRIBUTES = [
     "SpAbs",
     "SpMax",
     "SpDiam",
@@ -34,31 +34,35 @@ BARYSZ_ATTRIBUTES = [
 _CARBON = Atom(6)
 
 FEATURE_NAMES = [
-    f"{attr}_Dz{prop}" for prop in BARYSZ_PROPERTIES for attr in BARYSZ_ATTRIBUTES
+    f"{attr}_Dz{prop}" for prop in _BARYSZ_PROPERTIES for attr in _BARYSZ_ATTRIBUTES
 ]
 
 
 def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     """
-    Compute Mordred Barysz matrix spectral descriptors.
+    Barysz matrix spectral descriptors.
+
+    Constructs a weighted distance matrix where bond weights are inversely
+    proportional to atomic properties and bond order, normalized by the
+    corresponding carbon-carbon value. Spectral attributes of the resulting
+    matrix are computed for each atomic property.
+
+    Requires a connected molecule (single fragment).
     """
     return _barysz_values(mol_regular, n_frags), FEATURE_NAMES
 
 
-def _property_values(mol: Mol, prop: str) -> np.ndarray:
-    prop_func = PROPERTY_FUNCS[prop]
-    return np.asarray([prop_func(atom) for atom in mol.GetAtoms()], dtype=float)
-
-
 def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
-    property_values = _property_values(mol, prop)
+    prop_func = PROPERTY_FUNCS[prop]
+    carbon_value = prop_func(_CARBON)
+
+    property_values = np.asarray(
+        [prop_func(atom) for atom in mol.GetAtoms()], dtype=float
+    )
     if np.any(~np.isfinite(property_values)):
         return None
 
-    prop_func = PROPERTY_FUNCS[prop]
-    carbon_value = prop_func(_CARBON)
     n_atoms = mol.GetNumAtoms()
-
     matrix = np.full((n_atoms, n_atoms), np.inf, dtype=float)
     np.fill_diagonal(matrix, 0.0)
 
@@ -86,9 +90,9 @@ def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
 
 
 def _barysz_matrix_attribute_values(
-    mol: Mol, matrix: np.ndarray, n_frags: int
+    mol: Mol, matrix: np.ndarray
 ) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
+    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=1)
     return [
         attrs.graph_energy,
         attrs.leading_eigenvalue,
@@ -109,15 +113,15 @@ def _barysz_matrix_attribute_values(
 def _barysz_values(mol: Mol, n_frags: int) -> np.ndarray:
     if n_frags != 1:
         return np.full(
-            len(BARYSZ_PROPERTIES) * len(BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
+            len(_BARYSZ_PROPERTIES) * len(_BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
         )
 
     values: list[float | np.floating] = []
-    for prop in BARYSZ_PROPERTIES:
+    for prop in _BARYSZ_PROPERTIES:
         matrix = _barysz_matrix(mol, prop)
         if matrix is None:
-            values.extend([np.nan] * len(BARYSZ_ATTRIBUTES))
+            values.extend([np.nan] * len(_BARYSZ_ATTRIBUTES))
         else:
-            values.extend(_barysz_matrix_attribute_values(mol, matrix, n_frags))
+            values.extend(_barysz_matrix_attribute_values(mol, matrix))
 
     return np.asarray(values, dtype=np.float32)
