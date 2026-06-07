@@ -1,6 +1,8 @@
+from collections.abc import Callable
+
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, Bond
 
 from .periodic_table import (
     ALLRED_ROCHOW_ELECTRONEGATIVITY,
@@ -127,3 +129,132 @@ def get_intrinsic_state(atom: Atom) -> float:
         return np.nan
     dv = get_valence_electrons(atom)
     return ((2.0 / PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
+
+
+
+def get_core_count(atom: Atom) -> float:
+    """
+    Atomic core-count term (alpha) used as a building block of ETA indices.
+    Reflects the relative number of non-valence (core) electrons, scaled by period.
+    """
+    Z = atom.GetAtomicNum()
+    if Z == 1:
+        return 0.0
+    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(Z)
+    PN = PERIOD[Z]
+    return (Z - Zv) / (Zv * (PN - 1))
+
+
+def get_eta_epsilon(atom: Atom) -> float:
+    """
+    ETA electronegativity-like measure (epsilon) for a single atom.
+    Differences in epsilon between bonded atoms encode bond polarity.
+    """
+    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
+    return 0.3 * Zv - get_core_count(atom)
+
+
+def get_eta_beta_sigma(atom: Atom) -> float:
+    """
+    Sigma-bond contribution to an atom's ETA beta index, summed over
+    non-hydrogen neighbors and weighted by similarity of their epsilon values.
+    """
+    e = get_eta_epsilon(atom)
+    return sum(
+        0.5 if abs(get_eta_epsilon(a) - e) <= 0.3 else 0.75
+        for a in atom.GetNeighbors()
+        if a.GetAtomicNum() != 1
+    )
+
+
+def get_other_bond_atom(bond: Bond, atom: Atom) -> Atom:
+    begin = bond.GetBeginAtom()
+    if atom.GetIdx() != begin.GetIdx():
+        return begin
+    return bond.GetEndAtom()
+
+
+def get_eta_nonsigma_contribute(bond: Bond) -> float:
+    """
+    Non-sigma (pi, aromatic) contribution of a single bond to the ETA beta index.
+    Weighted by bond order, aromaticity, and the epsilon difference of its endpoints.
+    """
+    if bond.GetBondType() is Chem.BondType.SINGLE:
+        return 0.0
+
+    f = 1.0
+    if bond.GetBondTypeAsDouble() == Chem.BondType.TRIPLE:
+        f = 2.0
+
+    a = bond.GetBeginAtom()
+    b = bond.GetEndAtom()
+    dEps = abs(get_eta_epsilon(a) - get_eta_epsilon(b))
+
+    if bond.GetIsAromatic():
+        y = 2.0
+    elif dEps > 0.3:
+        y = 1.5
+    else:
+        y = 1.0
+
+    return y * f
+
+
+def get_eta_beta_delta(atom: Atom) -> float:
+    """
+    Lone-pair (delta) contribution to an atom's ETA beta index.
+    Nonzero only for acyclic atoms with lone pairs adjacent to an aromatic neighbor.
+    """
+    if (
+        atom.GetIsAromatic()
+        or atom.IsInRing()
+        or _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
+        - atom.GetTotalValence()
+        <= 0
+    ):
+        return 0.0
+
+    for b in atom.GetNeighbors():
+        if b.GetIsAromatic():
+            return 0.5
+
+    return 0.0
+
+
+def get_eta_beta_non_sigma(atom: Atom) -> float:
+    """
+    Total non-sigma (pi, aromatic) bond contribution to an atom's ETA beta index,
+    summed over all bonds to non-hydrogen neighbors.
+    """
+    return sum(
+        get_eta_nonsigma_contribute(b)
+        for b in atom.GetBonds()
+        if get_other_bond_atom(b, atom).GetAtomicNum() != 1
+    )
+
+
+PROPERTY_FUNCS: dict[str, Callable[[Atom], float]] = {
+    "Z":   get_atomic_number,
+    "m":   get_mass,
+    "v":   get_van_der_waals_volume,
+    "se":  get_sanderson_electronegativity,
+    "pe":  get_pauling_electronegativity,
+    "are": get_allred_rochow_electronegativity,
+    "p":   get_polarizability,
+    "i":   get_ionization_potential,
+}
+
+
+def get_eta_gamma(atom: Atom) -> float:
+    """
+    ETA gamma index for an atom: core count divided by total beta contribution.
+    Represents an atom's topochemical "hardness" in the ETA framework.
+    """
+    beta = (
+        get_eta_beta_sigma(atom)
+        + get_eta_beta_non_sigma(atom)
+        + get_eta_beta_delta(atom)
+    )
+    if beta == 0:
+        return np.nan
+    return get_core_count(atom) / beta
