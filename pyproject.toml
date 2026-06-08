@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Topic :: Scientific/Engineering :: Chemistry",
@@ -25,8 +26,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 dependencies = [
+    "cloudpickle>=3.0",
     "descriptastorus>=2.0.0,<3",
     "e3fp>=1.2.6,<2",
     "huggingface_hub>=0.20.0,<2",
@@ -112,6 +114,11 @@ no_site_packages = true
 [tool.uv.build-backend]
 module-name = "skfp"
 module-root = ""
+
+[tool.uv.sources]
+# Temporary Python 3.14 compatibility sources, to be replaced with PyPI releases.
+joblib = { git = "https://github.com/joblib/joblib.git", branch = "main" }
+cloudpickle = { git = "https://github.com/BioGeek/cloudpickle.git", branch = "python3.14" }
 
 [build-system]
 requires = ["uv_build<1"]
