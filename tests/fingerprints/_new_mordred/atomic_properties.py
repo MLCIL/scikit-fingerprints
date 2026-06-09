@@ -1,5 +1,5 @@
 import pytest
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose
 from rdkit.Chem import AddHs, Atom, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
@@ -15,53 +15,47 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-
-@pytest.fixture
-def get_atom():
-    smiles = {
-        ">C<": "CC(C)(C)C",
-        ">CH-": "CC(C)C",
-        "-CH2-": "CCC",
-        "=C<": "C=C(C)C",
-        "-CH3": "CC",
-        "=CH-": "CC=C",
-        ">N-": "CN(C)C",
-        "#C-": "C#CC",
-        "-NH-": "CNC",
-        "=CH2": "C=C",
-        "=N-": "C=NC",
-        "-O-": "COC",
-        "#CH": "C#C",
-        "-NH2": "CN",
-        "=NH": "C=N",
-        "#N": "C#N",
-        "-OH": "CO",
-        "=O": "C=O",
-        "-F": "CF",
-        "-SH": "CS",
-        "-S-": "CSC",
-        "=S": "C=S",
-        "-Cl": "CCl",
-        "-Br": "CBr",
-        "-I": "CI",
-    }
-
-    def _get(label: str, explicit_hs: bool) -> Atom:
-        mol = MolFromSmiles(smiles[label])
-        if explicit_hs:
-            mol = AddHs(mol)
-        return mol.GetAtomWithIdx(1)
-
-    return _get
+# label -> SMILES; the atom of interest is always index 1
+_SMILES = {
+    ">C<": "CC(C)(C)C",
+    ">CH-": "CC(C)C",
+    "-CH2-": "CCC",
+    "=C<": "C=C(C)C",
+    "-CH3": "CC",
+    "=CH-": "CC=C",
+    ">N-": "CN(C)C",
+    "#C-": "C#CC",
+    "-NH-": "CNC",
+    "=CH2": "C=C",
+    "=N-": "C=NC",
+    "-O-": "COC",
+    "#CH": "C#C",
+    "-NH2": "CN",
+    "=NH": "C=N",
+    "#N": "C#N",
+    "-OH": "CO",
+    "=O": "C=O",
+    "-F": "CF",
+    "-SH": "CS",
+    "-S-": "CSC",
+    "=S": "C=S",
+    "-Cl": "CCl",
+    "-Br": "CBr",
+    "-I": "CI",
+}
 
 
-@pytest.fixture(params=[True, False], ids=["explicit_H", "implicit_H"])
-def explicit_hs(request):
-    return request.param
+def build_atom(label: str, explicit_hs: bool) -> Atom:
+    mol = MolFromSmiles(_SMILES[label])
+    if explicit_hs:
+        mol = AddHs(mol)
+    return mol.GetAtomWithIdx(1)
 
 
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize("explicit_hs", [True, False], ids=["explicit_H", "implicit_H"])
+@pytest.mark.parametrize(
+    ("label", "expected_value"),
+    [
         (">C<", 4),
         (">CH-", 3),
         ("-CH2-", 2),
@@ -88,14 +82,17 @@ def explicit_hs(request):
         ("-Br", 1),
         ("-I", 1),
     ],
-    ids=lambda row: row[0],
 )
-def sigma_case(request):
-    return request.param
+def test_sigma_electrons(label, expected_value, explicit_hs):
+    atom = build_atom(label, explicit_hs)
+    actual_value = get_sigma_electrons(atom)
+    assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize("explicit_hs", [True, False], ids=["explicit_H", "implicit_H"])
+@pytest.mark.parametrize(
+    ("label", "expected_value"),
+    [
         (">C<", 4),
         (">CH-", 3),
         ("-CH2-", 2),
@@ -120,14 +117,17 @@ def sigma_case(request):
         ("-Br", 0.26),
         ("-I", 0.16),
     ],
-    ids=lambda row: row[0],
 )
-def valence_case(request):
-    return request.param
+def test_valence_electrons(label, expected_value, explicit_hs):
+    atom = build_atom(label, explicit_hs)
+    actual_value = get_valence_electrons(atom)
+    assert_allclose(actual_value, expected_value, atol=1e-2)
 
 
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize("explicit_hs", [True, False], ids=["explicit_H", "implicit_H"])
+@pytest.mark.parametrize(
+    ("label", "expected_value"),
+    [
         (">C<", 1.25),
         (">CH-", 1.3333),
         ("-CH2-", 1.5),
@@ -148,25 +148,8 @@ def valence_case(request):
         ("=O", 7.0),
         ("-F", 8.0),
     ],
-    ids=lambda row: row[0],
 )
-def intrinsic_state_case(request):
-    return request.param
-
-
-def test_sigma_electrons(sigma_case, explicit_hs, get_atom):
-    label, expected = sigma_case
-    atom = get_atom(label, explicit_hs)
-    assert get_sigma_electrons(atom) == expected
-
-
-def test_valence_electrons(valence_case, explicit_hs, get_atom):
-    label, expected = valence_case
-    atom = get_atom(label, explicit_hs)
-    assert_almost_equal(get_valence_electrons(atom), expected, decimal=2)
-
-
-def test_intrinsic_state(intrinsic_state_case, explicit_hs, get_atom):
-    label, expected = intrinsic_state_case
-    atom = get_atom(label, explicit_hs)
-    assert_almost_equal(get_intrinsic_state(atom), expected, decimal=3)
+def test_intrinsic_state(label, expected_value, explicit_hs):
+    atom = build_atom(label, explicit_hs)
+    actual_value = get_intrinsic_state(atom)
+    assert_allclose(actual_value, expected_value, atol=1e-3)

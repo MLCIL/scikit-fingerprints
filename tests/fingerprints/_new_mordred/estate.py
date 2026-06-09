@@ -4,10 +4,18 @@ from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.estate import calc
 
+"""
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 
 @pytest.fixture(scope="module")
 def histidine_estate_features() -> dict[str, float]:
-    mol = MolFromSmiles("NC(Cc1c[nH]cn1)C(=O)O")  # histidine
+    # histidine tests in Mordred use a different tautomer from regular SDF file one
+    mol = MolFromSmiles("NC(Cc1c[nH]cn1)C(=O)O")
     values, feature_names = calc(mol)
     return dict(zip(feature_names, values, strict=True))
 

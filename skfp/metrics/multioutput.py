@@ -116,14 +116,8 @@ def multioutput_auroc_score(
 
     Returns the average value over all tasks. Missing values in target labels are
     ignored. Columns with constant true value are ignored by default, but can also
-    use default value - see ``auroc_score`` function. As such, it can be safely used
-    e.g. in cross-validation. Also supports single-task evaluation.
-
-    For scikit-learn <1.6, ``auroc_score`` function from scikit-fingerprints is used,
-    and for newer versions >=1.6 ``roc_auc_score`` from scikit-learn is used instead.
-    See `scikit-learn documentation <sklearn>`_ for more information.
-
-    .. _sklearn: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html
+    use default value. As such, it can be safely used e.g. in cross-validation.
+    Also supports single-task evaluation.
 
     Parameters
     ----------

@@ -97,7 +97,6 @@ filterwarnings = [
     "ignore:A worker stopped.*:UserWarning",
     "ignore:Precision loss occurred.*:RuntimeWarning",
     "ignore:The total space of parameters.*:UserWarning",
-    "ignore:Function auroc_score.*:FutureWarning"
 ]
 
 [tool.mypy]
