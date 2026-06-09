@@ -1,5 +1,5 @@
 import pytest
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.abc_index import (
@@ -16,29 +16,19 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize(
+    # values from 10.2298/JSC150901093F
+    "smiles, expected_abc, expected_abcgg",
+    [
         ("CC(C)CCCCCCC", 6.58, 6.49),
         ("CCC(C)CCCCCC", 6.47, 6.58),
         ("CC(C)(C)CCCCCC", 6.84, 6.82),
         ("CCC(C)(C)CCCCC", 6.68, 6.95),
     ],
-    ids=lambda row: row[0],
 )
-def abc_reference(request):
-    return request.param
-
-
-def test_abc_index_reference_values(abc_reference):
-    """
-    Check ABC index against reference values from
-    :doi:`10.2298/JSC150901093F`.
-    """
-    smi, expected_abc, expected_abcgg = abc_reference
-    mol = MolFromSmiles(smi)
+def test_abc_index_reference_values(smiles, expected_abc, expected_abcgg):
+    mol = MolFromSmiles(smiles)
     distance_matrix = DistanceMatrix(mol)
 
-    assert_almost_equal(_calc_abc_index(mol), expected_abc, decimal=2)
-    assert_almost_equal(
-        _calc_abcgg_index(mol, distance_matrix), expected_abcgg, decimal=2
-    )
+    assert_allclose(_calc_abc_index(mol), expected_abc, atol=1e-2)
+    assert_allclose(_calc_abcgg_index(mol, distance_matrix), expected_abcgg, atol=1e-2)

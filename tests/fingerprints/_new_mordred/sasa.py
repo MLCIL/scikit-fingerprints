@@ -1,7 +1,5 @@
-import os
-
 import pytest
-from rdkit.Chem import Mol, SDMolSupplier
+from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.utils.sasa import SurfaceArea
 
@@ -12,21 +10,10 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-SDF_FILE = os.path.join(os.path.dirname(__file__), "references", "structures.sdf")
 
-
-@pytest.fixture(scope="module")
-def sdf_mols() -> dict[str, Mol]:
-    mols = {}
-    for mol in SDMolSupplier(SDF_FILE, removeHs=False):
-        if mol is not None:
-            mols[mol.GetProp("_Name")] = mol
-    return mols
-
-
-# Reference values calculated by PyMOL
-@pytest.fixture(
-    params=[
+@pytest.mark.parametrize(
+    "name, expected_value",
+    [
         ("Hexane", 296.910),
         ("Benzene", 243.552),
         ("Caffeine", 369.973),
@@ -50,19 +37,8 @@ def sdf_mols() -> dict[str, Mol]:
         ("Acetonitrile", 182.197),
         ("Histidine", 335.672),
     ],
-    ids=lambda row: row[0],
 )
-def sasa_reference(request):
-    return request.param
-
-
-def test_sasa_reference_values(sasa_reference, sdf_mols):
-    """
-    Check per-molecule SASA against reference values calculated with PyMOL.
-    """
-    name, expected_sasa = sasa_reference
-    mol = sdf_mols[name]
-    actual = sum(SurfaceArea.from_mol(mol).surface_area())
-
-    rel_error = abs((actual - expected_sasa) / expected_sasa)
-    assert rel_error < 0.05, f"large SASA error in {name}: {rel_error:.4f}"
+def test_sasa_reference_values(name, expected_value, mordred_test_mols_hydrogens_3d):
+    mol = mordred_test_mols_hydrogens_3d[name]
+    actual_value = sum(SurfaceArea.from_mol(mol).surface_area())
+    assert_allclose(actual_value, expected_value, atol=10)

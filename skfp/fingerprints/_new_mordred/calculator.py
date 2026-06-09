@@ -6,6 +6,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     acid_base,
     adjacency_matrix,
     autocorrelation,
+    morse,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -17,6 +18,7 @@ from skfp.fingerprints._new_mordred.utils.feature_names import (
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix,
+    DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from tests.fingerprints._new_mordred import estate
@@ -74,7 +76,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        descriptors_3d: list = []
+        conf_id = mol_hydrogens.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
+
+        descriptors_3d: list = [
+            morse.calc(mol_hydrogens, distance_matrix_3d),
+        ]
 
         for values, feature_names in descriptors_3d:
             result[[idx_map[n] for n in feature_names]] = values

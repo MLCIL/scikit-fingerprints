@@ -64,9 +64,11 @@ class AdjacencyMatrix:
 
 
 class DistanceMatrix3D:
-    def __init__(self, mol: Mol, use_atom_weights: bool = False):
+    def __init__(self, mol: Mol, conf_id: int = 0, use_atom_weights: bool = False):
         self.matrix: np.ndarray
-        self.matrix = Get3DDistanceMatrix(mol, useAtomWts=use_atom_weights)
+        self.matrix = Get3DDistanceMatrix(
+            mol, confId=conf_id, useAtomWts=use_atom_weights
+        )
 
     @cached_property
     def eccentricities(self) -> np.ndarray:
