@@ -50,16 +50,16 @@ def calc(
     if num_atoms < 2:
         return np.full(160, np.nan, dtype=np.float32), FEATURE_NAMES
 
-    kernels = []
+    dist_kernels = []
     for distance in _DISTANCES:
         if distance == 1:
-            n = np.ones((num_atoms, num_atoms), dtype=np.float32)
+            value = np.ones((num_atoms, num_atoms), dtype=np.float32)
         else:
-            sr = (distance - 1) * distance_matrix_3d.matrix
-            np.fill_diagonal(sr, 1.0)
-            n = np.sin(sr) / sr
-        np.fill_diagonal(n, 0.0)
-        kernels.append(n)
+            dists = (distance - 1) * distance_matrix_3d.matrix
+            np.fill_diagonal(dists, 1.0)
+            value = np.sin(dists) / dists
+        np.fill_diagonal(value, 0.0)
+        dist_kernels.append(value)
 
     prop_vectors = []
     for name, func in _PROPS:
@@ -71,9 +71,10 @@ def calc(
                 dtype=np.float32,
                 count=num_atoms,
             )
+            # normalize by value for carbon
             props = props / func(Atom(6))  # type: ignore
         prop_vectors.append(props)
 
-    values = [0.5 * (props @ n @ props) for props in prop_vectors for n in kernels]
+    values = [0.5 * (props @ n @ props) for props in prop_vectors for n in dist_kernels]
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES
