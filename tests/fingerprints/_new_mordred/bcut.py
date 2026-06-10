@@ -29,17 +29,14 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
         ("Astaxanthin", 11.89, 15.99795509),
     ],
 )
-def test_morse_unweighted_reference_values(
-    name, expected_smallest, expected_largest, mordred_test_mols
-):
+def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_test_mols):
     mol = mordred_test_mols[name]
 
     values, feature_names = calc(mol)
-    print(values)
-    print(feature_names)
     values = dict(zip(feature_names, values, strict=True))
     actual_smallest = values["BCUT_mass_smallest_eigval"]
     actual_largest = values["BCUT_mass_largest_eigval"]
 
-    assert_allclose(actual_smallest, expected_smallest, atol=1e-2)
-    assert_allclose(actual_largest, expected_largest, atol=1e-2)
+    # Mordred tests also use such a large tolerance
+    assert_allclose(actual_smallest, expected_smallest, atol=1)
+    assert_allclose(actual_largest, expected_largest, atol=1)

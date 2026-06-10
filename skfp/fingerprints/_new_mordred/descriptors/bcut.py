@@ -56,7 +56,7 @@ _PROPS_FUNCS = [
 
 FEATURE_NAMES = [
     f"BCUT_{prop}_{kind}_eigval"
-    for prop in [*_PROPS_NAMES, "gasteiger_charge"]
+    for prop in _PROPS_NAMES
     for kind in ["smallest", "largest"]
 ]
 
@@ -75,7 +75,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
             props = atomic_partial_charges(mol, "Gasteiger", "ignore")
         else:
             props = np.fromiter(
-                (func(a) for a in mol.GetAtoms()),
+                (func(a) for a in mol.GetAtoms()),  # type: ignore
                 dtype=np.float32,
                 count=mol.GetNumAtoms(),
             )
@@ -87,6 +87,8 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         largest = eigvals[-1]
 
         values.extend([smallest, largest])
+
+    print(FEATURE_NAMES)
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
