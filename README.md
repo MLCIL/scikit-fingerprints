@@ -70,7 +70,7 @@ If you need bleeding-edge features and don't mind potentially unstable or undocu
 pip install git+https://github.com/MLCIL/scikit-fingerprints.git
 ```
 
-Python versions from 3.10 to 3.13 are supported on all major operating systems.
+Python versions from 3.10 to 3.14 are supported on all major operating systems.
 Tests are run on Linux Ubuntu, Windows, and macOS.
 
 ## Quickstart
