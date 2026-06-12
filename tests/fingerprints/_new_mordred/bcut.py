@@ -1,5 +1,7 @@
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.bcut import calc
 
@@ -40,3 +42,9 @@ def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_tes
     # Mordred tests also use such a large tolerance
     assert_allclose(actual_smallest, expected_smallest, atol=1)
     assert_allclose(actual_largest, expected_largest, atol=1)
+
+
+def test_disconnected_mol_all_nan():
+    mol = MolFromSmiles("[Na].[Cl]")
+    values, feature_names = calc(mol)
+    assert_allclose(values, np.nan)

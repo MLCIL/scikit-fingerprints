@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit.Chem import GetMolFrags, Mol
 
 from skfp.descriptors import atomic_partial_charges
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
@@ -67,7 +67,8 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
     burden_matrix = _get_burden_matrix(mol)
 
-    # TODO: disconnected case
+    if len(GetMolFrags(mol)) > 1:
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
     values = []
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
@@ -87,8 +88,6 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         largest = eigvals[-1]
 
         values.extend([smallest, largest])
-
-    print(FEATURE_NAMES)
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
