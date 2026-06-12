@@ -80,13 +80,7 @@ def test_new_mordred_feature_names():
 
     # we exclude changed feature names
     changed_name = np.array(
-        [
-            any(
-                feature_group_name in feature_name.lower()
-                for feature_group_name in ["autocorr", "bcut", "morse"]
-            )
-            for feature_name in feature_names_new
-        ]
+        ["autocorr" in feature or "MoRSE" in feature for feature in feature_names_new]
     )
     feature_names_new = feature_names_new[~changed_name]
     feature_names_old = feature_names_old[~changed_name]
@@ -106,13 +100,7 @@ def test_new_mordred_3D_feature_names():
 
     # we exclude changed feature names
     changed_name = np.array(
-        [
-            any(
-                feature_group_name in feature_name.lower()
-                for feature_group_name in ["autocorr", "bcut", "morse"]
-            )
-            for feature_name in feature_names_new
-        ]
+        ["autocorr" in feature or "MoRSE" in feature for feature in feature_names_new]
     )
     feature_names_new = feature_names_new[~changed_name]
     feature_names_old = feature_names_old[~changed_name]

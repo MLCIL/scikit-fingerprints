@@ -338,7 +338,7 @@ def test_zagreb_index_m2(mol_name, expected_value, input_mols):
     assert_equal(result, expected_value)
 
 
-def test_modified_zagreb_index_m1_zero_valence(input_mols):
+def test_modified_zagreb_index_m1_nan_for_zero_valence(input_mols):
     mol, _ = input_mols["sulfur"]
     result = top.zagreb_index_m1(mol, modified=True)
     assert np.isnan(result)

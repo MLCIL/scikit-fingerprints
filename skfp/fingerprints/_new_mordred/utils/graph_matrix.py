@@ -67,7 +67,7 @@ class DistanceMatrix3D:
     def __init__(self, mol: Mol, conf_id: int = 0, use_atom_weights: bool = False):
         self.matrix: np.ndarray
         self.matrix = Get3DDistanceMatrix(
-            Mol(mol), confId=conf_id, useAtomWts=use_atom_weights
+            mol, confId=conf_id, useAtomWts=use_atom_weights
         )
 
     @cached_property
