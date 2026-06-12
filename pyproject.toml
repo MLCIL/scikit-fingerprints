@@ -109,6 +109,9 @@ ignore_missing_imports = true
 disable_error_code = ["import-untyped"]
 no_site_packages = true
 
+[tool.uv.audit]
+ignore-until-fixed = ["GHSA-rrmf-rvhw-rf47"]
+
 [tool.uv.build-backend]
 module-name = "skfp"
 module-root = ""
