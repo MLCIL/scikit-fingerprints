@@ -34,8 +34,8 @@ _PROPS_NAMES = [
     "Allred_Rochow_electronegativity",
     "polarizability",
     "ionization_potential",
-    "sigma_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
     "valence_electrons",
+    "sigma_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
     "intrinsic_state",  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
 ]
 _PROPS_FUNCS = [
