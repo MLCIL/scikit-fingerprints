@@ -22,6 +22,10 @@ class MolFromSDFTransformer(BasePreprocessor):
     molecules. For this reason ``.transform()`` either reads the SDF file directly
     from disk or takes a string input in that format.
 
+    Molecules with a conformation are returned as ``PropertyMol`` objects with
+    ``conf_id`` integer property set to the ID of their 0th conformer, the same
+    convention as :class:`~skfp.preprocessing.ConformerGenerator`.
+
     For details see RDKit documentation [1]_.
 
     Parameters
@@ -103,7 +107,16 @@ class MolFromSDFTransformer(BasePreprocessor):
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
 
-        return mols
+        return [self._set_conf_id(mol) for mol in mols]
+
+    @staticmethod
+    def _set_conf_id(mol: Mol | None) -> Mol | None:
+        if mol is None or not mol.GetNumConformers():
+            return mol
+
+        mol = PropertyMol(mol)
+        mol.SetIntProp("conf_id", mol.GetConformer(0).GetId())
+        return mol
 
     def _transform_batch(self, X):
         pass  # unused
