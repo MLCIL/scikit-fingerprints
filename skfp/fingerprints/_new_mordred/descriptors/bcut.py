@@ -70,6 +70,8 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     if len(GetMolFrags(mol)) > 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
+    num_atoms = mol.GetNumAtoms()
+
     values = []
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
         if name == "gasteiger_charge":
@@ -78,7 +80,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
             props = np.fromiter(
                 (func(a) for a in mol.GetAtoms()),  # type: ignore
                 dtype=np.float32,
-                count=mol.GetNumAtoms(),
+                count=num_atoms,
             )
 
         np.fill_diagonal(burden_matrix, props)
