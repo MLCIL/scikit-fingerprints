@@ -46,7 +46,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     result = np.full(n_features, np.nan, dtype=np.float32)
 
     # dependencies
-    n_frags = len(GetMolFrags(mol))  # noqa: F841
+    n_frags = len(GetMolFrags(mol))
     mol_regular = preprocess_mol(mol)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_regular = DistanceMatrix(mol_regular)

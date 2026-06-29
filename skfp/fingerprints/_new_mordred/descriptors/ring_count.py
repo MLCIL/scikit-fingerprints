@@ -36,6 +36,7 @@ class RingProperties:
 
 
 _GENERAL_RING_FEATURES = [
+    # name, size, match size or larger, use fused rings, required aromatic, required hetero
     RingCountFeature("nRing", None, False, False, None, None),
     RingCountFeature("nHRing", None, False, False, None, True),
     RingCountFeature("naRing", None, False, False, True, None),
@@ -44,6 +45,22 @@ _GENERAL_RING_FEATURES = [
     RingCountFeature("nAHRing", None, False, False, False, True),
 ]
 _GENERAL_RING_NAMES = {feature.name for feature in _GENERAL_RING_FEATURES}
+
+_RING_FILTER_BLOCKS = [
+    # use fused rings, required aromatic, required hetero
+    (False, None, None),
+    (False, None, True),
+    (False, True, None),
+    (False, True, True),
+    (False, False, None),
+    (False, False, True),
+    (True, None, None),
+    (True, None, True),
+    (True, True, None),
+    (True, True, True),
+    (True, False, None),
+    (True, False, True),
+]
 
 
 def _feature_name(
@@ -86,30 +103,26 @@ def _ring_count_features() -> list[RingCountFeature]:
     matching rings.
     """
     features = [*_GENERAL_RING_FEATURES]
-    for fused in [False, True]:
-        for aromatic in [None, True, False]:
-            for hetero in [None, True]:
-                # Start each fused/aromatic/hetero block with the all-size count,
-                # unless it is one of the general features already listed above.
-                name = _feature_name(None, False, fused, aromatic, hetero)
-                if name not in _GENERAL_RING_NAMES:
-                    features.append(
-                        RingCountFeature(name, None, False, fused, aromatic, hetero)
-                    )
+    for fused, aromatic, hetero in _RING_FILTER_BLOCKS:
+        min_ring_size = 4 if fused else 3
 
-                start = 4 if fused else 3
-                for size in range(start, 13):
-                    # Then add exact-size counts: simple rings start at 3 atoms,
-                    # fused ring systems start at 4 atoms.
-                    name = _feature_name(size, False, fused, aromatic, hetero)
-                    features.append(
-                        RingCountFeature(name, size, False, fused, aromatic, hetero)
-                    )
+        # Each block contributes an all-size descriptor, exact-size descriptors,
+        # and finally a G12 descriptor for rings with size 12 or greater.
+        name = _feature_name(None, False, fused, aromatic, hetero)
+        if name not in _GENERAL_RING_NAMES:
+            features.append(
+                RingCountFeature(name, None, False, fused, aromatic, hetero)
+            )
 
-                name = _feature_name(12, True, fused, aromatic, hetero)
-                features.append(
-                    RingCountFeature(name, 12, True, fused, aromatic, hetero)
-                )
+        # Simple rings start at 3 atoms, fused ring systems start at 4 atoms.
+        for size in range(min_ring_size, 13):
+            name = _feature_name(size, False, fused, aromatic, hetero)
+            features.append(
+                RingCountFeature(name, size, False, fused, aromatic, hetero)
+            )
+
+        name = _feature_name(12, True, fused, aromatic, hetero)
+        features.append(RingCountFeature(name, 12, True, fused, aromatic, hetero))
 
     return features
 

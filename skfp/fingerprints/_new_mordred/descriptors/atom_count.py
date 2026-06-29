@@ -1,3 +1,10 @@
+from collections import Counter
+
+import numpy as np
+from rdkit.Chem import Mol, rdMolDescriptors
+
+from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
+
 """
 Atom count descriptors implemented with direct RDKit atom access.
 
@@ -7,14 +14,6 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-from collections import Counter
-
-import numpy as np
-from rdkit.Chem import Mol, rdMolDescriptors
-
-from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
-
-# Mordred exposes count descriptors with n* names; keep these strings unchanged.
 FEATURE_NAMES = [
     "nAtom",
     "nHeavyAtom",
@@ -54,8 +53,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     Count atoms by common element and structural category.
     """
     atoms = mol.GetAtoms()
-    atomic_numbers = [atom.GetAtomicNum() for atom in atoms]
-    atomic_number_counts = Counter(atomic_numbers)
+    atomic_number_counts = Counter(atom.GetAtomicNum() for atom in atoms)
     values = [
         rdMolDescriptors.CalcNumAtoms(mol),
         rdMolDescriptors.CalcNumHeavyAtoms(mol),
@@ -69,7 +67,11 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         for element_atomic_number in _ELEMENT_ATOMIC_NUMBERS
     )
     values.append(
-        sum(atomic_number in HALOGEN_ATOMIC_NUMS for atomic_number in atomic_numbers)
+        sum(
+            atomic_number_count
+            for atomic_number, atomic_number_count in atomic_number_counts.items()
+            if atomic_number in HALOGEN_ATOMIC_NUMS
+        )
     )
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

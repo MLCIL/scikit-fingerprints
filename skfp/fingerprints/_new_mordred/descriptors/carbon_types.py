@@ -67,6 +67,7 @@ def calc(mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
         counts[(carbon_neighbors, hybridization)] += 1
         hybridization_counts[hybridization] += 1
 
+    # HybRatio and FCSP3 use aggregate hybridization counts, not neighbor counts.
     values = [counts[_FEATURE_TO_COUNTS[name]] for name in FEATURE_NAMES[:-2]]
 
     num_sp3 = hybridization_counts[HybridizationType.SP3]
