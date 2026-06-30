@@ -59,6 +59,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
+    # kekulized molecule (aromatic -> single/double bonds)
+    mol_kekulized = preprocess_mol(mol, kekulize=True)
+
     # 2D descriptors
     descriptors_2d = [
         abc_index.calc(mol_regular, distance_matrix_regular),
