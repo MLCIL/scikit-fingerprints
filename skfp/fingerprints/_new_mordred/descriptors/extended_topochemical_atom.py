@@ -33,14 +33,19 @@ def calc(
     eta_core_counts = get_eta_core_counts(core_counts, num_atoms)
     eta_shape_indices = get_eta_shape_indices(mol_kekulized, core_counts)
     eta_vem_counts = get_eta_vem_counts(mol_kekulized)
-    eta_composite_indices = get_eta_composite_and_functionality_indices(
-        mol_kekulized,
-        distance_matrix.matrix,
-        mol_alkane,
-        distance_matrix_simplified.matrix,
+    eta_composite_and_functionality_indices = (
+        get_eta_composite_and_functionality_indices(
+            mol_kekulized,
+            distance_matrix.matrix,
+            mol_alkane,
+            distance_matrix_simplified.matrix,
+        )
     )
-    eta_composite_index_non_local = eta_composite_indices[0]
-    eta_composite_index_non_local_alkane = eta_composite_indices[4]
+    eta_branching_indices = get_eta_branching_indices(
+        composite_index_alkane_local=eta_composite_and_functionality_indices[6],
+        ring_count=ring_count,
+        num_atoms=num_atoms,
+    )
 
     values = np.concatenate([eta_core_counts], dtype=np.float32)
     return values, FEATURE_NAMES
@@ -120,7 +125,7 @@ def get_eta_composite_and_functionality_indices(
     distance_matrix_alkane: np.ndarray,
 ) -> np.ndarray:
     """
-    ETA composite index descriptor.
+    ETA composite and functionality index descriptors.
     """
     gamma_vals = [get_eta_gamma(atom) for atom in mol.GetAtoms()]
     alkane_gamma_vals = [get_eta_gamma(atom) for atom in mol_alkane.GetAtoms()]
@@ -183,6 +188,39 @@ def get_eta_composite_and_functionality_indices(
             functionality_index_non_local_avg,
             functionality_index_local,
             functionality_index_local_avg,
+        ],
+        dtype=np.float32,
+    )
+
+
+def get_eta_branching_indices(
+    composite_index_alkane_local: float,
+    ring_count: int,
+    num_atoms: int,
+) -> np.ndarray:
+    """
+    ETA branching index descriptors.
+    """
+    if num_atoms <= 1:
+        return np.full(4, np.nan, dtype=np.float32)
+
+    if num_atoms == 2:
+        reference_alkane_branching = 1.0
+    else:
+        reference_alkane_branching = np.sqrt(2) + 0.5 * (num_atoms - 3)
+
+    branching_index_non_ring = reference_alkane_branching - composite_index_alkane_local
+    branching_index_non_ring_avg = branching_index_non_ring / num_atoms
+
+    branching_index_ring = branching_index_non_ring + 0.086 * ring_count
+    branching_index_ring_avg = branching_index_ring / num_atoms
+
+    return np.array(
+        [
+            branching_index_non_ring,
+            branching_index_non_ring_avg,
+            branching_index_ring,
+            branching_index_ring_avg,
         ],
         dtype=np.float32,
     )
