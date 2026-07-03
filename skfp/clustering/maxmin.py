@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import numpy as np
-from rdkit.DataStructs import BulkTanimotoSimilarity
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from rdkit.SimDivFilters import MaxMinPicker
 from scipy import sparse
@@ -9,6 +8,8 @@ from sklearn.base import BaseEstimator, ClusterMixin
 from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
 from sklearn.utils.validation import check_is_fitted, validate_data
+
+from skfp.clustering import utils
 
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
@@ -114,7 +115,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         # centroid selection (MaxMin)
         picker = MaxMinPicker()
 
-        fps = self._array_to_bitvectors(X)
+        fps = utils.array_to_bitvectors(X)
         rng = check_random_state(self.random_state)
         seed = rng.randint(0, 2**31 - 1)
         centroid_indices, _ = picker.LazyBitVectorPickWithThreshold(
@@ -135,7 +136,7 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             self.centroids_ = arr[self.centroid_indices_].astype(np.uint8)
 
         # cluster assignment
-        self.labels_ = self._assign_labels(fps)
+        self.labels_ = utils.assign_labels(fps, self.centroid_bitvectors_)
 
         # enforce invariant: each centroid labels itself
         for cluster_id, sample_idx in enumerate(self.centroid_indices_):
@@ -163,8 +164,8 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
         check_is_fitted(self)
         X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
 
-        bitvecs = self._array_to_bitvectors(X)
-        return self._assign_labels(bitvecs)
+        bitvecs = utils.array_to_bitvectors(X)
+        return utils.assign_labels(bitvecs, self.centroid_bitvectors_)
 
     def fit_predict(
         self,
@@ -206,57 +207,4 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             indices of samples belonging to that cluster.
         """
         check_is_fitted(self)
-        return {
-            k: np.where(self.labels_ == k)[0]
-            for k in range(len(self.centroid_indices_))
-        }
-
-    def _array_to_bitvectors(
-        self, X: np.ndarray | sparse.csr_array
-    ) -> list[ExplicitBitVect]:
-        """
-        Convert input data to a list of RDKit ExplicitBitVect objects.
-        """
-        bitvecs: list[ExplicitBitVect] = []
-        if np.ndim(X) == 1 and len(X) > 0 and isinstance(X[0], ExplicitBitVect):
-            return list(X)
-
-        if sparse.issparse(X):
-            X = X.tocsr()
-            n_samples, n_bits = X.shape
-
-            for i in range(n_samples):
-                vec = ExplicitBitVect(n_bits)
-                row_start = X.indptr[i]
-                row_end = X.indptr[i + 1]
-
-                for bit in X.indices[row_start:row_end]:
-                    # RDKit ExplicitBitVect uses int indices, not Numpy integers
-                    vec.SetBit(int(bit))
-
-                bitvecs.append(vec)
-
-            return bitvecs
-
-        n_samples, n_bits = X.shape
-
-        for i in range(n_samples):
-            vec = ExplicitBitVect(n_bits)
-            for bit in np.flatnonzero(X[i]):
-                vec.SetBit(int(bit))
-            bitvecs.append(vec)
-
-        return bitvecs
-
-    def _assign_labels(self, vectors: list[ExplicitBitVect]) -> np.ndarray:
-        """
-        Assign each sample to the nearest centroid by Tanimoto similarity.
-        """
-        n_samples = len(vectors)
-        labels = np.empty(n_samples, dtype=int)
-
-        for i, fp in enumerate(vectors):
-            sims = BulkTanimotoSimilarity(fp, self.centroid_bitvectors_)
-            labels[i] = np.argmax(sims)
-
-        return labels
+        return utils.clusters_and_points(self.labels_)

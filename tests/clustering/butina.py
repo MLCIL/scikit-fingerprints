@@ -2,9 +2,11 @@ import re
 
 import numpy as np
 import pytest
+from rdkit.DataStructs import BulkTanimotoSimilarity
 from scipy.sparse import csr_matrix
 
 from skfp.clustering import ButinaClustering
+from skfp.clustering.utils import array_to_bitvectors
 
 
 @pytest.fixture(params=["dense", "sparse"])
@@ -77,10 +79,8 @@ def test_sparse_matches_dense(binary_X):
 
 
 def test_predict_assigns_to_nearest_centroid(binary_X):
-    from rdkit.DataStructs import BulkTanimotoSimilarity
-
     clusterer = ButinaClustering(distance_threshold=0.5).fit(binary_X)
-    bitvects = clusterer._array_to_bitvectors(binary_X)
+    bitvects = array_to_bitvectors(binary_X)
     preds = clusterer.predict(binary_X)
     for i, fp in enumerate(bitvects):
         sims = BulkTanimotoSimilarity(fp, clusterer.centroid_bitvectors_)
