@@ -1,6 +1,5 @@
 import numpy as np
-from rdkit import Chem
-from rdkit.Chem import AddHs, Atom, Bond, BondType, Kekulize, Mol, RWMol, SanitizeMol
+from rdkit.Chem import AddHs, Atom, BondType, Kekulize, Mol, RWMol, SanitizeMol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import _RDKIT_PERIODIC_TABLE
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
@@ -13,166 +12,321 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["WPath", "WPol"]
+_GET_N_OUTER_ELECS = _RDKIT_PERIODIC_TABLE.GetNOuterElecs
+
+FEATURE_NAMES = [
+    "ETA_alpha",
+    "AETA_alpha",
+    "ETA_shape_p",
+    "ETA_shape_y",
+    "ETA_shape_x",
+    "ETA_beta",
+    "AETA_beta",
+    "ETA_beta_s",
+    "AETA_beta_s",
+    "ETA_beta_ns",
+    "AETA_beta_ns",
+    "ETA_beta_ns_d",
+    "AETA_beta_ns_d",
+    "ETA_eta",
+    "AETA_eta",
+    "ETA_eta_L",
+    "AETA_eta_L",
+    "ETA_eta_R",
+    "AETA_eta_R",
+    "ETA_eta_RL",
+    "AETA_eta_RL",
+    "ETA_eta_F",
+    "AETA_eta_F",
+    "ETA_eta_FL",
+    "AETA_eta_FL",
+    "ETA_eta_B",
+    "AETA_eta_B",
+    "ETA_eta_BR",
+    "AETA_eta_BR",
+    "ETA_dAlpha_A",
+    "ETA_dAlpha_B",
+    "ETA_epsilon_1",
+    "ETA_epsilon_2",
+    "ETA_epsilon_3",
+    "ETA_epsilon_4",
+    "ETA_epsilon_5",
+    "ETA_dEpsilon_A",
+    "ETA_dEpsilon_B",
+    "ETA_dEpsilon_C",
+    "ETA_dEpsilon_D",
+    "ETA_dBeta",
+    "AETA_dBeta",
+    "ETA_psi_1",
+    "ETA_dPsi_A",
+    "ETA_dPsi_B",
+]
 
 
 def calc(
     mol_kekulized: Mol,
     distance_matrix: DistanceMatrix,
+    mol_kekulized_hydrogens: Mol,
     ring_count: int,
+    n_frags: int,
 ) -> tuple[np.ndarray, list[str]]:
-    mol_alkane = build_alkane_mol(mol_kekulized)
-    if not mol_alkane:
-        pass  # TODO: handle errors
+    # ETA descriptors require a connected molecule
+    if n_frags != 1:
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
-    distance_matrix_simplified = DistanceMatrix(mol_alkane)
-
-    core_counts = np.array([get_core_count(atom) for atom in mol_kekulized.GetAtoms()])
     num_atoms = mol_kekulized.GetNumAtoms()
 
-    eta_core_counts = get_eta_core_counts(core_counts, num_atoms)
-    eta_shape_indices = get_eta_shape_indices(mol_kekulized, core_counts)
-    eta_vem_counts = get_eta_vem_counts(mol_kekulized)
-    eta_composite_and_functionality_indices = (
-        get_eta_composite_and_functionality_indices(
-            mol_kekulized,
-            distance_matrix.matrix,
-            mol_alkane,
-            distance_matrix_simplified.matrix,
-        )
+    # atomic properties
+    atomic_nums, core_counts, epsilons = _atom_properties(mol_kekulized)
+    degrees = np.fromiter(
+        (atom.GetDegree() for atom in mol_kekulized.GetAtoms()),
+        dtype=np.int64,
+        count=num_atoms,
     )
-    eta_branching_indices = get_eta_branching_indices(
-        composite_index_alkane_local=eta_composite_and_functionality_indices[6],
-        ring_count=ring_count,
-        num_atoms=num_atoms,
+    gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
+        mol_kekulized, atomic_nums, core_counts, epsilons
     )
 
-    values = np.concatenate([eta_core_counts], dtype=np.float32)
-    return values, FEATURE_NAMES
+    # reference variants of the molecule; each may fail to build (e.g. heavy atom
+    # with degree > 4), in which case the descriptors depending on it become NaN
+    mol_alkane = build_reference_mol(mol_kekulized)
+    mol_alkane_hydrogens = build_reference_mol(mol_kekulized, explicit_hydrogens=True)
+    mol_saturated = build_reference_mol(
+        mol_kekulized, explicit_hydrogens=True, saturated=True
+    )
 
+    core_count = core_counts.sum()
+    core_count_mean = core_count / num_atoms
 
-def get_eta_core_counts(core_counts: np.ndarray, num_atoms: int) -> np.ndarray:
-    """
-    ETA core count descriptors, sum and average.
-    """
-    core_count_sum = core_counts.sum()
-    return np.array([core_count_sum, core_count_sum / num_atoms])
+    # ETA_shape_{p,y,x}: fraction of total core count from atoms of degree 1/3/4
+    shape = np.array([core_counts[degrees == d].sum() / core_count for d in (1, 3, 4)])
 
-
-def get_eta_shape_indices(mol: Mol, core_counts: np.ndarray) -> np.ndarray:
-    """
-    ETA shape indices, like core count sum but only for given degrees.
-    """
-    values = []
-    for degree in [1, 3, 4]:
-        value = np.mean(
-            [
-                core_count
-                for atom, core_count in zip(mol.GetAtoms(), core_counts, strict=True)
-                if atom.GetDegree() == degree
-            ]
-        )
-        values.append(value)
-
-    return np.array(values)
-
-
-def get_eta_vem_counts(mol: Mol) -> np.ndarray:
-    """
-    ETA VEM(valence electron mobile) count descriptors.
-    """
-    beta_sum = 0
-    beta_s_sum = 0
-    beta_ns_sum = 0
-    beta_ns_d_sum = 0
-
-    for atom in mol.GetAtoms():
-        beta_s = get_eta_beta_sigma(atom) / 2
-        beta_ns_d = get_eta_beta_delta(atom)
-        beta_ns = get_eta_beta_non_sigma(atom) / 2 + beta_ns_d
-        beta = beta_s + beta_ns
-
-        beta_sum += beta
-        beta_s_sum += beta_ns_d
-        beta_ns_sum += beta_ns
-        beta_ns_d_sum += beta_ns_d
-
-    num_atoms = mol.GetNumAtoms()
-    beta_avg = beta_sum / num_atoms
-    beta_s_avg = beta_s_sum / num_atoms
-    beta_ns_avg = beta_ns_sum / num_atoms
-    beta_ns_d_avg = beta_ns_d_sum / num_atoms
-
-    return np.array(
+    # ETA VEM counts (sums and averages of beta / beta_s / beta_ns / beta_ns_d)
+    vem_beta_s = beta_sigma.sum() / 2.0
+    vem_beta_ns = beta_non_sigma.sum() / 2.0 + beta_delta.sum()
+    vem_beta_ns_d = beta_delta.sum()
+    vem_beta = vem_beta_s + vem_beta_ns
+    eta_vem_counts = np.array(
         [
-            beta_sum,
-            beta_avg,
-            beta_s_sum,
-            beta_s_avg,
-            beta_ns_sum,
-            beta_ns_avg,
-            beta_ns_d_sum,
-            beta_ns_d_avg,
+            vem_beta,
+            vem_beta / num_atoms,
+            vem_beta_s,
+            vem_beta_s / num_atoms,
+            vem_beta_ns,
+            vem_beta_ns / num_atoms,
+            vem_beta_ns_d,
+            vem_beta_ns_d / num_atoms,
         ],
         dtype=np.float32,
     )
 
+    # composite + functionality indices
+    if mol_alkane is None:
+        gamma_alkane = None
+        distance_matrix_alkane = None
+    else:
+        z_a, core_a, eps_a = _atom_properties(mol_alkane)
+        gamma_alkane, *_ = _beta_and_gamma(mol_alkane, z_a, core_a, eps_a)
+        distance_matrix_alkane = DistanceMatrix(mol_alkane).matrix
 
-def get_eta_composite_and_functionality_indices(
+    eta_composite = _composite_and_functionality(
+        gamma,
+        distance_matrix.matrix,
+        gamma_alkane,
+        distance_matrix_alkane,
+        num_atoms,
+    )
+
+    eta_branching = _branching_indices(eta_composite[6], ring_count, num_atoms)
+
+    # ETA delta alpha
+    if mol_alkane is None:
+        eta_delta_alpha = np.array([np.nan, np.nan], dtype=np.float32)
+    else:
+        core_count_alkane = core_a.sum()
+        d_a = max((core_count - core_count_alkane) / num_atoms, 0.0)
+        d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
+        eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
+
+    eta_epsilon_values = _epsilon_values(
+        epsilons,
+        mol_kekulized_hydrogens,
+        mol_alkane_hydrogens,
+        mol_saturated,
+    )
+
+    # ETA delta beta
+    delta_beta = vem_beta_ns - vem_beta_s
+    eta_delta_beta = np.array([delta_beta, delta_beta / num_atoms], dtype=np.float32)
+
+    # ETA psi
+    psi = core_count / (num_atoms * eta_epsilon_values[1])
+    eta_psi = np.array(
+        [psi, max(0.714 - psi, 0.0), max(psi - 0.714, 0.0)], dtype=np.float32
+    )
+
+    values = np.concatenate(
+        [
+            [core_count, core_count_mean],
+            shape,
+            eta_vem_counts,
+            eta_composite,
+            eta_branching,
+            eta_delta_alpha,
+            eta_epsilon_values,
+            eta_delta_beta,
+            eta_psi,
+        ],
+        dtype=np.float32,
+    )
+    return values, FEATURE_NAMES
+
+
+def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Return per-atom arrays of (atomic number, core count alpha, epsilon).
+    """
+    num_atoms = mol.GetNumAtoms()
+    atomic_nums = np.empty(num_atoms, dtype=np.int64)
+    core_counts = np.empty(num_atoms, dtype=np.float64)
+    epsilons = np.empty(num_atoms, dtype=np.float64)
+
+    for atom in mol.GetAtoms():
+        i = atom.GetIdx()
+        z = atom.GetAtomicNum()
+        zv = _GET_N_OUTER_ELECS(z)
+        alpha = 0.0 if z == 1 else (z - zv) / (zv * (PERIOD[z] - 1))
+        atomic_nums[i] = z
+        core_counts[i] = alpha
+        epsilons[i] = 0.3 * zv - alpha
+
+    return atomic_nums, core_counts, epsilons
+
+
+def _beta_and_gamma(
     mol: Mol,
+    atomic_nums: np.ndarray,
+    core_counts: np.ndarray,
+    epsilons: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Compute per-atom sigma, non-sigma, and delta beta contributions and gamma.
+    """
+    num_atoms = mol.GetNumAtoms()
+    beta_sigma = np.zeros(num_atoms, dtype=np.float64)
+    beta_non_sigma = np.zeros(num_atoms, dtype=np.float64)
+
+    for bond in mol.GetBonds():
+        a = bond.GetBeginAtomIdx()
+        b = bond.GetEndAtomIdx()
+        za = atomic_nums[a]
+        zb = atomic_nums[b]
+
+        # sigma contribution: only between heavy-atom neighbors
+        if za != 1 and zb != 1:
+            weight = 0.5 if abs(epsilons[a] - epsilons[b]) <= 0.3 else 0.75
+            beta_sigma[a] += weight
+            beta_sigma[b] += weight
+
+        # non-sigma (pi / aromatic) bond contribution
+        contribution = _nonsigma_contribute(bond, epsilons)
+        if contribution:
+            if zb != 1:
+                beta_non_sigma[a] += contribution
+            if za != 1:
+                beta_non_sigma[b] += contribution
+
+    beta_delta = np.fromiter(
+        (_beta_delta(atom) for atom in mol.GetAtoms()),
+        dtype=np.float64,
+        count=num_atoms,
+    )
+
+    beta = beta_sigma + beta_non_sigma + beta_delta
+    with np.errstate(divide="ignore", invalid="ignore"):
+        gamma = np.where(beta == 0.0, np.nan, core_counts / beta)
+
+    return gamma, beta_sigma, beta_non_sigma, beta_delta
+
+
+def _nonsigma_contribute(bond, epsilons: np.ndarray) -> float:
+    """
+    Non-sigma (pi, aromatic) contribution of a single bond to the ETA beta index.
+    """
+    if bond.GetBondType() is BondType.SINGLE:
+        return 0.0
+
+    f = 2.0 if bond.GetBondTypeAsDouble() == BondType.TRIPLE else 1.0
+
+    if bond.GetIsAromatic():
+        y = 2.0
+    else:
+        d_eps = abs(epsilons[bond.GetBeginAtomIdx()] - epsilons[bond.GetEndAtomIdx()])
+        y = 1.5 if d_eps > 0.3 else 1.0
+
+    return y * f
+
+
+def _beta_delta(atom) -> float:
+    """
+    Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that
+    is adjacent to an aromatic neighbor, otherwise 0.
+    """
+    if atom.GetIsAromatic() or atom.IsInRing():
+        return 0.0
+    if _GET_N_OUTER_ELECS(atom.GetAtomicNum()) - atom.GetTotalValence() <= 0:
+        return 0.0
+    for neighbor in atom.GetNeighbors():
+        if neighbor.GetIsAromatic():
+            return 0.5
+    return 0.0
+
+
+def _composite_index_pair(gamma: np.ndarray, dists: np.ndarray) -> tuple[float, float]:
+    """
+    ETA composite index, returning (non_local, local) together.
+
+    ``non_local = sum_{i<j} sqrt(gamma_i gamma_j / r_ij^2)`` and ``local`` is the
+    same sum restricted to bonded pairs (``r_ij == 1``).
+    """
+    upper_i, upper_j = np.triu_indices(gamma.shape[0], k=1)
+    d = dists[upper_i, upper_j]
+    terms = np.sqrt(gamma[upper_i] * gamma[upper_j] / d**2)
+    non_local = terms.sum()
+    local = terms[d == 1.0].sum()
+    return float(non_local), float(local)
+
+
+def _composite_and_functionality(
+    gamma: np.ndarray,
     distance_matrix: np.ndarray,
-    mol_alkane: Mol,
-    distance_matrix_alkane: np.ndarray,
+    gamma_alkane: np.ndarray | None,
+    distance_matrix_alkane: np.ndarray | None,
+    num_atoms: int,
 ) -> np.ndarray:
     """
     ETA composite and functionality index descriptors.
+
+    Reference-alkane values (and the functionality indices derived from them)
+    are NaN when the reference alkane could not be built.
     """
-    gamma_vals = [get_eta_gamma(atom) for atom in mol.GetAtoms()]
-    alkane_gamma_vals = [get_eta_gamma(atom) for atom in mol_alkane.GetAtoms()]
-
-    num_atoms = mol.GetNumAtoms()
-    num_atoms_alkane = mol_alkane.GetNumAtoms()
-
-    def eta_composite_index(
-        gamma: list[float], dists: np.ndarray, local: bool
-    ) -> float:
-        if local:
-            checker = lambda r: r == 1
-        else:
-            checker = lambda r: r != 0
-
-        return sum(
-            sum(
-                np.sqrt(gamma[i] * gamma[j] / r**2)
-                for j, r in enumerate(row)
-                if i < j and checker(r)
-            )
-            for i, row in enumerate(dists)
-        )
-
-    # composite indices
-    regular_non_local = eta_composite_index(gamma_vals, distance_matrix, local=False)
+    regular_non_local, regular_local = _composite_index_pair(gamma, distance_matrix)
     regular_non_local_avg = regular_non_local / num_atoms
-
-    regular_local = eta_composite_index(gamma_vals, distance_matrix, local=True)
     regular_local_avg = regular_local / num_atoms
 
-    alkane_non_local = eta_composite_index(
-        alkane_gamma_vals, distance_matrix_alkane, local=False
-    )
-    alkane_non_local_avg = alkane_non_local / num_atoms_alkane
+    if gamma_alkane is None:
+        alkane_non_local = alkane_non_local_avg = np.nan
+        alkane_local = alkane_local_avg = np.nan
+    else:
+        num_atoms_alkane = gamma_alkane.shape[0]
+        alkane_non_local, alkane_local = _composite_index_pair(
+            gamma_alkane, distance_matrix_alkane
+        )
+        alkane_non_local_avg = alkane_non_local / num_atoms_alkane
+        alkane_local_avg = alkane_local / num_atoms_alkane
 
-    alkane_local = eta_composite_index(
-        alkane_gamma_vals, distance_matrix_alkane, local=True
-    )
-    alkane_local_avg = alkane_local / num_atoms_alkane
-
-    # functionality indices
-    functionality_index_non_local = alkane_non_local - regular_non_local
-    functionality_index_non_local_avg = functionality_index_non_local / num_atoms
-
-    functionality_index_local = alkane_local - regular_local
-    functionality_index_local_avg = functionality_index_local / num_atoms
+    functionality_non_local = alkane_non_local - regular_non_local
+    functionality_local = alkane_local - regular_local
 
     return np.array(
         [
@@ -184,19 +338,17 @@ def get_eta_composite_and_functionality_indices(
             alkane_non_local_avg,
             alkane_local,
             alkane_local_avg,
-            functionality_index_non_local,
-            functionality_index_non_local_avg,
-            functionality_index_local,
-            functionality_index_local_avg,
+            functionality_non_local,
+            functionality_non_local / num_atoms,
+            functionality_local,
+            functionality_local / num_atoms,
         ],
         dtype=np.float32,
     )
 
 
-def get_eta_branching_indices(
-    composite_index_alkane_local: float,
-    ring_count: int,
-    num_atoms: int,
+def _branching_indices(
+    composite_index_alkane_local: float, ring_count: int, num_atoms: int
 ) -> np.ndarray:
     """
     ETA branching index descriptors.
@@ -209,147 +361,73 @@ def get_eta_branching_indices(
     else:
         reference_alkane_branching = np.sqrt(2) + 0.5 * (num_atoms - 3)
 
-    branching_index_non_ring = reference_alkane_branching - composite_index_alkane_local
-    branching_index_non_ring_avg = branching_index_non_ring / num_atoms
+    non_ring = reference_alkane_branching - composite_index_alkane_local
+    ring = non_ring + 0.086 * ring_count
 
-    branching_index_ring = branching_index_non_ring + 0.086 * ring_count
-    branching_index_ring_avg = branching_index_ring / num_atoms
+    return np.array(
+        [non_ring, non_ring / num_atoms, ring, ring / num_atoms], dtype=np.float32
+    )
+
+
+def _epsilon_values(
+    epsilons: np.ndarray,
+    mol_hydrogens: Mol,
+    mol_alkane_hydrogens: Mol | None,
+    mol_saturated: Mol | None,
+) -> np.ndarray:
+    """
+    ETA epsilon and epsilon delta descriptors.
+
+    Types 3 and 4 (and the epsilon deltas derived from them) are NaN when the
+    respective reference molecule could not be built.
+    """
+    _, _, eps_hydrogens = _atom_properties(mol_hydrogens)
+
+    eps_1 = eps_hydrogens.mean()
+    eps_2 = epsilons.mean()
+    eps_3 = (
+        _atom_properties(mol_alkane_hydrogens)[2].mean()
+        if mol_alkane_hydrogens is not None
+        else np.nan
+    )
+    eps_4 = (
+        _atom_properties(mol_saturated)[2].mean()
+        if mol_saturated is not None
+        else np.nan
+    )
+
+    # heavy atoms and hydrogens bonded to heteroatoms, on the H-explicit molecule
+    keep = [
+        atom.GetIdx()
+        for atom in mol_hydrogens.GetAtoms()
+        if atom.GetAtomicNum() != 1 or atom.GetNeighbors()[0].GetAtomicNum() != 6
+    ]
+    eps_5 = eps_hydrogens[keep].mean()
 
     return np.array(
         [
-            branching_index_non_ring,
-            branching_index_non_ring_avg,
-            branching_index_ring,
-            branching_index_ring_avg,
+            eps_1,
+            eps_2,
+            eps_3,
+            eps_4,
+            eps_5,
+            eps_1 - eps_3,
+            eps_1 - eps_4,
+            eps_3 - eps_4,
+            eps_2 - eps_5,
         ],
         dtype=np.float32,
     )
 
 
-def get_core_count(atom: Atom) -> float:
-    """
-    Atomic core-count term (alpha) used as a building block of ETA indices.
-    Reflects the relative number of non-valence (core) electrons, scaled by period.
-    """
-    Z = atom.GetAtomicNum()
-    if Z == 1:
-        return 0.0
-    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(Z)
-    PN = PERIOD[Z]
-    return (Z - Zv) / (Zv * (PN - 1))
-
-
-def get_eta_epsilon(atom: Atom) -> float:
-    """
-    ETA electronegativity-like measure (epsilon) for a single atom.
-    Differences in epsilon between bonded atoms encode bond polarity.
-    """
-    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
-    return 0.3 * Zv - get_core_count(atom)
-
-
-def get_eta_beta_sigma(atom: Atom) -> float:
-    """
-    Sigma-bond contribution to an atom's ETA beta index, summed over
-    non-hydrogen neighbors and weighted by similarity of their epsilon values.
-    """
-    e = get_eta_epsilon(atom)
-    return sum(
-        0.5 if abs(get_eta_epsilon(a) - e) <= 0.3 else 0.75
-        for a in atom.GetNeighbors()
-        if a.GetAtomicNum() != 1
-    )
-
-
-def get_other_bond_atom(bond: Bond, atom: Atom) -> Atom:
-    begin = bond.GetBeginAtom()
-    if atom.GetIdx() != begin.GetIdx():
-        return begin
-    return bond.GetEndAtom()
-
-
-def get_eta_nonsigma_contribute(bond: Bond) -> float:
-    """
-    Non-sigma (pi, aromatic) contribution of a single bond to the ETA beta index.
-    Weighted by bond order, aromaticity, and the epsilon difference of its endpoints.
-    """
-    if bond.GetBondType() is Chem.BondType.SINGLE:
-        return 0.0
-
-    f = 1.0
-    if bond.GetBondTypeAsDouble() == Chem.BondType.TRIPLE:
-        f = 2.0
-
-    a = bond.GetBeginAtom()
-    b = bond.GetEndAtom()
-    dEps = abs(get_eta_epsilon(a) - get_eta_epsilon(b))
-
-    if bond.GetIsAromatic():
-        y = 2.0
-    elif dEps > 0.3:
-        y = 1.5
-    else:
-        y = 1.0
-
-    return y * f
-
-
-def get_eta_beta_delta(atom: Atom) -> float:
-    """
-    Lone-pair (delta) contribution to an atom's ETA beta index.
-    Nonzero only for acyclic atoms with lone pairs adjacent to an aromatic neighbor.
-    """
-    if (
-        atom.GetIsAromatic()
-        or atom.IsInRing()
-        or _RDKIT_PERIODIC_TABLE.GetNOuterElecs(atom.GetAtomicNum())
-        - atom.GetTotalValence()
-        <= 0
-    ):
-        return 0.0
-
-    for b in atom.GetNeighbors():
-        if b.GetIsAromatic():
-            return 0.5
-
-    return 0.0
-
-
-def get_eta_beta_non_sigma(atom: Atom) -> float:
-    """
-    Total non-sigma (pi, aromatic) bond contribution to an atom's ETA beta index,
-    summed over all bonds to non-hydrogen neighbors.
-    """
-    return sum(
-        get_eta_nonsigma_contribute(b)
-        for b in atom.GetBonds()
-        if get_other_bond_atom(b, atom).GetAtomicNum() != 1
-    )
-
-
-def get_eta_gamma(atom: Atom) -> float:
-    """
-    ETA gamma index for an atom: core count divided by total beta contribution.
-    Represents an atom's topochemical "hardness" in the ETA framework.
-    """
-    beta = (
-        get_eta_beta_sigma(atom)
-        + get_eta_beta_non_sigma(atom)
-        + get_eta_beta_delta(atom)
-    )
-    if beta == 0:
-        return np.nan
-    return get_core_count(atom) / beta
-
-
-def build_alkane_mol(
+def build_reference_mol(
     mol: Mol, explicit_hydrogens: bool = False, saturated: bool = False
 ) -> Mol | None:
     """
-    Build a simplified copy of input molecule.
+    Build an simplified reference analog of the molecule.
 
-    saturated=False gives a carbon skeleton, replacing heavy atoms with carbons
-    and all bonds with single ones.
+    saturated=False gives a carbon alkane-like skeleton, replacing heavy atoms
+    with carbons and all bonds with single ones.
 
     saturated=True keeps atom elements and formal charges, carbon-carbon bonds
     become single, while bonds touching a heteroatom keep their original order.
