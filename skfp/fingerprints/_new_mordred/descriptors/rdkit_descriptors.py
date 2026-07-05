@@ -18,7 +18,7 @@ from rdkit.Chem import (
 )
 from rdkit.Chem.EState import EState_VSA
 
-from skfp.fingerprints._new_mordred.utils.calculation import safe_value
+from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import safe_value
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 FEATURE_NAMES_2D = [
@@ -97,19 +97,14 @@ def calc_rdkit_2d(
         safe_value(rdMolDescriptors.CalcNumHBA, mol_regular),
         safe_value(rdMolDescriptors.CalcNumHBD, mol_regular),
         safe_value(MolSurf.LabuteASA, mol_regular),
+        *_calc_moe_type_descriptors(mol_regular),
+        safe_value(Crippen.MolLogP, mol_regular),
+        safe_value(Crippen.MolMR, mol_regular),
+        safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
+        safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
+        safe_value(Descriptors.ExactMolWt, mol_regular),
+        safe_value(_average_exact_mol_wt, mol_regular),
     ]
-
-    values.extend(
-        [
-            *_calc_moe_type_descriptors(mol_regular),
-            safe_value(Crippen.MolLogP, mol_regular),
-            safe_value(Crippen.MolMR, mol_regular),
-            safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
-            safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
-            safe_value(Descriptors.ExactMolWt, mol_regular),
-            safe_value(_average_exact_mol_wt, mol_regular),
-        ]
-    )
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES_2D
 
