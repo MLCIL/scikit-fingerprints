@@ -6,7 +6,7 @@ from rdkit.Chem import Mol, rdMolDescriptors
 from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
 
 """
-Atom count descriptors implemented with direct RDKit atom access.
+Atom count descriptors.
 
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community

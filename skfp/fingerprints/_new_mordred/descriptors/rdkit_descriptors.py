@@ -52,17 +52,11 @@ def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
     E-State values.
     """
     return [
-        *[safe_value(getattr(MolSurf, f"PEOE_VSA{idx}"), mol) for idx in range(1, 14)],
-        *[safe_value(getattr(MolSurf, f"SMR_VSA{idx}"), mol) for idx in range(1, 10)],
-        *[safe_value(getattr(MolSurf, f"SlogP_VSA{idx}"), mol) for idx in range(1, 12)],
-        *[
-            safe_value(getattr(EState_VSA, f"EState_VSA{idx}"), mol)
-            for idx in range(1, 11)
-        ],
-        *[
-            safe_value(getattr(EState_VSA, f"VSA_EState{idx}"), mol)
-            for idx in range(1, 10)
-        ],
+        *[getattr(MolSurf, f"PEOE_VSA{idx}")(mol) for idx in range(1, 14)],
+        *[getattr(MolSurf, f"SMR_VSA{idx}")(mol) for idx in range(1, 10)],
+        *[getattr(MolSurf, f"SlogP_VSA{idx}")(mol) for idx in range(1, 12)],
+        *[getattr(EState_VSA, f"EState_VSA{idx}")(mol) for idx in range(1, 11)],
+        *[getattr(EState_VSA, f"VSA_EState{idx}")(mol) for idx in range(1, 10)],
     ]
 
 
@@ -94,15 +88,15 @@ def calc_rdkit_2d(
             mol_regular,
             dMat=distance_matrix_regular.matrix,
         ),
-        safe_value(rdMolDescriptors.CalcNumHBA, mol_regular),
-        safe_value(rdMolDescriptors.CalcNumHBD, mol_regular),
-        safe_value(MolSurf.LabuteASA, mol_regular),
+        rdMolDescriptors.CalcNumHBA(mol_regular),
+        rdMolDescriptors.CalcNumHBD(mol_regular),
+        MolSurf.LabuteASA(mol_regular),
         *_calc_moe_type_descriptors(mol_regular),
-        safe_value(Crippen.MolLogP, mol_regular),
-        safe_value(Crippen.MolMR, mol_regular),
-        safe_value(rdMolDescriptors.CalcTPSA, mol_regular),
-        safe_value(rdMolDescriptors.CalcTPSA, mol_regular, includeSandP=True),
-        safe_value(Descriptors.ExactMolWt, mol_regular),
+        Crippen.MolLogP(mol_regular),
+        Crippen.MolMR(mol_regular),
+        rdMolDescriptors.CalcTPSA(mol_regular),
+        rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True),
+        Descriptors.ExactMolWt(mol_regular),
         safe_value(_average_exact_mol_wt, mol_regular),
     ]
 

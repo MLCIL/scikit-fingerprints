@@ -1,5 +1,5 @@
 """
-Carbon type descriptors implemented with direct RDKit atom access.
+Carbon type descriptors.
 
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
