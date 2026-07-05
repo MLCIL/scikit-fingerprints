@@ -5,8 +5,13 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     adjacency_matrix,
+    atom_count,
     autocorrelation,
+    carbon_types,
     morse,
+    rdkit_descriptors,
+    ring_count,
+    rotatable_bond,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -52,6 +57,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
+    mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
@@ -69,6 +75,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         acid_base.calc(mol_regular),
         autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate.calc(mol_regular),
+        rdkit_descriptors.calc_rdkit_2d(
+            mol_regular,
+            distance_matrix_regular,
+        ),
+        atom_count.calc(mol_regular),
+        carbon_types.calc(mol_kekulized),
+        rotatable_bond.calc(mol_regular),
+        ring_count.calc(mol_regular),
     ]
 
     for values, feature_names in descriptors_2d:
@@ -81,6 +95,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
         descriptors_3d: list = [
             morse.calc(mol_hydrogens, distance_matrix_3d),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
         ]
 
         for values, feature_names in descriptors_3d:
