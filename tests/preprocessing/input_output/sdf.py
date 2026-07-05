@@ -28,6 +28,17 @@ def test_mol_from_sdf(sdf_in_file_path):
     assert all(isinstance(x, Mol) for x in mols)
 
 
+def test_mol_from_sdf_accepts_path_object(sdf_in_file_path):
+    from pathlib import Path
+
+    mol_from_sdf = MolFromSDFTransformer()
+    mols_from_str = mol_from_sdf.transform(sdf_in_file_path)
+    mols_from_path = mol_from_sdf.transform(Path(sdf_in_file_path))
+
+    assert_equal(len(mols_from_path), len(mols_from_str))
+    assert all(isinstance(x, Mol) for x in mols_from_path)
+
+
 def test_mol_from_sdf_sets_conf_id(sdf_in_file_path):
     mol_from_sdf = MolFromSDFTransformer()
     mols = mol_from_sdf.transform(sdf_in_file_path)
