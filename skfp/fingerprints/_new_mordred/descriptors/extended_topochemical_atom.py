@@ -80,7 +80,7 @@ def calc(
     atomic_nums, core_counts, epsilons = _atom_properties(mol_kekulized)
     degrees = np.fromiter(
         (atom.GetDegree() for atom in mol_kekulized.GetAtoms()),
-        dtype=np.int64,
+        dtype=np.int32,
         count=num_atoms,
     )
     gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
@@ -187,9 +187,9 @@ def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     Return per-atom arrays of (atomic number, core count alpha, epsilon).
     """
     num_atoms = mol.GetNumAtoms()
-    atomic_nums = np.empty(num_atoms, dtype=np.int64)
-    core_counts = np.empty(num_atoms, dtype=np.float64)
-    epsilons = np.empty(num_atoms, dtype=np.float64)
+    atomic_nums = np.empty(num_atoms, dtype=np.int32)
+    core_counts = np.empty(num_atoms, dtype=np.float32)
+    epsilons = np.empty(num_atoms, dtype=np.float32)
 
     for atom in mol.GetAtoms():
         i = atom.GetIdx()
@@ -213,8 +213,8 @@ def _beta_and_gamma(
     Compute per-atom sigma, non-sigma, and delta beta contributions and gamma.
     """
     num_atoms = mol.GetNumAtoms()
-    beta_sigma = np.zeros(num_atoms, dtype=np.float64)
-    beta_non_sigma = np.zeros(num_atoms, dtype=np.float64)
+    beta_sigma = np.zeros(num_atoms, dtype=np.float32)
+    beta_non_sigma = np.zeros(num_atoms, dtype=np.float32)
 
     for bond in mol.GetBonds():
         a = bond.GetBeginAtomIdx()
@@ -238,7 +238,7 @@ def _beta_and_gamma(
 
     beta_delta = np.fromiter(
         (_beta_delta(atom) for atom in mol.GetAtoms()),
-        dtype=np.float64,
+        dtype=np.float32,
         count=num_atoms,
     )
 
