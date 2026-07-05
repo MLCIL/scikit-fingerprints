@@ -113,7 +113,7 @@ Thank you for your contribution! Your efforts help make the scikit-fingerprints 
 ## LLMs and AI agents policy
 
 Primarily or purely LLM-generated contributions are **strictly forbidden**. AI agents and in particular 
-autonomous PRs are not allowed. PRs sumitted this way will result in a ban and report to GitHub as spam.
+autonomous PRs are not allowed. PRs submitted this way will result in a ban and report to GitHub as spam.
 
 Usage of LLMs is allowed only for polishing code, detecting bugs, and other supportive tasks. All PRs
 must be human-made and human-supervised. PR author takes full responsibility for the code.
