@@ -203,6 +203,10 @@ Also available as a [preprint on ArXiv](https://arxiv.org/abs/2407.13291).
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
 
+Note that LLM-generated contributions are **strictly forbidden**. We do not accept PRs by
+AI agents or primarily created with code generation tools. They will result in a ban and spam
+report to GitHub. Usage of LLMs is only allowed to polish human contributions.
+
 ## License
 
 MIT -- see [LICENSE.md](LICENSE.md) for details.
