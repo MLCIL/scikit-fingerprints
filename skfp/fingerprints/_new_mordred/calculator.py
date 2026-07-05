@@ -31,6 +31,7 @@ from tests.fingerprints._new_mordred import estate
 """
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
+
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
@@ -53,6 +54,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # dependencies
     n_frags = len(GetMolFrags(mol))
+
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
