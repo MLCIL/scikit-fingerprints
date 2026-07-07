@@ -13,7 +13,7 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-_BARYSZ_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
+_PROPS_NAMES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
 
 _BARYSZ_ATTRIBUTES = [
     "SpAbs",
@@ -31,10 +31,8 @@ _BARYSZ_ATTRIBUTES = [
     "VR3",
 ]
 
-_CARBON = Atom(6)
-
 FEATURE_NAMES = [
-    f"{attr}_Dz{prop}" for prop in _BARYSZ_PROPERTIES for attr in _BARYSZ_ATTRIBUTES
+    f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _BARYSZ_ATTRIBUTES
 ]
 
 
@@ -49,21 +47,35 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
 
     Requires a connected molecule (single fragment).
     """
-    return _barysz_values(mol_regular, n_frags), FEATURE_NAMES
+
+    if n_frags != 1:
+        return np.full(
+            len(_PROPS_NAMES) * len(_BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
+        ), FEATURE_NAMES
+
+    values: list = []
+    for prop in _PROPS_NAMES:
+        matrix = _barysz_matrix(mol_regular, prop)
+        if matrix is None:
+            values.extend([np.nan] * len(_BARYSZ_ATTRIBUTES))
+        else:
+            values.extend(_barysz_matrix_attribute_values(mol_regular, n_frags, matrix))
+
+    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
 
 def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
     prop_func = PROPERTY_FUNCS[prop]
-    carbon_value = prop_func(_CARBON)
+    carbon_value = prop_func(Atom(6)) # Carbon
 
     property_values = np.asarray(
-        [prop_func(atom) for atom in mol.GetAtoms()], dtype=float
+        [prop_func(atom) for atom in mol.GetAtoms()], dtype=np.float32
     )
     if np.any(~np.isfinite(property_values)):
         return None
 
     n_atoms = mol.GetNumAtoms()
-    matrix = np.full((n_atoms, n_atoms), np.inf, dtype=float)
+    matrix = np.full((n_atoms, n_atoms), np.inf, dtype=np.float32)
     np.fill_diagonal(matrix, 0.0)
 
     for bond in mol.GetBonds():
@@ -109,19 +121,4 @@ def _barysz_matrix_attribute_values(
         attrs.vr3,
     ]
 
-
-def _barysz_values(mol: Mol, n_frags: int) -> np.ndarray:
-    if n_frags != 1:
-        return np.full(
-            len(_BARYSZ_PROPERTIES) * len(_BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
-        )
-
-    values: list[float | np.floating] = []
-    for prop in _BARYSZ_PROPERTIES:
-        matrix = _barysz_matrix(mol, prop)
-        if matrix is None:
-            values.extend([np.nan] * len(_BARYSZ_ATTRIBUTES))
-        else:
-            values.extend(_barysz_matrix_attribute_values(mol, n_frags, matrix))
-
-    return np.asarray(values, dtype=np.float32)
+    
