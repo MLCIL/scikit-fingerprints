@@ -6,8 +6,7 @@ from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.barysz_matrix import (
-    _ATTR_NAMES,
-    _PROPS_NAMES,
+    FEATURE_NAMES,
     calc,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
@@ -45,11 +44,8 @@ def computed_values():
 
 
 @pytest.mark.parametrize("molecule", list(_SMILES))
-@pytest.mark.parametrize(
-    "prop,attr", [(p, a) for p in _PROPS_NAMES for a in _ATTR_NAMES]
-)
-def test_barysz_matrix_reference_values(prop, attr, molecule, computed_values):
-    feature_name = f"{attr}_Dz{prop}"
+@pytest.mark.parametrize("feature_name", FEATURE_NAMES)
+def test_barysz_matrix_reference_values(feature_name, molecule, computed_values):
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]
     assert_allclose(actual, expected, atol=1e-3, equal_nan=True)
