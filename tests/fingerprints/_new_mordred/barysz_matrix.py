@@ -33,6 +33,7 @@ _SMILES = {
 with open(Path(__file__).parent / "references" / "barysz_matrix.json") as f:
     _REFERENCE = json.load(f)
 
+
 @pytest.fixture(scope="module")
 def computed_values():
     computed = {}

@@ -31,9 +31,7 @@ _ATTR_NAMES = [
     "VR3",
 ]
 
-FEATURE_NAMES = [
-    f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _ATTR_NAMES
-]
+FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _ATTR_NAMES]
 
 
 def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
@@ -66,7 +64,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
 
 @np.errstate(divide="ignore", invalid="ignore")
 def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
-    carbon_value = prop_func(Atom(6)) # Carbon
+    carbon_value = prop_func(Atom(6))  # Carbon
 
     property_values = np.asarray(
         [prop_func(atom) for atom in mol.GetAtoms()], dtype=np.float32
@@ -83,7 +81,9 @@ def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
         i_arr = np.array([b.GetBeginAtomIdx() for b in bonds])
         j_arr = np.array([b.GetEndAtomIdx() for b in bonds])
         bo_arr = np.array([b.GetBondTypeAsDouble() for b in bonds])
-        weights = carbon_value**2 / (property_values[i_arr] * property_values[j_arr] * bo_arr)
+        weights = carbon_value**2 / (
+            property_values[i_arr] * property_values[j_arr] * bo_arr
+        )
         if not np.all(np.isfinite(weights)):
             return None
         matrix[i_arr, j_arr] = weights
@@ -117,5 +117,3 @@ def _barysz_matrix_attribute_values(
         attrs.vr2,
         attrs.vr3,
     ]
-
-    
