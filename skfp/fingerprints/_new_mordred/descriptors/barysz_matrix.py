@@ -45,7 +45,6 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
 
     Requires a connected molecule (single fragment).
     """
-
     if n_frags != 1:
         return np.full(
             len(_PROPS_NAMES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
