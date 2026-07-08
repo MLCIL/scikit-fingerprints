@@ -13,8 +13,6 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-_PROPS_NAMES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
-
 _ATTR_NAMES = [
     "SpAbs",
     "SpMax",
@@ -31,7 +29,7 @@ _ATTR_NAMES = [
     "VR3",
 ]
 
-FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _ATTR_NAMES]
+FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in PROPERTY_FUNCS for attr in _ATTR_NAMES]
 
 
 def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
@@ -46,9 +44,11 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     Requires a connected molecule (single fragment).
     """
     if n_frags != 1:
-        return np.full(
-            len(_PROPS_NAMES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
-        ), FEATURE_NAMES
+        values_nan = np.full(
+            len(PROPERTY_FUNCS) * len(_ATTR_NAMES), np.nan, dtype=np.float32
+        )
+
+        return values_nan, FEATURE_NAMES
 
     values: list = []
     for prop_func in PROPERTY_FUNCS.values():

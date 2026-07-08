@@ -131,7 +131,6 @@ def get_intrinsic_state(atom: Atom) -> float:
     return ((2.0 / PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
 
 
-
 def get_core_count(atom: Atom) -> float:
     """
     Atomic core-count term (alpha) used as a building block of ETA indices.
