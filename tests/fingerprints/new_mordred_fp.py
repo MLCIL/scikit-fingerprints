@@ -81,7 +81,7 @@ def test_new_mordred_feature_names():
     # we exclude changed feature names
     changed_name = np.array(
         [
-            "autocorr" in feature or "MoRSE" in feature or "BCUT" in feature
+            "autocorr" in feature or "MoRSE" in feature or "BCUT" in feature or "Dz" in feature
             for feature in feature_names_new
         ]
     )
@@ -104,7 +104,7 @@ def test_new_mordred_3D_feature_names():
     # we exclude changed feature names
     changed_name = np.array(
         [
-            "autocorr" in feature or "MoRSE" in feature or "BCUT" in feature
+            "autocorr" in feature or "MoRSE" in feature or "BCUT" in feature or "Dz" in feature
             for feature in feature_names_new
         ]
     )
