@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import GetMolFrags, Mol
+from rdkit.Chem import GetMolFrags, GetSymmSSSR, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -8,6 +8,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     atom_count,
     autocorrelation,
     carbon_types,
+    extended_topochemical_atom,
     morse,
     rdkit_descriptors,
     ring_count,
@@ -57,13 +58,20 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
-    mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
     # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
+
+    # kekulized molecule (aromatic -> single/double bonds)
+    mol_kekulized = preprocess_mol(mol, kekulize=True)
+    distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
+    mol_kekulized_hydrogens = preprocess_mol(
+        mol, kekulize=True, explicit_hydrogens=True
+    )
+    num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # 2D descriptors
     descriptors_2d = [
@@ -83,6 +91,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
         ring_count.calc(mol_regular),
+        extended_topochemical_atom.calc(
+            mol_kekulized,
+            distance_matrix_kekulized,
+            mol_kekulized_hydrogens,
+            num_rings,
+            n_frags,
+        ),
     ]
 
     for values, feature_names in descriptors_2d:
