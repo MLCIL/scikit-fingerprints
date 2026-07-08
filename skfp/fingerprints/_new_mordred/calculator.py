@@ -92,7 +92,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
         ring_count.calc(mol_regular),
-        vdw_volume_abc.calc(mol_hydrogens),
+        vdw_volume_abc.calc(mol_regular, mol_hydrogens),
         extended_topochemical_atom.calc(
             mol_kekulized,
             distance_matrix_kekulized,
