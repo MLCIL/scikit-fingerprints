@@ -5,7 +5,11 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.barysz_matrix import calc
+from skfp.fingerprints._new_mordred.descriptors.barysz_matrix import (
+    _ATTR_NAMES,
+    _PROPS_NAMES,
+    calc,
+)
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -29,24 +33,6 @@ _SMILES = {
 with open(Path(__file__).parent / "references" / "barysz_matrix.json") as f:
     _REFERENCE = json.load(f)
 
-_PROPERTIES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
-_ATTRIBUTES = [
-    "SpAbs",
-    "SpMax",
-    "SpDiam",
-    "SpAD",
-    "SpMAD",
-    "LogEE",
-    "SM1",
-    "VE1",
-    "VE2",
-    "VE3",
-    "VR1",
-    "VR2",
-    "VR3",
-]
-
-
 @pytest.fixture(scope="module")
 def computed_values():
     computed = {}
@@ -58,9 +44,10 @@ def computed_values():
 
 
 @pytest.mark.parametrize("molecule", list(_SMILES))
-@pytest.mark.parametrize("prop", _PROPERTIES)
-@pytest.mark.parametrize("attr", _ATTRIBUTES)
-def test_barysz_matrix_reference_values(attr, prop, molecule, computed_values):
+@pytest.mark.parametrize(
+    "prop,attr", [(p, a) for p in _PROPS_NAMES for a in _ATTR_NAMES]
+)
+def test_barysz_matrix_reference_values(prop, attr, molecule, computed_values):
     feature_name = f"{attr}_Dz{prop}"
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]

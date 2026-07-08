@@ -234,14 +234,14 @@ def get_eta_beta_non_sigma(atom: Atom) -> float:
 
 
 PROPERTY_FUNCS: dict[str, Callable[[Atom], float]] = {
-    "Z": get_atomic_number,
-    "m": get_mass,
-    "v": get_van_der_waals_volume,
-    "se": get_sanderson_electronegativity,
-    "pe": get_pauling_electronegativity,
-    "are": get_allred_rochow_electronegativity,
-    "p": get_polarizability,
-    "i": get_ionization_potential,
+    "atomic_number": get_atomic_number,
+    "mass": get_mass,
+    "van_der_Waals_volume": get_van_der_waals_volume,
+    "Sanderson_electronegativity": get_sanderson_electronegativity,
+    "Pauling_electronegativity": get_pauling_electronegativity,
+    "Allred_Rochow_electronegativity": get_allred_rochow_electronegativity,
+    "polarizability": get_polarizability,
+    "ionization_potential": get_ionization_potential,
 }
 
 

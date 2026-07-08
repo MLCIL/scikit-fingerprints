@@ -15,7 +15,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 _PROPS_NAMES = ["Z", "m", "v", "se", "pe", "are", "p", "i"]
 
-_BARYSZ_ATTRIBUTES = [
+_ATTR_NAMES = [
     "SpAbs",
     "SpMax",
     "SpDiam",
@@ -32,7 +32,7 @@ _BARYSZ_ATTRIBUTES = [
 ]
 
 FEATURE_NAMES = [
-    f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _BARYSZ_ATTRIBUTES
+    f"{attr}_Dz{prop}" for prop in _PROPS_NAMES for attr in _ATTR_NAMES
 ]
 
 
@@ -50,22 +50,22 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
 
     if n_frags != 1:
         return np.full(
-            len(_PROPS_NAMES) * len(_BARYSZ_ATTRIBUTES), np.nan, dtype=np.float32
+            len(_PROPS_NAMES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
         ), FEATURE_NAMES
 
     values: list = []
-    for prop in _PROPS_NAMES:
-        matrix = _barysz_matrix(mol_regular, prop)
+    for prop_func in PROPERTY_FUNCS.values():
+        matrix = _barysz_matrix(mol_regular, prop_func)
         if matrix is None:
-            values.extend([np.nan] * len(_BARYSZ_ATTRIBUTES))
+            values.extend([np.nan] * len(_ATTR_NAMES))
         else:
             values.extend(_barysz_matrix_attribute_values(mol_regular, n_frags, matrix))
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
 
-def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
-    prop_func = PROPERTY_FUNCS[prop]
+@np.errstate(divide="ignore", invalid="ignore")
+def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
     carbon_value = prop_func(Atom(6)) # Carbon
 
     property_values = np.asarray(
@@ -78,22 +78,19 @@ def _barysz_matrix(mol: Mol, prop: str) -> np.ndarray | None:
     matrix = np.full((n_atoms, n_atoms), np.inf, dtype=np.float32)
     np.fill_diagonal(matrix, 0.0)
 
-    for bond in mol.GetBonds():
-        i = bond.GetBeginAtomIdx()
-        j = bond.GetEndAtomIdx()
-        bond_order = bond.GetBondTypeAsDouble()
-        denominator = property_values[i] * property_values[j] * bond_order
-        with np.errstate(divide="ignore", invalid="ignore"):
-            weight = float(np.divide(carbon_value * carbon_value, denominator))
-        if not np.isfinite(weight):
+    bonds = mol.GetBonds()
+    if bonds:
+        i_arr = np.array([b.GetBeginAtomIdx() for b in bonds])
+        j_arr = np.array([b.GetEndAtomIdx() for b in bonds])
+        bo_arr = np.array([b.GetBondTypeAsDouble() for b in bonds])
+        weights = carbon_value**2 / (property_values[i_arr] * property_values[j_arr] * bo_arr)
+        if not np.all(np.isfinite(weights)):
             return None
-
-        matrix[i, j] = weight
-        matrix[j, i] = weight
+        matrix[i_arr, j_arr] = weights
+        matrix[j_arr, i_arr] = weights
 
     matrix = floyd_warshall(matrix, directed=False)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        diagonal = 1.0 - carbon_value / property_values
+    diagonal = 1.0 - carbon_value / property_values
     if np.any(~np.isfinite(diagonal)):
         return None
 
