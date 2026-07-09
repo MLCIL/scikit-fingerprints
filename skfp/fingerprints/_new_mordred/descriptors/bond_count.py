@@ -1,6 +1,6 @@
 import numpy as np
-from rdkit.Chem.rdchem import Bond, BondType
 from rdkit.Chem import Mol
+from rdkit.Chem.rdchem import Bond, BondType
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
