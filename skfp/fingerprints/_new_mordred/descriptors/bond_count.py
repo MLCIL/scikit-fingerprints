@@ -26,12 +26,7 @@ def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, 
     # nBonds (any) and nBondsS (single) use explicit-H molecule, matching mordred's
     # explicit_hydrogens=True for BondType.any and BondType.single
     n_bonds = mol_hydrogens.GetNumBonds()
-    n_bonds_o = sum(
-        1
-        for b in mol_hydrogens.GetBonds()
-        if b.GetBeginAtom().GetAtomicNum() != 1 and b.GetEndAtom().GetAtomicNum() != 1
-    )
-
+    n_bonds_o = 0
     n_bonds_s = 0
     n_bonds_d = 0
     n_bonds_t = 0
@@ -41,7 +36,9 @@ def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, 
     for bond in mol_hydrogens.GetBonds():
         bond_type = bond.GetBondType()
         is_aromatic = _is_aromatic_bond(bond)
+        is_heavy = bond.GetBeginAtom().GetAtomicNum() != 1 and bond.GetEndAtom().GetAtomicNum() != 1
 
+        n_bonds_o += is_heavy
         n_bonds_s += bond_type == BondType.SINGLE
         n_bonds_d += bond_type == BondType.DOUBLE
         n_bonds_t += bond_type == BondType.TRIPLE
