@@ -65,16 +65,18 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # hydrogen-explicit molecule
-    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    # hydrogen-explicit molecule for 2D descriptors, derived from mol_regular rather
+    # than directly from mol - RemoveHs resets any bond type flags that may have been
+    # altered by conformer generation (EmbedMolecule), ensuring GetBondType() is
+    # consistent regardless of whether the input mol already has explicit hydrogens
+    # check by failed CI CD :>
+    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
-    mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
-    )
+    mol_kekulized_hydrogens = preprocess_mol(mol_kekulized, explicit_hydrogens=True)
     num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # 2D descriptors
@@ -113,12 +115,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        conf_id = mol_hydrogens.GetIntProp("conf_id")
-        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
+        mol_hydrogens_conformer = preprocess_mol(mol, explicit_hydrogens=True)
+        conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
         descriptors_3d: list = [
-            morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
+            morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
         ]
 
         for values, feature_names in descriptors_3d:
