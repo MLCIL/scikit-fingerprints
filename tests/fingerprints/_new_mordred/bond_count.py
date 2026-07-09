@@ -1,9 +1,8 @@
 import numpy as np
 import pytest
-from rdkit.Chem import MolFromSmiles
+from rdkit.Chem import AddHs, Kekulize, MolFromSmiles, RWMol
 
 from skfp.fingerprints._new_mordred.descriptors.bond_count import FEATURE_NAMES, calc
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,10 +15,10 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 def _calc(smiles: str) -> np.ndarray:
-    mol = MolFromSmiles(smiles)
-    mol_h = preprocess_mol(mol, explicit_hydrogens=True)
-    mol_kek_h = preprocess_mol(mol, kekulize=True, explicit_hydrogens=True)
-    values, _ = calc(mol_h, mol_kek_h)
+    mol = AddHs(MolFromSmiles(smiles))
+    mol_kek = RWMol(AddHs(MolFromSmiles(smiles)))
+    Kekulize(mol_kek)
+    values, _ = calc(mol, mol_kek)
     return values
 
 
