@@ -22,7 +22,9 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(
+    mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol
+) -> tuple[np.ndarray, list[str]]:
     """
     Bond count descriptors.
 
@@ -46,7 +48,10 @@ def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, 
     for bond in mol_hydrogens.GetBonds():
         bond_type = bond.GetBondType()
         is_aromatic = _is_aromatic_bond(bond)
-        is_heavy = bond.GetBeginAtom().GetAtomicNum() != 1 and bond.GetEndAtom().GetAtomicNum() != 1
+        is_heavy = (
+            bond.GetBeginAtom().GetAtomicNum() != 1
+            and bond.GetEndAtom().GetAtomicNum() != 1
+        )
 
         n_bonds_o += is_heavy
         n_bonds_s += bond_type == BondType.SINGLE
