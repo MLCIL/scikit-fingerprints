@@ -23,8 +23,18 @@ FEATURE_NAMES = [
 
 
 def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
-    # nBonds (any) and nBondsS (single) use explicit-H molecule, matching mordred's
-    # explicit_hydrogens=True for BondType.any and BondType.single
+    """
+    Bond count descriptors.
+
+    Counts bonds by type: all bonds, heavy-atom-only bonds, single, double, triple,
+    aromatic, multiple, and kekulized single/double bonds.
+
+    Following the original Mordred implementation, nBonds (any) and nBondsS (single)
+    are computed on the hydrogen-explicit molecule, while nBondsO (heavy) counts only
+    bonds between non-hydrogen atoms. nBondsKS and nBondsKD use the kekulized
+    hydrogen-explicit molecule, where aromatic bonds are expressed as alternating
+    single and double bonds.
+    """
     n_bonds = mol_hydrogens.GetNumBonds()
     n_bonds_o = 0
     n_bonds_s = 0
