@@ -22,21 +22,23 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_regular: Mol, mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
-    """
-    Compute Mordred bond count descriptors without adding explicit hydrogens.
-    """
-    bonds_regular = mol_regular.GetBonds()
-    bonds_kekulized = mol_kekulized.GetBonds()
+def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+    # nBonds (any) and nBondsS (single) use explicit-H molecule, matching mordred's
+    # explicit_hydrogens=True for BondType.any and BondType.single
+    n_bonds = mol_hydrogens.GetNumBonds()
+    n_bonds_o = sum(
+        1
+        for b in mol_hydrogens.GetBonds()
+        if b.GetBeginAtom().GetAtomicNum() != 1 and b.GetEndAtom().GetAtomicNum() != 1
+    )
 
-    n_bonds = mol_regular.GetNumBonds()
     n_bonds_s = 0
     n_bonds_d = 0
     n_bonds_t = 0
     n_bonds_a = 0
     n_bonds_m = 0
 
-    for bond in bonds_regular:
+    for bond in mol_hydrogens.GetBonds():
         bond_type = bond.GetBondType()
         is_aromatic = _is_aromatic_bond(bond)
 
@@ -48,7 +50,7 @@ def calc(mol_regular: Mol, mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
 
     n_bonds_ks = 0
     n_bonds_kd = 0
-    for bond in bonds_kekulized:
+    for bond in mol_kekulized_hydrogens.GetBonds():
         bond_type = bond.GetBondType()
         n_bonds_ks += bond_type == BondType.SINGLE
         n_bonds_kd += bond_type == BondType.DOUBLE
@@ -56,7 +58,7 @@ def calc(mol_regular: Mol, mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
     return np.asarray(
         [
             n_bonds,
-            n_bonds,
+            n_bonds_o,
             n_bonds_s,
             n_bonds_d,
             n_bonds_t,
