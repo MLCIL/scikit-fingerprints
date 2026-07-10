@@ -7,6 +7,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     adjacency_matrix,
     atom_count,
     autocorrelation,
+    barysz_matrix,
     carbon_types,
     extended_topochemical_atom,
     morse,
@@ -98,6 +99,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             num_rings,
             n_frags,
         ),
+        barysz_matrix.calc(mol_regular, n_frags),
     ]
 
     for values, feature_names in descriptors_2d:

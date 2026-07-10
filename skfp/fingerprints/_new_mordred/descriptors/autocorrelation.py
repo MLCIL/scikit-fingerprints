@@ -3,17 +3,10 @@ from rdkit.Chem import Mol
 
 from skfp.descriptors import atomic_partial_charges
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    get_allred_rochow_electronegativity,
-    get_atomic_number,
+    PROPERTY_FUNCS,
     get_intrinsic_state,
-    get_ionization_potential,
-    get_mass,
-    get_pauling_electronegativity,
-    get_polarizability,
-    get_sanderson_electronegativity,
     get_sigma_electrons,
     get_valence_electrons,
-    get_van_der_waals_volume,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
@@ -25,51 +18,31 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 # atomic properties used to weight distance matrices
-_PROPS_NAMES = [
-    "atomic_number",
-    "mass",
-    "van_der_Waals_volume",
-    "Sanderson_electronegativity",
-    "Pauling_electronegativity",
-    "Allred_Rochow_electronegativity",
-    "polarizability",
-    "ionization_potential",
-    "valence_electrons",
-    "sigma_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
-    "intrinsic_state",  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
-]
-_PROPS_FUNCS = [
-    get_atomic_number,
-    get_mass,
-    get_van_der_waals_volume,
-    get_sanderson_electronegativity,
-    get_pauling_electronegativity,
-    get_allred_rochow_electronegativity,
-    get_polarizability,
-    get_ionization_potential,
-    get_valence_electrons,
-    get_sigma_electrons,
-    get_intrinsic_state,
-]
+_PROPS = {
+    **PROPERTY_FUNCS,
+    "valence_electrons": get_valence_electrons,
+    "sigma_electrons": get_sigma_electrons,  # http://dx.doi.org/10.1002%2Fjps.2600721016
+    "intrinsic_state": get_intrinsic_state,  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
+}
 
 
 FEATURE_NAMES = [
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["autocorr", "autocorr_avg"]
-        for prop in _PROPS_NAMES
+        for prop in _PROPS
         for dist in range(9)
     ],
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["autocorr_centered", "autocorr_avg_centered"]
-        for prop in [*_PROPS_NAMES, "gasteiger_charge"]
+        for prop in [*_PROPS, "gasteiger_charge"]
         for dist in range(9)
     ],
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["Moreau_autocorr", "Geary_autocorr"]
-        for prop in [*_PROPS_NAMES, "gasteiger_charge"]
+        for prop in [*_PROPS, "gasteiger_charge"]
         for dist in range(1, 9)
     ],
 ]
@@ -90,7 +63,7 @@ def calc(
     """
     atoms = list(mol_hydrogens.GetAtoms())
     atomic_props = {}
-    for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
+    for name, func in _PROPS.items():
         atomic_props[name] = np.array([func(atom) for atom in atoms], dtype=np.float64)
 
     atomic_props["gasteiger_charge"] = atomic_partial_charges(
@@ -129,7 +102,7 @@ def _calc_ats_aats(
     ats_values = []
     aats_values = []
 
-    for prop_name in _PROPS_NAMES:
+    for prop_name in _PROPS:
         props = atomic_props[prop_name]
 
         # distance 0 has separate formula
@@ -159,7 +132,7 @@ def _calc_atsc_aatsc_mats(
     aatsc_values = []
     mats_values = []
 
-    for prop_name in [*_PROPS_NAMES, "gasteiger_charge"]:
+    for prop_name in [*_PROPS, "gasteiger_charge"]:
         props = atomic_props[prop_name]
         props_centered = props - np.mean(props)
         sum_squared_props_vec_c = np.sum(props_centered**2)
@@ -197,7 +170,7 @@ def _calc_gats(
     """
     gats_values = []
 
-    for prop_name in [*_PROPS_NAMES, "gasteiger_charge"]:
+    for prop_name in [*_PROPS, "gasteiger_charge"]:
         props = atomic_props[prop_name]
         props_var = np.var(props, ddof=1)
 

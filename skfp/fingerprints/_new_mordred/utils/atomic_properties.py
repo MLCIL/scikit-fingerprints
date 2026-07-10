@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdchem import Atom
@@ -127,3 +129,15 @@ def get_intrinsic_state(atom: Atom) -> float:
         return np.nan
     dv = get_valence_electrons(atom)
     return ((2.0 / PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
+
+
+PROPERTY_FUNCS: dict[str, Callable[[Atom], float]] = {
+    "atomic_number": get_atomic_number,
+    "mass": get_mass,
+    "van_der_Waals_volume": get_van_der_waals_volume,
+    "Sanderson_electronegativity": get_sanderson_electronegativity,
+    "Pauling_electronegativity": get_pauling_electronegativity,
+    "Allred_Rochow_electronegativity": get_allred_rochow_electronegativity,
+    "polarizability": get_polarizability,
+    "ionization_potential": get_ionization_potential,
+}
