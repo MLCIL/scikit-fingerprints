@@ -1,0 +1,15 @@
+{
+  "Hexane": {"nAromAtom": 0, "nAromBond": 0},
+  "Benzene": {"nAromAtom": 6, "nAromBond": 6},
+  "Caffeine": {"nAromAtom": 9, "nAromBond": 10},
+  "Cyanidin": {"nAromAtom": 16, "nAromBond": 17},
+  "Lycopene": {"nAromAtom": 0, "nAromBond": 0},
+  "Epicatechin": {"nAromAtom": 12, "nAromBond": 12},
+  "Limonene": {"nAromAtom": 0, "nAromBond": 0},
+  "Allicin": {"nAromAtom": 0, "nAromBond": 0},
+  "Glutathione": {"nAromAtom": 0, "nAromBond": 0},
+  "Digoxin": {"nAromAtom": 0, "nAromBond": 0},
+  "Capsaicin": {"nAromAtom": 6, "nAromBond": 6},
+  "EllagicAcid": {"nAromAtom": 16, "nAromBond": 19},
+  "Astaxanthin": {"nAromAtom": 0, "nAromBond": 0}
+}
