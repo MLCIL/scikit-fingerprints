@@ -14,6 +14,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
+    vertex_adjacency_info,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -91,6 +92,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         atom_count.calc(mol_regular),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
+        vertex_adjacency_info.calc(mol_regular),
         ring_count.calc(mol_regular),
         extended_topochemical_atom.calc(
             mol_kekulized,
