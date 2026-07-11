@@ -7,6 +7,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     adjacency_matrix,
     atom_count,
     autocorrelation,
+    barysz_matrix,
     carbon_types,
     extended_topochemical_atom,
     morse,
@@ -14,6 +15,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     ring_count,
     rotatable_bond,
     vdw_volume_abc,
+    vertex_adjacency_info,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -91,6 +93,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         atom_count.calc(mol_regular),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
+        vertex_adjacency_info.calc(mol_regular),
         ring_count.calc(mol_regular),
         vdw_volume_abc.calc(mol_regular, mol_hydrogens),
         extended_topochemical_atom.calc(
@@ -100,6 +103,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             num_rings,
             n_frags,
         ),
+        barysz_matrix.calc(mol_regular, n_frags),
     ]
 
     for values, feature_names in descriptors_2d:
