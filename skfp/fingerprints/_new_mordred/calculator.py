@@ -5,6 +5,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     adjacency_matrix,
+    aromatic,
     atom_count,
     autocorrelation,
     barysz_matrix,
@@ -102,6 +103,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             n_frags,
         ),
         barysz_matrix.calc(mol_regular, n_frags),
+        aromatic.calc(mol_regular),
     ]
 
     for values, feature_names in descriptors_2d:
