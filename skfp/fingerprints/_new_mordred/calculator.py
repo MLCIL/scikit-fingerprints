@@ -11,6 +11,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     barysz_matrix,
     bond_count,
     carbon_types,
+    cpsa,
     extended_topochemical_atom,
     morse,
     rdkit_descriptors,
@@ -24,6 +25,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     wiener_index,
     zagreb_index,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -68,8 +70,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
+    # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
+    gasteiger_charges_hydrogens = gasteiger_charges(mol_hydrogens)
+
+    # cpsa_3d reuses cpsa_2d values
+    cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
@@ -112,6 +119,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         barysz_matrix.calc(mol_regular, n_frags),
         aromatic.calc(mol_regular),
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
+        cpsa_2d,
     ]
 
     for values, feature_names in descriptors_2d:
