@@ -34,12 +34,7 @@ def calc(graph_radius: float, graph_diameter: float) -> tuple[np.ndarray, list[s
     )
 
     values = np.asarray(
-        [
-            int(graph_diameter),
-            int(graph_radius),
-            topo_shape_index,
-            petitjean_index,
-        ],
+        [graph_diameter, graph_radius, topo_shape_index, petitjean_index],
         dtype=np.float32,
     )
     return values, FEATURE_NAMES
