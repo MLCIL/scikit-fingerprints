@@ -7,7 +7,7 @@ from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import require_mols_with_conf_ids
+from skfp.utils import get_conf_id, require_mols_with_conformations
 
 
 class WHIMFingerprint(BaseFingerprintTransformer):
@@ -68,8 +68,10 @@ class WHIMFingerprint(BaseFingerprintTransformer):
         Number of output features, size of fingerprints.
 
     requires_conformers : bool = True
-        Value is always True, as this fingerprint is 3D based. It always requires
-        molecules with conformers as inputs, with ``conf_id`` integer property set.
+        Value is always True, as this fingerprint is 3D-based. It always requires
+        molecules with conformers as input. If the ``conf_id`` property is set, it
+        will be used to determine the conformation. You can use
+        :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     References
     ----------
@@ -238,8 +240,8 @@ class WHIMFingerprint(BaseFingerprintTransformer):
     def _calculate_fingerprint(self, X: Sequence[Mol]) -> np.ndarray | csr_array:
         from rdkit.Chem.rdMolDescriptors import CalcWHIM
 
-        X = require_mols_with_conf_ids(X)
-        X = [CalcWHIM(mol, confId=mol.GetIntProp("conf_id")) for mol in X]
+        X = require_mols_with_conformations(X)
+        X = [CalcWHIM(mol, confId=get_conf_id(mol)) for mol in X]
         if self.clip_val is not None:
             X = np.clip(X, -self.clip_val, self.clip_val)
 

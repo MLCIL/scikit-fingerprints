@@ -57,19 +57,34 @@ def require_mols(X: Sequence[Any]) -> None:
             )
 
 
-def require_mols_with_conf_ids(X: Sequence[Any]) -> Sequence[Mol]:
+def require_mols_with_conformations(X: Sequence[Any]) -> Sequence[Mol]:
     """
-    Check that all inputs are RDKit ``Mol`` objects with ``"conf_id"`` property
-    set, i.e. with conformers computed and properly identified. Raises TypeError
-    otherwise.
+    Check that all inputs are RDKit ``Mol`` objects with at least one conformation,
+    i.e. with 3D coordinates computed. Raises TypeError otherwise.
     """
-    if not all(isinstance(x, (Mol, PropertyMol)) and x.HasProp("conf_id") for x in X):
+    if not all(
+        isinstance(x, (Mol, PropertyMol)) and x.GetNumConformers() >= 1 for x in X
+    ):
         raise TypeError(
             "Passed data must be molecules (RDKit Mol objects) "
-            "and each must have conf_id property set. "
+            "and each must have at least one conformation. "
             "You can use ConformerGenerator to add them."
         )
     return X
+
+
+def get_conf_id(mol: Mol) -> int:
+    """
+    Get the conformer ID to use for 3D-based computations. Returns the value of the
+    ``"conf_id"`` property if set, e.g. by ``ConformerGenerator``. Otherwise, returns
+    the ID of the first available conformer, which RDKit sets automatically.
+
+    Assumes that at least one conformation is available. Ensure this by calling
+    require_mols_with_conformations().
+    """
+    if mol.HasProp("conf_id"):
+        return mol.GetIntProp("conf_id")
+    return mol.GetConformer().GetId()
 
 
 def require_strings(X: Sequence[Any]) -> None:

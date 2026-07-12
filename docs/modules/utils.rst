@@ -18,8 +18,9 @@ Validators:
 
     ensure_mols
     ensure_smiles
+    get_conf_id
     require_mols
-    require_mols_with_conf_ids
+    require_mols_with_conformations
     require_strings
 
 Utilities:
