@@ -16,6 +16,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
+    topological_index,
     vdw_volume_abc,
     vertex_adjacency_info,
     walk_count,
@@ -77,6 +78,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     )
     num_rings = len(GetSymmSSSR(mol_kekulized))
 
+    # graph radius and diameter from the hydrogen-suppressed distance matrix
+    graph_radius = distance_matrix_regular.radius
+    graph_diameter = distance_matrix_regular.diameter
+
     # 2D descriptors
     descriptors_2d = [
         abc_index.calc(mol_regular, distance_matrix_regular),
@@ -98,6 +103,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         vertex_adjacency_info.calc(mol_regular),
         ring_count.calc(mol_regular),
         vdw_volume_abc.calc(mol_regular, mol_hydrogens),
+        topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom.calc(
             mol_kekulized,
             distance_matrix_kekulized,

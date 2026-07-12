@@ -28,7 +28,7 @@ class DistanceMatrix:
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricities().min()
+        return self.eccentricities.min()
 
     @cached_property
     def diameter(self) -> np.floating:
@@ -76,7 +76,7 @@ class DistanceMatrix3D:
 
     @cached_property
     def radius(self) -> np.floating:
-        return self.eccentricities().min()
+        return self.eccentricities.min()
 
     @cached_property
     def diameter(self) -> np.floating:
