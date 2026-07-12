@@ -27,9 +27,15 @@ def preprocess_mol(
     mol: Mol,
     explicit_hydrogens: bool = False,
     kekulize: bool = False,
+    sanitize: bool = True,
 ) -> Mol:
     """
     Preprocess an RDKit molecule before descriptor calculation.
+
+    By default (``sanitize=True``), starts with ``RemoveHs``, which re-runs
+    ``SanitizeMol`` and resets aromaticity perception to a canonical state.
+    This ensures consistent bond types regardless of prior operations such as
+    conformer embedding, which can leave the molecule in a kekulized state.
 
     Parameters
     ----------
@@ -37,24 +43,30 @@ def preprocess_mol(
         Input molecule.
 
     explicit_hydrogens : bool, default=False
-        If ``True``, add explicit hydrogens via ``AddHs``. If ``False``,
-        remove hydrogens via ``RemoveHs``.
+        If ``True``, add explicit hydrogens via ``AddHs`` as the final step.
 
     kekulize : bool, default=False
-        If ``True``, kekulize the molecule, converting aromatic bonds to
-        alternating single and double bonds.
+        If ``True``, kekulize the molecule after sanitization, converting
+        aromatic bonds to alternating single and double bonds.
+
+    sanitize : bool, default=True
+        If ``True`` (default), start by removing hydrogens via ``RemoveHs``,
+        which re-sanitizes the molecule and resets aromaticity perception.
+        Set to ``False`` to skip this step and preserve the current molecule
+        state, e.g. when 3D conformer coordinates must not be discarded.
 
     Returns
     -------
     mol : rdkit.Chem.Mol
-        The preprocessed molecule, with all conformers removed.
+        The preprocessed molecule.
     """
-    if explicit_hydrogens:
-        mol = Chem.AddHs(mol)
-    else:
+    if sanitize:
         mol = Chem.RemoveHs(mol, updateExplicitCount=True)
 
     if kekulize:
         Chem.Kekulize(mol)
+
+    if explicit_hydrogens:
+        mol = Chem.AddHs(mol)
 
     return mol

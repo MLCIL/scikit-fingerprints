@@ -5,8 +5,11 @@ from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
     acid_base,
     adjacency_matrix,
+    aromatic,
     atom_count,
     autocorrelation,
+    barysz_matrix,
+    bond_count,
     carbon_types,
     extended_topochemical_atom,
     morse,
@@ -14,6 +17,9 @@ from skfp.fingerprints._new_mordred.descriptors import (
     ring_count,
     rotatable_bond,
     topological_charge,
+    topological_index,
+    vdw_volume_abc,
+    vertex_adjacency_info,
     walk_count,
     wiener_index,
     zagreb_index,
@@ -62,7 +68,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
@@ -73,6 +78,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         mol, kekulize=True, explicit_hydrogens=True
     )
     num_rings = len(GetSymmSSSR(mol_kekulized))
+
+    # graph radius and diameter from the hydrogen-suppressed distance matrix
+    graph_radius = distance_matrix_regular.radius
+    graph_diameter = distance_matrix_regular.diameter
 
     # 2D descriptors
     descriptors_2d = [
@@ -86,9 +95,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         estate.calc(mol_regular),
         rdkit_descriptors.calc_rdkit_2d(mol_regular, distance_matrix_regular),
         atom_count.calc(mol_regular),
+        bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
+        vertex_adjacency_info.calc(mol_regular),
         ring_count.calc(mol_regular),
+        vdw_volume_abc.calc(mol_regular, mol_hydrogens),
+        topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom.calc(
             mol_kekulized,
             distance_matrix_kekulized,
@@ -96,6 +109,8 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             num_rings,
             n_frags,
         ),
+        barysz_matrix.calc(mol_regular, n_frags),
+        aromatic.calc(mol_regular),
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
     ]
 
@@ -104,12 +119,15 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        conf_id = mol_hydrogens.GetIntProp("conf_id")
-        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
+        mol_hydrogens_conformer = preprocess_mol(
+            mol, explicit_hydrogens=True, sanitize=False
+        )
+        conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
         descriptors_3d: list = [
-            morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
+            morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
         ]
 
         for values, feature_names in descriptors_3d:
