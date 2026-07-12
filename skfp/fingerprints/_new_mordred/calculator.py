@@ -9,6 +9,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     atom_count,
     autocorrelation,
     barysz_matrix,
+    bond_count,
     carbon_types,
     extended_topochemical_atom,
     morse,
@@ -65,7 +66,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
@@ -92,6 +92,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             distance_matrix_regular,
         ),
         atom_count.calc(mol_regular),
+        bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types.calc(mol_kekulized),
         rotatable_bond.calc(mol_regular),
         vertex_adjacency_info.calc(mol_regular),
@@ -113,12 +114,15 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        conf_id = mol_hydrogens.GetIntProp("conf_id")
-        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
+        mol_hydrogens_conformer = preprocess_mol(
+            mol, explicit_hydrogens=True, sanitize=False
+        )
+        conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
         descriptors_3d: list = [
-            morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
+            morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
         ]
 
         for values, feature_names in descriptors_3d:
