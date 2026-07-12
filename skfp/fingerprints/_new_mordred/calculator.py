@@ -16,6 +16,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
+    topological_charge,
     topological_index,
     vdw_volume_abc,
     vertex_adjacency_info,
@@ -92,10 +93,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         acid_base.calc(mol_regular),
         autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate.calc(mol_regular),
-        rdkit_descriptors.calc_rdkit_2d(
-            mol_regular,
-            distance_matrix_regular,
-        ),
+        rdkit_descriptors.calc_rdkit_2d(mol_regular, distance_matrix_regular),
         atom_count.calc(mol_regular),
         bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types.calc(mol_kekulized),
@@ -113,6 +111,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         barysz_matrix.calc(mol_regular, n_frags),
         aromatic.calc(mol_regular),
+        topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
     ]
 
     for values, feature_names in descriptors_2d:
