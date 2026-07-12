@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, GetSymmSSSR, Mol
+from rdkit.Chem import GetMolFrags, GetSymmSSSR, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -65,16 +65,15 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # AddHs on mol_regular (not mol directly) to ensure consistent bond type flags —
-    # EmbedMolecule during conformer generation can alter aromaticity perception,
-    # and RemoveHs in preprocess_mol resets that before we re-add hydrogens
-    mol_hydrogens = AddHs(mol_regular)
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
-    mol_kekulized_hydrogens = AddHs(mol_kekulized)
+    mol_kekulized_hydrogens = preprocess_mol(
+        mol, kekulize=True, explicit_hydrogens=True
+    )
     num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # 2D descriptors
@@ -113,7 +112,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        mol_hydrogens_conformer = preprocess_mol(mol, explicit_hydrogens=True)
+        mol_hydrogens_conformer = preprocess_mol(
+            mol, explicit_hydrogens=True, sanitize=False
+        )
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
