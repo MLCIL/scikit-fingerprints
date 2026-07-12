@@ -2,6 +2,7 @@ import os.path
 import warnings
 from collections.abc import Sequence
 from numbers import Integral
+from pathlib import Path
 
 from joblib import effective_n_jobs
 from rdkit.Chem import Mol, SDMolSupplier, SDWriter
@@ -77,14 +78,14 @@ class MolFromSDFTransformer(BasePreprocessor):
         self.sanitize = sanitize
         self.remove_hydrogens = remove_hydrogens
 
-    def transform(self, X: str, copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
+    def transform(self, X: str | Path, copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
         """
         Create RDKit ``Mol`` objects from SDF file.
 
         Parameters
         ----------
-        X : str
-            Path to SDF file.
+        X : str or Path
+            Path to SDF file (``str`` or ``pathlib.Path``), or raw SDF text.
 
         copy : bool, default=False
             Unused, kept for scikit-learn compatibility.
@@ -95,6 +96,9 @@ class MolFromSDFTransformer(BasePreprocessor):
             List with RDKit ``Mol`` objects.
         """
         self._validate_params()
+
+        # accept pathlib.Path as well as str; raw SDF text (str) passes through unchanged
+        X = os.fspath(X)
 
         if X.endswith(".sdf"):
             if not os.path.exists(X):

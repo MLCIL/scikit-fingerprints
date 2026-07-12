@@ -104,13 +104,16 @@ To release scikit-fingerprints open a GitHub release with tag named 'vA.B.C'
 where each letter stands for version number. Fill the release notes and submit the release.
 Then, the version will be automatically sourced from tag by GH action and released to PyPI.
 
-### Code of Conduct
-
-By participating in this project, you agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md). We take violations seriously
-and may take action if necessary to maintain a welcoming and respectful community.
-
 ## Licensing
 
 By contributing to this project, you agree that your contributions will be licensed under the MIT License.
 
-Thank you for your contribution! Your efforts help make scikit-fingerprints library better for everyone.
+Thank you for your contribution! Your efforts help make the scikit-fingerprints library better for everyone.
+
+## LLMs and AI agents policy
+
+Primarily or purely LLM-generated contributions are **strictly forbidden**. AI agents and in particular 
+autonomous PRs are not allowed. PRs submitted this way will result in a ban and report to GitHub as spam.
+
+Usage of LLMs is allowed only for polishing code, detecting bugs, and other supportive tasks. All PRs
+must be human-made and human-supervised. PR author takes full responsibility for the code.
