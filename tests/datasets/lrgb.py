@@ -1,4 +1,5 @@
 import pytest
+from huggingface_hub.errors import LocalEntryNotFoundError
 from numpy.testing import assert_equal
 
 from skfp.datasets.lrgb import (
@@ -16,9 +17,9 @@ def get_dataset_names() -> list[str]:
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_lrgb_benchmark():
     dataset_names = get_dataset_names()
@@ -32,9 +33,9 @@ def test_load_lrgb_benchmark():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("dataset_name", get_dataset_names())
 def test_load_lrgb_splits(dataset_name):
@@ -56,9 +57,9 @@ def test_load_lrgb_splits(dataset_name):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("dataset_name", get_dataset_names())
 def test_load_lrgb_splits_as_dict(dataset_name):
@@ -72,9 +73,9 @@ def test_load_lrgb_splits_as_dict(dataset_name):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, valid_sequences_only, dataset_length",
@@ -92,9 +93,9 @@ def test_load_lrgb_splits_lengths(dataset_name, valid_sequences_only, dataset_le
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, load_func, expected_length, num_tasks, task_type",
