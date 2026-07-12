@@ -1,6 +1,6 @@
 import numpy as np
 from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Bond, BondType
+from rdkit.Chem.rdchem import BondType
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -47,7 +47,7 @@ def calc(
 
     for bond in mol_hydrogens.GetBonds():
         bond_type = bond.GetBondType()
-        is_aromatic = _is_aromatic_bond(bond)
+        is_aromatic = bond.GetIsAromatic() or bond.GetBondType() == BondType.AROMATIC
         is_heavy = (
             bond.GetBeginAtom().GetAtomicNum() != 1
             and bond.GetEndAtom().GetAtomicNum() != 1
@@ -81,7 +81,3 @@ def calc(
         ],
         dtype=np.float32,
     ), FEATURE_NAMES
-
-
-def _is_aromatic_bond(bond: Bond) -> bool:
-    return bond.GetIsAromatic() or bond.GetBondType() == BondType.AROMATIC
