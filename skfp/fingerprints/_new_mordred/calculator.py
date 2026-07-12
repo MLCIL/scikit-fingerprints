@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import GetMolFrags, GetSymmSSSR, Mol
+from rdkit.Chem import AddHs, GetMolFrags, GetSymmSSSR, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -65,15 +65,16 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    # AddHs on mol_regular (not mol directly) to ensure consistent bond type flags —
+    # EmbedMolecule during conformer generation can alter aromaticity perception,
+    # and RemoveHs in preprocess_mol resets that before we re-add hydrogens
+    mol_hydrogens = AddHs(mol_regular)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
-    mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
-    )
+    mol_kekulized_hydrogens = AddHs(mol_kekulized)
     num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # 2D descriptors
@@ -112,12 +113,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        conf_id = mol_hydrogens.GetIntProp("conf_id")
-        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
+        mol_hydrogens_conformer = preprocess_mol(mol, explicit_hydrogens=True)
+        conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
         descriptors_3d: list = [
-            morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
+            morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
+            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
         ]
 
         for values, feature_names in descriptors_3d:
