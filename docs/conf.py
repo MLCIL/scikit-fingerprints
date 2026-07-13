@@ -40,6 +40,15 @@ exclude_patterns = [
     "Thumbs.db",
 ]
 
+# dataset doctests are slow, so we skip them if they did not change on Git
+if os.environ.get("SKFP_SKIP_DATASET_DOCTESTS"):
+    exclude_patterns += [
+        "modules/datasets.rst",
+        "modules/datasets/**",
+    ]
+    # silence the toctree reference to the now-excluded datasets page
+    suppress_warnings = ["toc.excluded"]
+
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
 }

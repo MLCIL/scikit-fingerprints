@@ -1,4 +1,5 @@
 import pytest
+from huggingface_hub.errors import LocalEntryNotFoundError
 from numpy.testing import assert_equal
 from sklearn.utils._param_validation import InvalidParameterError
 
@@ -53,9 +54,9 @@ from tests.datasets.test_utils import run_basic_dataset_checks
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_tdc_benchmark():
     benchmark_full = load_tdc_benchmark(as_frames=True)
@@ -68,9 +69,9 @@ def test_load_tdc_benchmark():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_tdc_benchmark_subset():
     dataset_names = ["pampa_approved_drugs", "sarscov2_3clpro_diamond", "ames"]
@@ -80,9 +81,9 @@ def test_load_tdc_benchmark_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_tdc_benchmark_wrong_subset():
     dataset_names = ["pampa_approved_drugs", "Nonexistent"]
@@ -93,9 +94,9 @@ def test_load_tdc_benchmark_wrong_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("dataset_name", TDC_DATASET_NAMES)
 def test_load_tdc_splits(dataset_name):
@@ -117,9 +118,9 @@ def test_load_tdc_splits(dataset_name):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("dataset_name", TDC_DATASET_NAMES)
 def test_load_ogb_splits_as_dict(dataset_name):
@@ -133,9 +134,9 @@ def test_load_ogb_splits_as_dict(dataset_name):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, dataset_length",
@@ -184,9 +185,9 @@ def test_load_tdc_splits_lengths(dataset_name, dataset_length):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_tdc_splits_nonexistent_dataset():
     with pytest.raises(InvalidParameterError) as error:
@@ -198,9 +199,9 @@ def test_load_tdc_splits_nonexistent_dataset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, load_func, expected_length, num_tasks, task_type",
@@ -317,9 +318,9 @@ def test_load_dataset(dataset_name, load_func, expected_length, num_tasks, task_
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "subset_name, expected_num_datasets",
