@@ -136,6 +136,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         descriptors_3d: list = [
             morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
             rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
+            cpsa.calc_3d(mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens),
         ]
 
         for values, feature_names in descriptors_3d:

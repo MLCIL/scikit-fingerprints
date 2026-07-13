@@ -72,6 +72,7 @@ def calc_3d(
     ]
 
     pnsa, ppsa = _pnsa_ppsa(gasteiger_charges_hydrogens, masks, surface_area, num_atoms)
+    tasa, tpsa = _tasa_tpsa(gasteiger_charges_hydrogens, surface_area)
 
     values = [
         pnsa,
@@ -82,6 +83,9 @@ def calc_3d(
         pnsa * surface_area_sum / 1000.0,  # WNSA
         ppsa * surface_area_sum / 1000.0,  # WPSA
         _rncs_rpcs(gasteiger_charges_hydrogens, masks, surface_area, rncg, rpcg),
+        [tasa, tpsa],
+        [tasa / surface_area_sum],  # RASA
+        [tpsa / surface_area_sum],  # RPSA
     ]
 
     return np.concatenate(values, dtype=np.float32), FEATURE_NAMES_3D
@@ -93,8 +97,8 @@ def _pnsa_ppsa(
     surface_area: np.ndarray,
     num_atoms: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    pnsa: list[np.floating] = []
-    ppsa: list[np.floating] = []
+    pnsa: list[float] = []
+    ppsa: list[float] = []
 
     for mask, desc in zip(masks, [pnsa, ppsa], strict=True):
         charges = gasteiger_charges_hydrogens[mask]
@@ -134,3 +138,16 @@ def _rncs_rpcs(
             values.append(sa_max / desc)
 
     return np.asarray(values, dtype=np.float32)
+
+
+def _tasa_tpsa(
+    gasteiger_charges_hydrogens: np.ndarray, surface_area: np.ndarray
+) -> tuple[float, float]:
+    abs_charges = np.abs(gasteiger_charges_hydrogens)
+    tasa_mask = abs_charges < 0.2
+    tpsa_mask = abs_charges >= 0.2
+
+    tasa = np.sum(surface_area[tasa_mask]) if tasa_mask.any() else np.nan
+    tpsa = np.sum(surface_area[tpsa_mask]) if tpsa_mask.any() else np.nan
+
+    return tasa, tpsa
