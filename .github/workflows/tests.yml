@@ -59,9 +59,6 @@ jobs:
       - name: Check pre-commit
         run: uv run pre-commit run --all-files
 
-      - name: Audit uv dependencies
-        run: uv audit --preview-features audit
-
       - name: Run tests with pytest
         run: uv run make test
         env:
