@@ -10,7 +10,7 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["apol", "apol"]
+FEATURE_NAMES = ["apol", "bpol"]
 
 
 def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:

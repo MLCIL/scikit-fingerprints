@@ -113,7 +113,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         barysz_matrix.calc(mol_regular, n_frags),
         aromatic.calc(mol_regular),
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
-        polarizability.calc(mol_regular),
+        polarizability.calc(mol_hydrogens),
     ]
 
     for values, feature_names in descriptors_2d:
