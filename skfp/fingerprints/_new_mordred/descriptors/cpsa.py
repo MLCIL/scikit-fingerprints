@@ -33,6 +33,11 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> tuple[np.ndarray, list[s
     Each is the most extreme partial charge of a given sign divided by the
     total charge of that sign; ``0.0`` when no atom of that sign is present.
     Charge-only, so no 3D conformer is required.
+
+    Based on Stanton, D. T., & Jurs, P. C. (1990). Development and use of
+    charged partial surface area structural descriptors in computer-assisted
+    quantitative structure-property relationship studies. Analytical Chemistry,
+    62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
     """
     masks = [
         gasteiger_charges_hydrogens < 0.0,  # RNCG
@@ -57,6 +62,43 @@ def calc_3d(
     cpsa_2d: tuple[np.ndarray, list[str]],
     gasteiger_charges_hydrogens: np.ndarray,
 ):
+    """
+    Charged partial surface area (CPSA) descriptors.
+
+    Combine per-atom solvent-accessible surface areas with Gasteiger partial
+    charges to describe polar interactions on the molecular surface. All values
+    are ``nan`` for an empty molecule.
+
+    PNSA{v}/PPSA{v} (partial negative/positive surface area) sum the surface
+    area of the negatively/positively charged atoms, weighted by a
+    version-dependent charge factor ``f``:
+
+        * v1: f = 1 (plain surface area)
+        * v2: f = total charge of that sign
+        * v3: f = the per-atom charge
+        * v4: f = total charge of that sign / number of atoms
+        * v5: f = total charge of that sign / number of atoms of that sign
+
+    Descriptors derived from these:
+
+        * DPSA{v} (difference in charged partial surface area): PPSA - PNSA
+        * FNSA{v}/FPSA{v} (fractional charged partial negative/positive surface
+          area): PNSA/PPSA divided by the total surface area
+        * WNSA{v}/WPSA{v} (surface weighted charged partial negative/positive
+          surface area): PNSA/PPSA times the total surface area / 1000
+        * RNCS/RPCS (relative negative/positive charge surface area): surface
+          area of the most extreme negatively/positively charged atom divided
+          by the relative charge (RNCG/RPCG)
+        * TASA/TPSA (total hydrophobic/polar surface area): sum of the surface
+          area of atoms with |charge| below / at or above 0.2
+        * RASA/RPSA (relative hydrophobic/polar surface area): TASA/TPSA divided
+          by the total surface area
+
+    Based on Stanton, D. T., & Jurs, P. C. (1990). Development and use of
+    charged partial surface area structural descriptors in computer-assisted
+    quantitative structure-property relationship studies. Analytical Chemistry,
+    62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
+    """
     num_atoms = mol_hydrogens_conformer.GetNumAtoms()
     if num_atoms == 0:
         return np.full(
@@ -97,6 +139,13 @@ def _pnsa_ppsa(
     surface_area: np.ndarray,
     num_atoms: int,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Partial negative and positive surface area descriptors (PNSA{v}, PPSA{v}).
+
+    For each sign, sums the surface area of the charged atoms weighted by a
+    version-dependent factor ``f`` (see :func:`calc_3d`); ``nan`` for all five
+    versions when no atom of that sign is present.
+    """
     pnsa: list[float] = []
     ppsa: list[float] = []
 
@@ -127,6 +176,13 @@ def _rncs_rpcs(
     rncg: np.ndarray,
     rpcg: np.ndarray,
 ) -> np.ndarray:
+    """
+    Relative negative and positive charge surface area descriptors (RNCS, RPCS).
+
+    Surface area of the atom carrying the most extreme charge of a given sign,
+    divided by the relative charge of that sign (RNCG/RPCG); ``nan`` when no
+    atom of that sign is present.
+    """
     values = []
 
     for mask, desc in zip(masks, [rncg, rpcg], strict=True):
@@ -143,6 +199,13 @@ def _rncs_rpcs(
 def _tasa_tpsa(
     gasteiger_charges_hydrogens: np.ndarray, surface_area: np.ndarray
 ) -> tuple[float, float]:
+    """
+    Total hydrophobic and polar surface area descriptors (TASA, TPSA).
+
+    TASA sums the surface area of hydrophobic atoms (|charge| < 0.2) and TPSA
+    the surface area of polar atoms (|charge| >= 0.2); each is ``nan`` when no
+    atom meets its condition.
+    """
     abs_charges = np.abs(gasteiger_charges_hydrogens)
     tasa_mask = abs_charges < 0.2
     tpsa_mask = abs_charges >= 0.2
