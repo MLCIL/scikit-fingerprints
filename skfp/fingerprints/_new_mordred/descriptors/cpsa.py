@@ -101,9 +101,8 @@ def calc_3d(
     """
     num_atoms = mol_hydrogens_conformer.GetNumAtoms()
     if num_atoms == 0:
-        return np.full(
-            len(FEATURE_NAMES_3D), np.nan, dtype=np.float32
-        ), FEATURE_NAMES_3D
+        values = np.full(len(FEATURE_NAMES_3D), np.nan, dtype=np.float32)
+        return values, FEATURE_NAMES_3D
 
     rncg, rpcg = cpsa_2d[0]
     surface_area = solvent_accessible_surface_area(mol_hydrogens_conformer)
