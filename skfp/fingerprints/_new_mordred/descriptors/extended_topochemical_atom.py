@@ -3,6 +3,7 @@ from rdkit.Chem import AddHs, Atom, BondType, Kekulize, Mol, RWMol, SanitizeMol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import _RDKIT_PERIODIC_TABLE
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 from skfp.fingerprints._new_mordred.utils.periodic_table import PERIOD
 
 """
@@ -236,11 +237,7 @@ def _beta_and_gamma(
             if za != 1:
                 beta_non_sigma[b] += contribution
 
-    beta_delta = np.fromiter(
-        (_beta_delta(atom) for atom in mol.GetAtoms()),
-        dtype=np.float32,
-        count=num_atoms,
-    )
+    beta_delta = atoms_apply_func(_beta_delta, mol, np.float32)
 
     beta = beta_sigma + beta_non_sigma + beta_delta
     with np.errstate(divide="ignore", invalid="ignore"):

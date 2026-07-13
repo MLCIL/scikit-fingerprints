@@ -14,7 +14,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 def atoms_apply_func(
-    f: Callable[[Atom], float], mol: Mol, dtype: str = "float"
+    f: Callable[[Atom], float], mol: Mol, dtype: str | np.dtype | type = "float"
 ) -> np.ndarray:
     """
     Apply a function to each atom of a molecule and return the results as a

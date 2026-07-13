@@ -15,6 +15,7 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     get_valence_electrons,
     get_van_der_waals_volume,
 )
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -70,18 +71,12 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     if len(GetMolFrags(mol)) > 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
-    num_atoms = mol.GetNumAtoms()
-
     values = []
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
         if name == "gasteiger_charge":
             props = atomic_partial_charges(mol, "Gasteiger", "ignore")
         else:
-            props = np.fromiter(
-                (func(a) for a in mol.GetAtoms()),  # type: ignore
-                dtype=np.float32,
-                count=num_atoms,
-            )
+            props = atoms_apply_func(func, mol, np.float32)  # type: ignore
 
         np.fill_diagonal(burden_matrix, props)
         eigvals = np.linalg.eigvalsh(burden_matrix)  # ascending order
