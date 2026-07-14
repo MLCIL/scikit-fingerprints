@@ -14,6 +14,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     cpsa,
     extended_topochemical_atom,
     morse,
+    polarizability,
     rdkit_descriptors,
     ring_count,
     rotatable_bond,
@@ -120,6 +121,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         aromatic.calc(mol_regular),
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
         cpsa_2d,
+        polarizability.calc(mol_hydrogens),
     ]
 
     for values, feature_names in descriptors_2d:
