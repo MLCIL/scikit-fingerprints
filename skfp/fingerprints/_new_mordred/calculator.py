@@ -13,6 +13,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     carbon_types,
     cpsa,
     extended_topochemical_atom,
+    gravitational_index,
     morse,
     polarizability,
     rdkit_descriptors,
@@ -135,10 +136,23 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
+        # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
+        # coordinates), so it is the heavy-atom 3D molecule
+        distance_matrix_3d_regular = DistanceMatrix3D(mol_regular, conf_id)
+        adjacency_matrix_hydrogens_conformer = AdjacencyMatrix(mol_hydrogens_conformer)
+
         descriptors_3d: list = [
             morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
             rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
             cpsa.calc_3d(mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens),
+            gravitational_index.calc(
+                mol_regular,
+                mol_hydrogens_conformer,
+                distance_matrix_3d_regular,
+                distance_matrix_3d,
+                adjacency_matrix_regular,
+                adjacency_matrix_hydrogens_conformer,
+            ),
         ]
 
         for values, feature_names in descriptors_3d:
