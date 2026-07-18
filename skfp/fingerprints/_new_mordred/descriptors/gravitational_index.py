@@ -60,11 +60,11 @@ def _variant_values(
     mol: Mol,
     distance_matrix_3d: DistanceMatrix3D,
     adjacency_matrix: AdjacencyMatrix,
-) -> tuple[float, float]:
+) -> tuple[np.float32, np.float32]:
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
     """
-    masses = np.asarray([atom.GetMass() for atom in mol.GetAtoms()], dtype=float)
+    masses = np.asarray([atom.GetMass() for atom in mol.GetAtoms()], dtype=np.float32)
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 
@@ -78,4 +78,4 @@ def _variant_values(
     weighted = mass_products * inverse_squared_distances
     all_pairs = 0.5 * np.sum(weighted)
     bonded_pairs = 0.5 * np.sum(weighted * adjacency_matrix.matrix)
-    return float(all_pairs), float(bonded_pairs)
+    return all_pairs, bonded_pairs
