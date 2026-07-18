@@ -89,11 +89,11 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     properties = {
         "d": np.asarray(
             [get_sigma_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=float,
+            dtype=np.float32,
         ),
         "dv": np.asarray(
             [get_valence_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=float,
+            dtype=np.float32,
         ),
     }
     subgraphs_by_order = {order: _chi_subgraphs(mol, order) for order in range(1, 8)}
@@ -154,9 +154,9 @@ def _chi_value(
     node_sets: list[list[int]],
     prop_values: np.ndarray,
     averaged: bool,
-) -> float | np.floating:
+) -> np.float32:
     if averaged and len(node_sets) == 0:
-        return np.nan
+        return np.float32(np.nan)
 
     value = 0.0
     for nodes in node_sets:
@@ -165,11 +165,11 @@ def _chi_value(
             product *= prop_values[node]
 
         if product <= 0:
-            return np.nan
+            return np.float32(np.nan)
 
         value += product**-0.5
 
     if averaged:
         value /= len(node_sets)
 
-    return value
+    return np.float32(value)
