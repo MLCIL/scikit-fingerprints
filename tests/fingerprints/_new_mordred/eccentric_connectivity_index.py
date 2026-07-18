@@ -23,19 +23,19 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 @pytest.mark.parametrize(
     "name, expected",
     [
-        ("Hexane", [38]),
-        ("Benzene", [36]),
-        ("Caffeine", [137]),
-        ("Cyanidin", [353]),
-        ("Lycopene", [1834]),
-        ("Epicatechin", [353]),
-        ("Limonene", [88]),
-        ("Allicin", [83]),
-        ("Glutathione", [347]),
-        ("Digoxin", [2628]),
-        ("Capsaicin", [515]),
-        ("EllagicAcid", [328]),
-        ("Astaxanthin", [1932]),
+        ("Hexane", 38),
+        ("Benzene", 36),
+        ("Caffeine", 137),
+        ("Cyanidin", 353),
+        ("Lycopene", 1834),
+        ("Epicatechin", 353),
+        ("Limonene", 88),
+        ("Allicin", 83),
+        ("Glutathione", 347),
+        ("Digoxin", 2628),
+        ("Capsaicin", 515),
+        ("EllagicAcid", 328),
+        ("Astaxanthin", 1932),
     ],
 )
 def test_eccentric_connectivity_index_values(name, expected, mordred_test_mols):
@@ -46,4 +46,4 @@ def test_eccentric_connectivity_index_values(name, expected, mordred_test_mols):
     )
 
     assert feature_names == FEATURE_NAMES
-    assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)
+    assert_allclose(values, np.float32(expected), rtol=1e-6)

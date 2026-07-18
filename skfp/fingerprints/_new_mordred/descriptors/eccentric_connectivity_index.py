@@ -28,6 +28,6 @@ def calc(
     E = distance_matrix_regular.eccentricities
     D = adjacency_matrix_regular.degree
 
-    value = int((E.astype("int") * D).sum())
+    value = int((E * D).sum())
 
     return np.array([value], dtype=np.float32), FEATURE_NAMES
