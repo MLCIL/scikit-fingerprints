@@ -1,12 +1,5 @@
 import numpy as np
-from rdkit.Chem import Atom, Mol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    get_mass,
-    get_polarizability,
-    get_sanderson_electronegativity,
-    get_van_der_waals_volume,
-)
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 
 """
@@ -22,6 +15,7 @@ FEATURE_NAMES = [
     "GeomShapeIndex",
     "GeomPetitjeanIndex",
 ]
+
 
 @np.errstate(divide="ignore", invalid="ignore")
 def calc(distance_matrix_3d: DistanceMatrix3D) -> tuple[np.ndarray, list[str]]:
