@@ -13,6 +13,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     carbon_types,
     cpsa,
     extended_topochemical_atom,
+    fragment_complexity,
     morse,
     polarizability,
     rdkit_descriptors,
@@ -122,6 +123,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
         cpsa_2d,
         polarizability.calc(mol_hydrogens),
+        fragment_complexity.calc(mol_regular),
     ]
 
     for values, feature_names in descriptors_2d:
