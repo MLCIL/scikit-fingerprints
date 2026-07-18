@@ -10,6 +10,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 FEATURE_NAMES = ["fragCpx"]
 
+
 def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
     Compute the Mordred fragment complexity descriptor.
