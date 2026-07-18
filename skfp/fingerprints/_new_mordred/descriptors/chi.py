@@ -14,7 +14,6 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-
 FEATURE_NAMES = [
     "Xch-3d",
     "Xch-4d",
@@ -118,6 +117,7 @@ def _chi_subgraphs(mol: Mol, order: int) -> dict[str, list[list[int]]]:
     ]
 
     for bond_idxs in Chem.FindAllSubgraphsOfLengthN(mol, order):
+        # simplyfied dfs
         deg: dict[int, int] = {}
         for i in bond_idxs:
             a, b = bond_endpoints[i]
