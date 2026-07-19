@@ -12,6 +12,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     bond_count,
     carbon_types,
     cpsa,
+    distance_matrix,
     eccentric_connectivity_index,
     extended_topochemical_atom,
     morse,
@@ -126,6 +127,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         eccentric_connectivity_index.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),
+        distance_matrix.calc(mol_regular, n_frags, distance_matrix_regular),
     ]
 
     for values, feature_names in descriptors_2d:
