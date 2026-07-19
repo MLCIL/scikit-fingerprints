@@ -1,7 +1,17 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
+
+
+def _logee_mask(feature_names: np.ndarray) -> np.ndarray:
+    # LogEE intentionally diverges from mordred-community, whose implementation
+    # adds a spurious exp(-a) term and computes log(1 + sum(exp(lambda_i)))
+    # instead of the documented log(sum(exp(lambda_i))). The divergence is
+    # log(1 + 1/EE), so only small-EE features exceed atol.
+    # See https://github.com/JacksonBurns/mordred-community/issues/24.
+    return np.array(["LogEE" in name for name in feature_names])
 
 
 def test_new_mordred_fingerprint(smallest_mols_list):
@@ -11,10 +21,13 @@ def test_new_mordred_fingerprint(smallest_mols_list):
     mordred_fp = MordredFingerprint(n_jobs=-1)
     X_old = mordred_fp.transform(smallest_mols_list)
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0)
-
     feature_names = new_mordred_fp.get_feature_names_out()
+    # temporary mask - will be eventually removed; LogEE is also excluded, as it
+    # intentionally diverges from mordred-community (see _logee_mask); it is
+    # compared separately in test_new_mordred_logee_diverges.
+    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0) & ~_logee_mask(
+        feature_names
+    )
     assert_allclose(
         X_new[:, mask],
         X_old[:, mask],
@@ -36,10 +49,13 @@ def test_new_mordred_sparse_fingerprint(smallest_mols_list):
     X_new = X_new.toarray()
     X_old = X_old.toarray()
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0)
-
     feature_names = new_mordred_fp.get_feature_names_out()
+    # temporary mask - will be eventually removed; LogEE is also excluded, as it
+    # intentionally diverges from mordred-community (see _logee_mask); it is
+    # compared separately in test_new_mordred_logee_diverges.
+    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0) & ~_logee_mask(
+        feature_names
+    )
     assert_allclose(
         X_new[:, mask],
         X_old[:, mask],
@@ -58,10 +74,13 @@ def test_new_mordred_3D_fingerprint(mols_conformers_list, smallest_mols_list):
     mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
     X_old = mordred_fp.transform(smallest_mols_list)
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0)
-
     feature_names = new_mordred_fp.get_feature_names_out()
+    # temporary mask - will be eventually removed; LogEE is also excluded, as it
+    # intentionally diverges from mordred-community (see _logee_mask); it is
+    # compared separately in test_new_mordred_logee_diverges.
+    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0) & ~_logee_mask(
+        feature_names
+    )
     assert_allclose(
         X_new[:, mask],
         X_old[:, mask],
@@ -83,10 +102,13 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_l
     X_new = X_new.toarray()
     X_old = X_old.toarray()
 
-    # temporary mask - will be eventually removed
-    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0)
-
     feature_names = new_mordred_fp.get_feature_names_out()
+    # temporary mask - will be eventually removed; LogEE is also excluded, as it
+    # intentionally diverges from mordred-community (see _logee_mask); it is
+    # compared separately in test_new_mordred_logee_diverges.
+    mask = ~(np.isnan(X_new) | np.isnan(X_old)).all(axis=0) & ~_logee_mask(
+        feature_names
+    )
     assert_allclose(
         X_new[:, mask],
         X_old[:, mask],
@@ -96,6 +118,27 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_l
     )
     assert_equal(X_new.shape, (len(mols_conformers_list), 1826))
     assert X_new.dtype == np.float32
+
+
+@pytest.mark.xfail(
+    strict=False,
+    reason="LogEE fixed in skfp, mordred-community reference is buggy "
+    "(https://github.com/JacksonBurns/mordred-community/issues/24). The divergence "
+    "is log(1 + 1/EE), so large-EE features still match within atol and xpass; "
+    "not strict.",
+)
+def test_new_mordred_logee_diverges(smallest_mols_list):
+    new_mordred_fp = NewMordredFingerprint(n_jobs=-1)
+    X_new = new_mordred_fp.transform(smallest_mols_list)
+
+    mordred_fp = MordredFingerprint(n_jobs=-1)
+    X_old = mordred_fp.transform(smallest_mols_list)
+
+    feature_names = new_mordred_fp.get_feature_names_out()
+    logee = _logee_mask(feature_names)
+    assert logee.any()
+
+    assert_allclose(X_new[:, logee], X_old[:, logee], equal_nan=True, atol=1e-3)
 
 
 def test_new_mordred_feature_names():

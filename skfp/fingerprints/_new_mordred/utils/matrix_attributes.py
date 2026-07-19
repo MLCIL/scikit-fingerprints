@@ -91,13 +91,20 @@ class MatrixAttributes:
     @cached_property
     def log_ee(self) -> np.floating:
         """
-        Estrada-like index (log-sum-exp).
+        Estrada-like index, defined as ``LogEE = log(sum(exp(lambda_i)))``
+        over the eigenvalues ``lambda_i``.
 
-        See https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp
-        for the log-sum-exp trick used here for numerical stability.
+        Computed via the log-sum-exp trick for numerical stability
+        (see https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp):
+        ``log(sum(exp(x_i))) = a + log(sum(exp(x_i - a)))`` with ``a = max(x_i)``.
+
+        Note that this intentionally diverges from mordred-community, whose
+        implementation adds a spurious ``exp(-a)`` term and thus computes
+        ``log(1 + sum(exp(lambda_i)))`` instead of the documented formula.
+        See https://github.com/JacksonBurns/mordred-community/issues/24.
         """
         a = np.maximum(self._eigvals[self._i_max], 0)
-        sx = np.exp(self._eigvals - a).sum() + np.exp(-a)
+        sx = np.exp(self._eigvals - a).sum()
         return a + np.log(sx)
 
     @cached_property
