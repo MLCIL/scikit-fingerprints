@@ -14,6 +14,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     cpsa,
     distance_matrix,
     eccentric_connectivity_index,
+    estate,
     extended_topochemical_atom,
     morse,
     polarizability,
@@ -39,7 +40,6 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
-from tests.fingerprints._new_mordred import estate
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
