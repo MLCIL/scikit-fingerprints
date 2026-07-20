@@ -47,7 +47,7 @@ def _get_normalized_property_table() -> np.ndarray:
         ],
         dtype=np.float64,
     )
-    carbon_values = property_values[:, [6]]
+    carbon_values = property_values[:, 6]
     return property_values / carbon_values
 
 
@@ -68,5 +68,5 @@ def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
         count=mol_hydrogens.GetNumAtoms(),
     )
     sums = _CARBON_NORMALIZED_PROPERTIES[:, atomic_numbers].sum(axis=1)
-    means = sums / atomic_numbers.size if atomic_numbers.size else np.full(8, np.nan)
+    means = sums / atomic_numbers.size
     return np.concatenate((sums, means)).astype(np.float32), FEATURE_NAMES
