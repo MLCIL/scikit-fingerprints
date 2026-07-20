@@ -16,12 +16,12 @@ def test_individual_set_output(mols_conformers_list):
         # USR and USRCAT don't work for molecules with 3 or fewer atoms, so we use
         # NaNs there
         if "USR" in name:
-            fp = obj(errors="NaN")
+            fp = obj(errors="NaN")  # type: ignore
         else:
             fp = obj()
 
-        fp.set_output(transform="pandas")
-        output = fp.transform(mols_conformers_list)
+        fp.set_output(transform="pandas")  # type: ignore
+        output = fp.transform(mols_conformers_list)  # type: ignore
         if not isinstance(output, pd.DataFrame):
             raise AssertionError(
                 f"For fingerprint {name} output was of type {type(output)} "
@@ -41,11 +41,11 @@ def test_global_set_output(mols_conformers_list):
             # USR and USRCAT don't work for molecules with 3 or fewer atoms, so we use
             # NaNs there
             if "USR" in name:
-                fp = obj(errors="NaN")
+                fp = obj(errors="NaN")  # type: ignore
             else:
                 fp = obj()
 
-            output = fp.transform(mols_conformers_list)
+            output = fp.transform(mols_conformers_list)  # type: ignore
             if not isinstance(output, pd.DataFrame):
                 raise AssertionError(
                     f"For fingerprint {name} output was of type {type(output)} "

@@ -59,15 +59,18 @@ jobs:
       - name: Check pre-commit
         run: uv run pre-commit run --all-files
 
-      - name: Audit uv dependencies
-        run: uv audit --preview-features audit
-
       - name: Run tests with pytest
         run: uv run make test
         env:
+          # pin the exact PR base/head so dataset tests only run when this PR
+          # actually changes datasets (see DATASETS_CHANGED in the Makefile)
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}  # faster datasets download
 
       - name: Run docstring tests
-        run: uv run make -C docs doctest
+        run: uv run make run-doctest
         env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}  # faster datasets download

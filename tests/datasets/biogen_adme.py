@@ -1,4 +1,5 @@
 import pytest
+from huggingface_hub.errors import LocalEntryNotFoundError
 from numpy.testing import assert_equal
 
 from skfp.datasets.biogen_adme import (
@@ -21,9 +22,9 @@ from tests.datasets.test_utils import run_basic_dataset_checks
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_biogen_adme_benchmark():
     benchmark_full = load_biogen_adme_benchmark(as_frames=True)
@@ -36,9 +37,9 @@ def test_load_biogen_adme_benchmark():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_biogen_adme_benchmark_subset():
     dataset_names = ["HLM CLint", "Solubility", "RLM CLint"]
@@ -48,9 +49,9 @@ def test_load_biogen_adme_benchmark_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_biogen_adme_benchmark_wrong_subset():
     dataset_names = ["HLM CLint", "Nonexistent"]
@@ -61,9 +62,9 @@ def test_load_biogen_adme_benchmark_wrong_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, load_func, expected_length, num_tasks, task_type",
@@ -92,9 +93,9 @@ def test_load_dataset(dataset_name, load_func, expected_length, num_tasks, task_
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "subset_name, expected_num_datasets",

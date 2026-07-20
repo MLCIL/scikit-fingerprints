@@ -2,7 +2,10 @@ from collections.abc import Callable
 
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, Mol
+from rdkit.Chem.rdPartialCharges import ComputeGasteigerCharges
+
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 from .periodic_table import (
     ALLRED_ROCHOW_ELECTRONEGATIVITY,
@@ -87,6 +90,18 @@ def get_gasteiger_charge(atom: Atom) -> float:
         if atom.HasProp("_GasteigerHCharge")
         else 0.0
     )
+
+
+def gasteiger_charges(mol: Mol) -> np.ndarray:
+    """
+    Per-atom Gasteiger partial charges, shared by the 2D and 3D descriptors.
+
+    Each value includes the charge of the atom's implicit hydrogens folded back
+    onto the heavy atom (see :func:`get_gasteiger_charge`). Charges depend only on
+    connectivity, so the same array is valid regardless of 3D coordinates.
+    """
+    ComputeGasteigerCharges(mol)
+    return atoms_apply_func(get_gasteiger_charge, mol)
 
 
 def get_sigma_electrons(atom: Atom) -> int:

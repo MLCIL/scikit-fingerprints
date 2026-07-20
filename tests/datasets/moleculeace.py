@@ -1,4 +1,5 @@
 import pytest
+from huggingface_hub.errors import LocalEntryNotFoundError
 from sklearn.utils._param_validation import InvalidParameterError
 
 from skfp.datasets.moleculeace import (
@@ -41,9 +42,9 @@ from tests.datasets.test_utils import run_basic_dataset_checks
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_moleculeace_benchmark():
     benchmark_full = load_moleculeace_benchmark(as_frames=True)
@@ -56,9 +57,9 @@ def test_load_moleculeace_benchmark():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_moleculeace_benchmark_subset():
     dataset_names = ["chembl4005_ki", "chembl204_ki", "chembl235_ec50"]
@@ -68,9 +69,9 @@ def test_load_moleculeace_benchmark_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_moleculeace_benchmark_wrong_subset():
     dataset_names = ["chembl4005_ki", "Nonexistent"]
@@ -81,9 +82,9 @@ def test_load_moleculeace_benchmark_wrong_subset():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("split_type", ["random", "activity_cliff"])
 @pytest.mark.parametrize("dataset_name", MOLECULEACE_DATASET_NAMES)
@@ -101,9 +102,9 @@ def test_load_moleculeace_splits(dataset_name, split_type):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("split_type", ["random", "activity_cliff"])
 @pytest.mark.parametrize("dataset_name", MOLECULEACE_DATASET_NAMES)
@@ -117,9 +118,9 @@ def test_load_moleculeace_splits_as_dict(dataset_name, split_type):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, dataset_length",
@@ -163,9 +164,9 @@ def test_load_moleculeace_splits_lengths(dataset_name, dataset_length):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("dataset_name", MOLECULEACE_DATASET_NAMES)
 def test_load_moleculeace_splits_activity_cliffs(dataset_name):
@@ -181,9 +182,9 @@ def test_load_moleculeace_splits_activity_cliffs(dataset_name):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize("split_type", ["random", "activity_cliff"])
 def test_load_moleculeace_splits_nonexistent_dataset(split_type):
@@ -196,9 +197,9 @@ def test_load_moleculeace_splits_nonexistent_dataset(split_type):
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 def test_load_moleculeace_splits_nonexistent_splits():
     with pytest.raises(InvalidParameterError) as error:
@@ -210,9 +211,9 @@ def test_load_moleculeace_splits_nonexistent_splits():
 
 
 @pytest.mark.flaky(
-    reruns=100,
+    reruns=10,
     reruns_delay=5,
-    only_rerun=["LocalEntryNotFoundError", "FileNotFoundError"],
+    only_rerun=[LocalEntryNotFoundError, FileNotFoundError],
 )
 @pytest.mark.parametrize(
     "dataset_name, load_func, expected_length, num_tasks, task_type",

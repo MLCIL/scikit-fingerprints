@@ -28,7 +28,7 @@ def fetch_dataset(
     """
     data_home_dir = get_data_home_dir(data_dir, dataset_name)
     filepath = Path(data_home_dir) / filename
-    if force_update:
+    if force_update or not filepath.exists():
         hf_hub_download(data_home_dir, dataset_name, verbose)
     return pd.read_csv(filepath)
 
@@ -49,7 +49,7 @@ def fetch_splits(
     """
     data_home_dir = get_data_home_dir(data_dir, dataset_name)
     filepath = Path(data_home_dir) / filename
-    if force_update:
+    if force_update or not filepath.exists():
         hf_hub_download(data_home_dir, dataset_name, verbose)
     if verbose:
         print(filepath)

@@ -47,7 +47,7 @@ def _get_normalized_property_table() -> np.ndarray:
         ],
         dtype=np.float64,
     )
-    carbon_values = property_values[:, 6]
+    carbon_values = property_values[:, [6]]
     return property_values / carbon_values
 
 

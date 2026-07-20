@@ -1,7 +1,7 @@
 import pytest
 from numpy.testing import assert_allclose
 
-from skfp.fingerprints._new_mordred.utils.sasa import SurfaceArea
+from skfp.fingerprints._new_mordred.utils.sasa import solvent_accessible_surface_area
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -40,5 +40,6 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 )
 def test_sasa_reference_values(name, expected_value, mordred_test_mols_hydrogens_3d):
     mol = mordred_test_mols_hydrogens_3d[name]
-    actual_value = sum(SurfaceArea.from_mol(mol).surface_area())
-    assert_allclose(actual_value, expected_value, atol=10)
+    actual_value = solvent_accessible_surface_area(mol).sum()
+    # 5% relative tolerance, matching mordred's own SASA test
+    assert_allclose(actual_value, expected_value, rtol=0.05)
