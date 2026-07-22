@@ -119,7 +119,7 @@ class MolFromSDFTransformer(BasePreprocessor):
             return mol
 
         mol = PropertyMol(mol)
-        mol.SetIntProp("conf_id", mol.GetConformer(0).GetId())
+        mol.SetIntProp("conf_id", mol.GetConformer().GetId())
         return mol
 
     def _transform_batch(self, X):

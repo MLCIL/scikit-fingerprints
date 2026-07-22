@@ -8,7 +8,7 @@ from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval, InvalidParameterError
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols, require_mols_with_conf_ids
+from skfp.utils import ensure_mols, get_conf_id, require_mols_with_conformations
 
 
 class AtomPairFingerprint(BaseFingerprintTransformer):
@@ -103,8 +103,9 @@ class AtomPairFingerprint(BaseFingerprintTransformer):
 
     requires_conformers : bool
         Whether the fingerprint is 3D-based and requires molecules with conformers as
-        inputs, with ``conf_id`` integer property set. This depends on the ``use_3D``
-        parameter, and has the same value.
+        inputs. This depends on the ``use_3D`` parameter, and has the same value. If the
+        ``conf_id`` property is set, it will be used to determine the conformation.
+        You can use :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     See Also
     --------
@@ -231,8 +232,8 @@ class AtomPairFingerprint(BaseFingerprintTransformer):
         )
 
         if self.use_3D:
-            X = require_mols_with_conf_ids(X)
-            conf_ids = [mol.GetIntProp("conf_id") for mol in X]
+            X = require_mols_with_conformations(X)
+            conf_ids = [get_conf_id(mol) for mol in X]
         else:
             X = ensure_mols(X)
             conf_ids = [-1 for _ in X]
