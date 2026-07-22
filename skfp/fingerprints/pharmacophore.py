@@ -7,7 +7,7 @@ from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval, InvalidParameterError, StrOptions
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols, require_mols_with_conf_ids
+from skfp.utils import ensure_mols, get_conf_id, require_mols_with_conformations
 
 
 class PharmacophoreFingerprint(BaseFingerprintTransformer):
@@ -94,8 +94,9 @@ class PharmacophoreFingerprint(BaseFingerprintTransformer):
 
     requires_conformers : bool
         Whether the fingerprint is 3D-based and requires molecules with conformers as
-        inputs, with ``conf_id`` integer property set. This depends on the ``use_3D``
-        parameter, and has the same value.
+        inputs. This depends on the ``use_3D`` parameter, and has the same value. If the
+        ``conf_id`` property is set, it will be used to determine the conformation.
+        You can use :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     References
     ----------
@@ -231,12 +232,12 @@ class PharmacophoreFingerprint(BaseFingerprintTransformer):
             X = ensure_mols(X)
             X = [Gen2DFingerprint(mol, factory) for mol in X]
         else:
-            X = require_mols_with_conf_ids(X)
+            X = require_mols_with_conformations(X)
             X = [
                 Gen2DFingerprint(
                     mol,
                     factory,
-                    dMat=Get3DDistanceMatrix(mol, confId=mol.GetIntProp("conf_id")),
+                    dMat=Get3DDistanceMatrix(mol, confId=get_conf_id(mol)),
                 )
                 for mol in X
             ]

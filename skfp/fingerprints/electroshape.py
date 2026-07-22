@@ -11,7 +11,7 @@ from sklearn.utils._param_validation import Interval, StrOptions
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.descriptors.charge import atomic_partial_charges
-from skfp.utils import require_mols_with_conf_ids
+from skfp.utils import get_conf_id, require_mols_with_conformations
 
 
 class ElectroShapeFingerprint(BaseFingerprintTransformer):
@@ -85,8 +85,10 @@ class ElectroShapeFingerprint(BaseFingerprintTransformer):
         Number of output features, size of fingerprints.
 
     requires_conformers : bool = True
-        Value is always True, as this fingerprint is 3D based. It always requires
-        molecules with conformers as inputs, with ``conf_id`` integer property set.
+        Value is always True, as this fingerprint is 3D-based. It always requires
+        molecules with conformers as input. If the ``conf_id`` property is set, it
+        will be used to determine the conformation. You can use
+        :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     See Also
     --------
@@ -248,7 +250,7 @@ class ElectroShapeFingerprint(BaseFingerprintTransformer):
         return X, y
 
     def _calculate_fingerprint(self, X: Sequence[Mol]) -> np.ndarray | csr_array:
-        mols = require_mols_with_conf_ids(X)
+        mols = require_mols_with_conformations(X)
 
         if self.errors == "raise":
             fps = [self._get_fp(mol) for mol in mols]
@@ -264,7 +266,7 @@ class ElectroShapeFingerprint(BaseFingerprintTransformer):
         return np.array(fps)
 
     def _get_fp(self, mol: Mol) -> np.ndarray:
-        conf_id = mol.GetIntProp("conf_id")
+        conf_id = get_conf_id(mol)
         coords = mol.GetConformer(conf_id).GetPositions()
         charges = atomic_partial_charges(
             mol, self.partial_charge_model, self.charge_errors
