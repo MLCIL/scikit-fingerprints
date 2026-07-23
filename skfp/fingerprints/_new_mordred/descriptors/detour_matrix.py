@@ -64,6 +64,8 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
             attrs.vr1,  # VR1_Dt
             attrs.vr2,  # VR2_Dt
             attrs.vr3,  # VR3_Dt
+            # detour index = sum over unordered atom pairs - the matrix is
+            # symmetric, so halving the full sum avoids double-counting each pair
             int(0.5 * detour_matrix.sum()),  # DetourIndex
         ],
         dtype=np.float32,
@@ -86,15 +88,15 @@ def _get_detour_matrix(mol: Mol) -> np.ndarray:
     if n == 1:
         return np.array([[0]], dtype=np.float32)
 
+    # G: molecular graph
     G = nx.from_edgelist(
         (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
     )
-    Q = []
+    Q = []  # queue of biconnected blocks, each a nodes and longest-paths map pair
 
     for bcc in (G.subgraph(components) for components in nx.biconnected_components(G)):
         lsp = _longest_simple_paths(bcc)
         nodes = set(bcc.nodes())
-
         Q.append((nodes, lsp))
 
     merged = _merge(Q, n)
@@ -111,9 +113,10 @@ def _longest_simple_paths(graph: nx.Graph) -> dict[tuple[int, int], int]:
     of molecular graphs are small.
     """
     # it's faster not to use NetworkX in brute-force DFS
-    G = {u: list(graph[u]) for u in graph}
+    G = {u: list(graph[u]) for u in graph}  # the graph in adjacency-list form
     longest_distances: dict[tuple[int, int], int] = {}
 
+    # s: source node, e: end node
     for s in G:
         for e, dist in _longest_paths_from(s, G).items():
             if s < e:
@@ -154,6 +157,7 @@ def _dfs(
     """
     dist += 1
 
+    # u: current node, v: neighbour being explored
     for v in G[u]:
         if v in visited:
             continue
@@ -169,17 +173,21 @@ def _merge(Q: list[tuple[set[int], dict[tuple[int, int], int]]], n: int) -> np.n
     """
     Assemble the full detour matrix from the per-block longest-path maps.
 
-    Blocks are merged one at a time following the block-cut tree: each new
-    block touches the already-merged part at exactly one articulation node
-    ``common``, so a cross-block detour distance is
-    ``D[i, common] + D[common, j]``.
+    Works incrementally: starting from one block, it grows a ``merged`` set of
+    nodes one block at a time, and each step fills in two kinds of distances.
+    First the within-block pairs are copied straight from that block's map.
+    Then the cross-block pairs are derived: because blocks meet at a single
+    articulation node in the block-cut tree, every path from an already-merged
+    node ``i`` to a new node ``j`` must pass through the shared node ``common``,
+    so ``D[i, j] = D[i, common] + D[common, j]``. Repeating until no blocks
+    remain leaves ``D`` holding the longest simple path between every pair.
     """
-    D = np.zeros((n, n), dtype=np.float32)
+    D = np.zeros((n, n), dtype=np.float32)  # the detour matrix being assembled
     merged: set[int] = set()
 
     while Q:
-        # pick a block adjacent to the already-merged set, in a block-cut tree
-        # such a block shares exactly one node with it
+        # first block starts the merge; after that, only pick a block that
+        # touches the merged part (in a block-cut tree it shares one node with it)
         idx = next(
             i
             for i, (bnodes, _) in enumerate(Q)
@@ -192,17 +200,25 @@ def _merge(Q: list[tuple[set[int], dict[tuple[int, int], int]]], n: int) -> np.n
         if lsp:
             ij = np.array(list(lsp), dtype=np.intp)  # (k, 2) node-pair keys
             vals = np.fromiter(lsp.values(), dtype=np.float32, count=len(lsp))
+            # write the longest-path distance for every node pair (i, j) into the
+            # matrix, filling both D[i, j] and D[j, i] so it stays symmetric,
+            # column 0 holds node i, column 1 holds node j, vals the distances
             D[ij[:, 0], ij[:, 1]] = vals
             D[ij[:, 1], ij[:, 0]] = vals
 
-        # cross-block pairs, joined through the articulation node;
-        # common stays in both index arrays: D[common, common] == 0 acts as
-        # an identity
+        # cross-block pairs: every path between an already-merged node and one
+        # from the new block goes through the shared articulation node
         if merged:
-            common = (nodes & merged).pop()
-            old = np.fromiter(merged, dtype=np.intp)
-            new = np.fromiter(nodes, dtype=np.intp)
+            common = (nodes & merged).pop()  # articulation node shared by both parts
+            old = np.fromiter(merged, dtype=np.intp)  # already-merged nodes
+            new = np.fromiter(nodes, dtype=np.intp)  # current block's nodes
+
+            # block[i, j] = D[i, common] + D[common, j] for every old i, new j,
+            # common is in both arrays but D[common, common] == 0, so it's a no-op
             block = np.add.outer(D[old, common], D[common, new])
+
+            # fill every old-by-new cell of D (and the mirrored new-by-old side),
+            # np.ix_ pairs each old node with each new node, covering all combos
             D[np.ix_(old, new)] = block
             D[np.ix_(new, old)] = block.T
 
