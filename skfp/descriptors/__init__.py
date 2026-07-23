@@ -3,6 +3,7 @@ from .constitutional import (
     average_molecular_weight,
     bond_count,
     element_atom_count,
+    element_counts,
     heavy_atom_count,
     molecular_weight,
     number_of_rings,

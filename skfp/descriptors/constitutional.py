@@ -1,3 +1,4 @@
+import numpy as np
 from rdkit.Chem import Mol
 from rdkit.Chem.Descriptors import MolWt
 from rdkit.Chem.rdMolDescriptors import CalcNumRings, CalcNumRotatableBonds
@@ -115,6 +116,47 @@ def element_atom_count(mol: Mol, atom_id: int | str) -> int:
             for atom in mol.GetAtoms()
             if atom.GetAtomicNum() == atom_id or atom.GetSymbol() == atom_id
         )
+
+
+def element_counts(mol: Mol) -> np.ndarray:
+    """
+    Element counts.
+
+    Calculates the number of atoms of every chemical element, returned as a
+    vector indexed by atomic number. Position ``i`` holds the count of the
+    element with atomic number ``i + 1`` (e.g. index 0 is hydrogen, index 5
+    is carbon). The vector has length 118, covering all elements of the RDKit
+    periodic table. Hydrogens are counted in total, including both explicit and
+    implicit ones, consistently with :func:`element_atom_count`.
+
+    Parameters
+    ----------
+    mol : RDKit ``Mol`` object
+        The molecule for which the element counts are to be calculated.
+
+    Examples
+    --------
+    >>> from rdkit.Chem import MolFromSmiles
+    >>> from skfp.descriptors import element_counts
+    >>> mol = MolFromSmiles("C1=CC=CC=C1")  # Benzene
+    >>> counts = element_counts(mol)
+    >>> int(counts[5])  # carbon, atomic number 6
+    6
+    >>> int(counts[0])  # hydrogen
+    6
+
+    >>> mol = MolFromSmiles("CCO")  # Ethanol
+    >>> counts = element_counts(mol)
+    >>> int(counts[5]), int(counts[7]), int(counts[0])  # carbon, oxygen, hydrogen
+    (2, 1, 6)
+    """
+    counts = np.zeros(118, dtype=int)
+    for atom in mol.GetAtoms():
+        atomic_num = atom.GetAtomicNum()
+        if atomic_num != 1:
+            counts[atomic_num - 1] += 1
+    counts[0] = element_atom_count(mol, 1)
+    return counts
 
 
 def heavy_atom_count(mol: Mol) -> int:

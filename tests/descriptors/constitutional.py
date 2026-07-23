@@ -95,6 +95,41 @@ def test_element_atom_count(mol_name, atom_id, expected_value, input_mols):
 
 
 @pytest.mark.parametrize(
+    "mol_name, atomic_number, expected_value",
+    [
+        ("benzene", 6, 6),
+        ("benzene", 1, 6),
+        ("ethanol", 6, 2),
+        ("ethanol", 8, 1),
+        ("ethanol", 1, 6),
+        ("propane", 1, 8),
+        ("hydrogen_cyanide", 7, 1),
+        ("oxygen", 8, 1),
+        ("oxygen", 1, 2),
+    ],
+)
+def test_element_counts(mol_name, atomic_number, expected_value, input_mols):
+    mol = input_mols[mol_name]
+    result = const.element_counts(mol)
+    assert len(result) == 118
+    assert_equal(result[atomic_number - 1], expected_value)
+
+
+def test_element_counts_matches_element_atom_count(input_mols):
+    for mol in input_mols.values():
+        counts = const.element_counts(mol)
+        assert_equal(counts[5], const.element_atom_count(mol, "C"))
+        assert_equal(counts[0], const.element_atom_count(mol, "H"))
+
+
+def test_element_counts_absent_elements_are_zero(input_mols):
+    # benzene contains only carbon and hydrogen
+    counts = const.element_counts(input_mols["benzene"])
+    assert_equal(counts[7], 0)  # oxygen absent
+    assert_equal(counts.sum(), 12)  # 6 C + 6 H
+
+
+@pytest.mark.parametrize(
     "mol_name, expected_value",
     [
         ("benzene", 6),
