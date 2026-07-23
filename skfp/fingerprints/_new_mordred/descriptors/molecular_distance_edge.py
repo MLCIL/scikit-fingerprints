@@ -35,7 +35,7 @@ FEATURE_NAMES = [
     "MDEO-22",
 ]
 
-# elements (C, N, O) and valences
+# elements (C, N, O) and valences from feature names
 _ELEMENTS = [6, 7, 8]
 _BUCKETS = [
     (atomic_num, valence_1, valence_2)
