@@ -12,8 +12,10 @@ from skfp.fingerprints._new_mordred.descriptors import (
     bond_count,
     carbon_types,
     cpsa,
+    detour_matrix,
     distance_matrix,
     eccentric_connectivity_index,
+    estate,
     extended_topochemical_atom,
     morse,
     polarizability,
@@ -39,7 +41,6 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
-from tests.fingerprints._new_mordred import estate
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -128,6 +129,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             adjacency_matrix_regular, distance_matrix_regular
         ),
         distance_matrix.calc(mol_regular, n_frags, distance_matrix_regular),
+        detour_matrix.calc(mol_regular, n_frags),
     ]
 
     for values, feature_names in descriptors_2d:
