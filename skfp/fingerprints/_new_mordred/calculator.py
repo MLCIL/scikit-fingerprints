@@ -18,6 +18,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     estate,
     extended_topochemical_atom,
     fragment_complexity,
+    geometric_index,
     morse,
     polarizability,
     rdkit_descriptors,
@@ -149,6 +150,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
             rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
             cpsa.calc_3d(mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens),
+            geometric_index.calc(distance_matrix_3d),
         ]
 
         for values, feature_names in descriptors_3d:
