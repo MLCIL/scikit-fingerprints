@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
@@ -117,12 +119,12 @@ def _chi_subgraphs(mol: Mol, order: int) -> dict[str, list[list[int]]]:
     ]
 
     for bond_idxs in Chem.FindAllSubgraphsOfLengthN(mol, order):
-        # simplyfied dfs
-        deg: dict[int, int] = {}
-        for i in bond_idxs:
-            a, b = bond_endpoints[i]
-            deg[a] = deg.get(a, 0) + 1
-            deg[b] = deg.get(b, 0) + 1
+        # count how many subgraph edges are incident to each atom (its degree
+        # within this subgraph)
+        deg: defaultdict[int, int] = defaultdict(int)
+        for a, b in (bond_endpoints[i] for i in bond_idxs):
+            deg[a] += 1
+            deg[b] += 1
 
         # A subgraph contains a cycle iff n_edges >= n_nodes (for connected subgraphs).
         if len(bond_idxs) >= len(deg):
