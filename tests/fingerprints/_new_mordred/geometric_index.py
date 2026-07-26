@@ -33,4 +33,4 @@ def test_geometric_index_reference_values(
     values = dict(zip(feature_names, values, strict=True))
     values = [values[name] for name in FEATURE_NAMES]
 
-    assert_allclose(values, expected_values, atol=1e-2)
+    assert_allclose(values, expected_values, atol=1e-3)
