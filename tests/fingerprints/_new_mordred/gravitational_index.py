@@ -60,4 +60,4 @@ def computed_values(mordred_test_mols_hydrogens_3d):
 def test_gravitational_index_reference_values(descriptor, molecule, computed_values):
     expected = _REFERENCE[molecule][descriptor]
     actual = computed_values[molecule][descriptor]
-    assert_allclose(actual, expected, atol=1e-2)
+    assert_allclose(actual, expected, atol=1e-3)

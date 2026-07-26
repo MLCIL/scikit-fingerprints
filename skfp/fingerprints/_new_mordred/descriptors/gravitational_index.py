@@ -68,14 +68,17 @@ def _variant_values(
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 
-    # copy so the cached matrix is not mutated; diagonal distances are 0, so set
-    # them to 1 to avoid division by zero (the mass diagonal is 0, so these
-    # terms vanish anyway)
-    distances = distance_matrix_3d.matrix.copy()
+    # float64 for the copy (astype also avoids mutating the cached matrix): the
+    # inverse-square and the summation over all pairs are precision-sensitive, so
+    # keep them in double precision. Diagonal distances are 0, so set them to 1
+    # to avoid division by zero (the mass diagonal is 0, so these terms vanish).
+    distances = distance_matrix_3d.matrix.astype(np.float64)
     np.fill_diagonal(distances, 1.0)
     inverse_squared_distances = distances**-2
 
     weighted = mass_products * inverse_squared_distances
     all_pairs = 0.5 * np.sum(weighted)
     bonded_pairs = 0.5 * np.sum(weighted * adjacency_matrix.matrix)
-    return all_pairs, bonded_pairs
+    # cast the final scalars to float32 (the fingerprint's dtype); the heavy math
+    # above stays in float64
+    return np.float32(all_pairs), np.float32(bonded_pairs)
