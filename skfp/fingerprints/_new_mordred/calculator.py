@@ -12,8 +12,14 @@ from skfp.fingerprints._new_mordred.descriptors import (
     bond_count,
     carbon_types,
     cpsa,
+    detour_matrix,
+    distance_matrix,
+    eccentric_connectivity_index,
+    estate,
     extended_topochemical_atom,
     gravitational_index,
+    fragment_complexity,
+    geometric_index,
     morse,
     polarizability,
     rdkit_descriptors,
@@ -38,7 +44,6 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
-from tests.fingerprints._new_mordred import estate
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -123,6 +128,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
         cpsa_2d,
         polarizability.calc(mol_hydrogens),
+        fragment_complexity.calc(mol_regular),
+        eccentric_connectivity_index.calc(
+            adjacency_matrix_regular, distance_matrix_regular
+        ),
+        distance_matrix.calc(mol_regular, n_frags, distance_matrix_regular),
+        detour_matrix.calc(mol_regular, n_frags),
     ]
 
     for values, feature_names in descriptors_2d:
@@ -153,6 +164,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
                 adjacency_matrix_regular,
                 adjacency_matrix_hydrogens_conformer,
             ),
+            geometric_index.calc(distance_matrix_3d),
         ]
 
         for values, feature_names in descriptors_3d:
