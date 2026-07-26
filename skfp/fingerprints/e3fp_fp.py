@@ -10,7 +10,7 @@ from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval, InvalidParameterError
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import require_mols_with_conf_ids
+from skfp.utils import require_mols_with_conformations
 
 """
 Note: this file cannot have the "e3fp.py" name due to conflict with E3FP library.
@@ -92,8 +92,10 @@ class E3FPFingerprint(BaseFingerprintTransformer):
         Number of output features, size of fingerprints. Equal to ``fp_size``.
 
     requires_conformers : bool = True
-        Value is always True, as this fingerprint is 3D based. It always requires
-        molecules with conformers as inputs, with ``conf_id`` integer property set.
+        Value is always True, as this fingerprint is 3D-based. It always requires
+        molecules with conformers as input. If the ``conf_id`` property is set, it
+        will be used to determine the conformation. You can use
+        :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     See Also
     --------
@@ -194,7 +196,7 @@ class E3FPFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy)
 
     def _calculate_fingerprint(self, X: Sequence[Mol]) -> np.ndarray | csr_array:
-        X = require_mols_with_conf_ids(X)
+        X = require_mols_with_conformations(X)
         X = [self._calculate_single_mol_fingerprint(mol) for mol in X]
         return scipy.sparse.vstack(X) if self.sparse else np.array(X)
 

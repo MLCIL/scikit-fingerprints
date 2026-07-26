@@ -5,9 +5,10 @@ from skfp.fingerprints import AtomPairFingerprint
 from skfp.utils.validators import (
     ensure_mols,
     ensure_smiles,
+    get_conf_id,
     require_atoms,
     require_mols,
-    require_mols_with_conf_ids,
+    require_mols_with_conformations,
     require_strings,
 )
 
@@ -78,11 +79,26 @@ def test_require_strings(smiles_list):
         require_strings(smiles_list + [1])
 
 
-def test_require_mols_with_conf_ids(mols_conformers_list, mols_list):
-    require_mols_with_conf_ids(mols_conformers_list)
+def test_require_mols_with_conformations(mols_conformers_list, mols_list):
+    require_mols_with_conformations(mols_conformers_list)
     with pytest.raises(TypeError) as exc_info:
-        require_mols_with_conf_ids(mols_conformers_list + mols_list)
-    assert "each must have conf_id property set" in str(exc_info)
+        require_mols_with_conformations(mols_conformers_list + mols_list)
+    assert "each must have at least one conformation" in str(exc_info)
+
+
+def test_get_conf_id_from_property(mols_conformers_list):
+    for mol in mols_conformers_list:
+        assert get_conf_id(mol) == mol.GetIntProp("conf_id")
+
+
+def test_get_conf_id_defaults_to_first_conformer():
+    from rdkit.Chem import AddHs
+    from rdkit.Chem.AllChem import EmbedMolecule
+
+    mol = AddHs(MolFromSmiles("CCO"))
+    EmbedMolecule(mol, randomSeed=0)
+    assert not mol.HasProp("conf_id")
+    assert get_conf_id(mol) == mol.GetConformer().GetId()
 
 
 @pytest.mark.parametrize(

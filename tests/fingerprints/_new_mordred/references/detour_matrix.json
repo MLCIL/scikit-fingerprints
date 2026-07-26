@@ -1,0 +1,92 @@
+{
+  "Hexane": {
+    "SpMax_Dt": 12.1093115,
+    "SpDiam_Dt": 19.57341312,
+    "SpAD_Dt": 24.21862301,
+    "SpMAD_Dt": 4.036437168,
+    "LogEE_Dt": 12.10932554
+  },
+  "Benzene": {
+    "SpMax_Dt": 21,
+    "SpDiam_Dt": 27,
+    "SpAD_Dt": 42,
+    "SpMAD_Dt": 7,
+    "LogEE_Dt": 21
+  },
+  "Caffeine": {
+    "SpMax_Dt": 95.16634059,
+    "SpDiam_Dt": 114.4774666,
+    "SpAD_Dt": 190.3326812,
+    "SpMAD_Dt": 13.59519151,
+    "LogEE_Dt": 95.16634059
+  },
+  "Cyanidin": {
+    "SpMax_Dt": 191.5904568,
+    "SpDiam_Dt": 263.4509827,
+    "SpAD_Dt": 383.1809137,
+    "SpMAD_Dt": 18.24671017,
+    "LogEE_Dt": 191.5904568
+  },
+  "Lycopene": {
+    "SpMax_Dt": 462.8935771,
+    "SpDiam_Dt": 726.367662,
+    "SpAD_Dt": 925.7871542,
+    "SpMAD_Dt": 23.14467886,
+    "LogEE_Dt": 462.8935771
+  },
+  "Epicatechin": {
+    "SpMax_Dt": 191.5904568,
+    "SpDiam_Dt": 263.4509827,
+    "SpAD_Dt": 383.1809137,
+    "SpMAD_Dt": 18.24671017,
+    "LogEE_Dt": 191.5904568
+  },
+  "Limonene": {
+    "SpMax_Dt": 41.38554761,
+    "SpDiam_Dt": 57.2454538,
+    "SpAD_Dt": 82.77109522,
+    "SpMAD_Dt": 8.277109522,
+    "LogEE_Dt": 41.38554761
+  },
+  "Allicin": {
+    "SpMax_Dt": 25.02074591,
+    "SpDiam_Dt": 38.31124324,
+    "SpAD_Dt": 50.04149182,
+    "SpMAD_Dt": 5.560165758,
+    "LogEE_Dt": 25.02074591
+  },
+  "Glutathione": {
+    "SpMax_Dt": 100.5557233,
+    "SpDiam_Dt": 150.8622885,
+    "SpAD_Dt": 201.1114466,
+    "SpMAD_Dt": 10.05557233,
+    "LogEE_Dt": 100.5557233
+  },
+  "Digoxin": {
+    "SpMax_Dt": 1035.473415,
+    "SpDiam_Dt": 1452.167174,
+    "SpAD_Dt": 2075.168371,
+    "SpMAD_Dt": 37.73033401
+  },
+  "Capsaicin": {
+    "SpMax_Dt": 159.9284809,
+    "SpDiam_Dt": 241.9071906,
+    "SpAD_Dt": 319.8569618,
+    "SpMAD_Dt": 14.53895281,
+    "LogEE_Dt": 159.9284809
+  },
+  "EllagicAcid": {
+    "SpMax_Dt": 282.1476622,
+    "SpDiam_Dt": 316.918998,
+    "SpAD_Dt": 564.2953244,
+    "SpMAD_Dt": 25.64978747,
+    "LogEE_Dt": 282.1476622
+  },
+  "Astaxanthin": {
+    "SpMax_Dt": 574.3451302,
+    "SpDiam_Dt": 888.9116878,
+    "SpAD_Dt": 1148.69026,
+    "SpMAD_Dt": 26.10659683,
+    "LogEE_Dt": 574.3451302
+  }
+}
