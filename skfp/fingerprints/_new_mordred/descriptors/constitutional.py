@@ -1,5 +1,3 @@
-"""Constitutional descriptors."""
-
 import numpy as np
 from rdkit.Chem import Mol
 from rdkit.Chem.rdchem import Atom
@@ -38,7 +36,9 @@ _NUM_ELEMENTS = 119
 
 
 def _get_normalized_property_table() -> np.ndarray:
-    """Precompute each atomic property divided by its value for carbon."""
+    """
+    Precompute each atomic property divided by its value for carbon.
+    """
     atoms = tuple(Atom(atomic_num) for atomic_num in range(_NUM_ELEMENTS))
     property_values = np.asarray(
         [
@@ -47,7 +47,9 @@ def _get_normalized_property_table() -> np.ndarray:
         ],
         dtype=np.float64,
     )
-    carbon_values = property_values[:, [6]]
+    # Keep shape as (num_properties, 1) so broadcasting divides each row by carbon
+    # while preserving the atom axis.
+    carbon_values = property_values[:, 6].reshape(-1, 1)
     return property_values / carbon_values
 
 
