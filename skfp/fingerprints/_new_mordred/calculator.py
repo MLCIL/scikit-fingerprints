@@ -22,6 +22,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     geometric_index,
     gravitational_index,
     morse,
+    path_count,
     polarizability,
     rdkit_descriptors,
     ring_count,
@@ -102,6 +103,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     descriptors_2d = [
         abc_index.calc(mol_regular, distance_matrix_regular),
         walk_count.calc(mol_regular, adjacency_matrix_regular),
+        path_count.calc(mol_regular),
         adjacency_matrix.calc(mol_regular, n_frags, adjacency_matrix_regular),
         wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index.calc(mol_regular, adjacency_matrix_regular),
