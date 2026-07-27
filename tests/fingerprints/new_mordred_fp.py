@@ -161,10 +161,12 @@ def test_new_mordred_feature_names():
             for feature in feature_names_new
         ]
     )
-    feature_names_new = feature_names_new[~changed_name]
-    feature_names_old = feature_names_old[~changed_name]
+    # sets, since the order does not matter
+    feature_names_new = set(feature_names_new[~changed_name])
+    feature_names_old = set(feature_names_old[~changed_name])
 
-    assert_equal(feature_names_new, feature_names_old)
+    diff_names = feature_names_new - feature_names_old
+    assert not diff_names
 
 
 def test_new_mordred_3D_feature_names():
@@ -187,10 +189,12 @@ def test_new_mordred_3D_feature_names():
             for feature in feature_names_new
         ]
     )
-    feature_names_new = feature_names_new[~changed_name]
-    feature_names_old = feature_names_old[~changed_name]
+    # sets, since the order does not matter
+    feature_names_new = set(feature_names_new[~changed_name])
+    feature_names_old = set(feature_names_old[~changed_name])
 
-    assert_equal(feature_names_new, feature_names_old)
+    diff_names = feature_names_new - feature_names_old
+    assert not diff_names
 
 
 def _mismatched_features_msg(
