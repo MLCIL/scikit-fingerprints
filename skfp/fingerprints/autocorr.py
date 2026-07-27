@@ -5,7 +5,7 @@ from rdkit.Chem import Mol
 from scipy.sparse import csr_array
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols, require_mols_with_conf_ids
+from skfp.utils import ensure_mols, get_conf_id, require_mols_with_conformations
 
 
 class AutocorrFingerprint(BaseFingerprintTransformer):
@@ -68,8 +68,9 @@ class AutocorrFingerprint(BaseFingerprintTransformer):
 
     requires_conformers : bool
         Whether the fingerprint is 3D-based and requires molecules with conformers as
-        inputs, with ``conf_id`` integer property set. This depends on the ``use_3D``
-        parameter, and has the same value.
+        inputs. This depends on the ``use_3D`` parameter, and has the same value. If the
+        ``conf_id`` property is set, it will be used to determine the conformation.
+        You can use :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     References
     ----------
@@ -213,7 +214,7 @@ class AutocorrFingerprint(BaseFingerprintTransformer):
             X = ensure_mols(X)
             X = [CalcAUTOCORR2D(mol) for mol in X]
         else:
-            X = require_mols_with_conf_ids(X)
-            X = [CalcAUTOCORR3D(mol, confId=mol.GetIntProp("conf_id")) for mol in X]
+            X = require_mols_with_conformations(X)
+            X = [CalcAUTOCORR3D(mol, confId=get_conf_id(mol)) for mol in X]
 
         return np.array(X)
