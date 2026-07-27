@@ -21,6 +21,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     fragment_complexity,
     geometric_index,
     gravitational_index,
+    molecular_distance_edge,
     morse,
     path_count,
     polarizability,
@@ -138,6 +139,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         distance_matrix.calc(mol_regular, n_frags, distance_matrix_regular),
         detour_matrix.calc(mol_regular, n_frags),
+        molecular_distance_edge.calc(
+            mol_regular, adjacency_matrix_regular, distance_matrix_regular
+        ),
     ]
 
     for values, feature_names in descriptors_2d:
