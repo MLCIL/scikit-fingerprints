@@ -33,6 +33,25 @@ with open(Path(__file__).parent / "references" / "barysz_matrix.json") as f:
     _REFERENCE = json.load(f)
 
 
+def _feature_param(feature_name):
+    # LogEE intentionally diverges from mordred-community, whose implementation
+    # adds a spurious exp(-a) term and computes log(1 + sum(exp(lambda_i)))
+    # instead of the documented log(sum(exp(lambda_i))).
+    # See https://github.com/JacksonBurns/mordred-community/issues/24.
+    if feature_name.startswith("LogEE"):
+        return pytest.param(
+            feature_name,
+            marks=pytest.mark.xfail(
+                reason="LogEE fixed in skfp, mordred-community reference is buggy "
+                "(https://github.com/JacksonBurns/mordred-community/issues/24). "
+                "Divergence is log(1 + 1/EE), so large-EE cases still match within "
+                "atol and xpass; not strict.",
+                strict=False,
+            ),
+        )
+    return feature_name
+
+
 @pytest.fixture(scope="module")
 def computed_values():
     computed = {}
@@ -44,7 +63,9 @@ def computed_values():
 
 
 @pytest.mark.parametrize("molecule", list(_SMILES))
-@pytest.mark.parametrize("feature_name", FEATURE_NAMES)
+@pytest.mark.parametrize(
+    "feature_name", [_feature_param(name) for name in FEATURE_NAMES]
+)
 def test_barysz_matrix_reference_values(feature_name, molecule, computed_values):
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]

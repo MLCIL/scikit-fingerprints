@@ -13,7 +13,14 @@ from skfp.fingerprints._new_mordred.descriptors import (
     carbon_types,
     chi,
     cpsa,
+    detour_matrix,
+    distance_matrix,
+    eccentric_connectivity_index,
+    estate,
     extended_topochemical_atom,
+    fragment_complexity,
+    geometric_index,
+    gravitational_index,
     morse,
     polarizability,
     rdkit_descriptors,
@@ -38,7 +45,6 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
-from tests.fingerprints._new_mordred import estate
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -124,6 +130,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         cpsa_2d,
         polarizability.calc(mol_hydrogens),
         chi.calc(mol_regular),
+        fragment_complexity.calc(mol_regular),
+        eccentric_connectivity_index.calc(
+            adjacency_matrix_regular, distance_matrix_regular
+        ),
+        distance_matrix.calc(mol_regular, n_frags, distance_matrix_regular),
+        detour_matrix.calc(mol_regular, n_frags),
     ]
 
     for values, feature_names in descriptors_2d:
@@ -137,10 +149,24 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
+        # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
+        # coordinates), so it is the heavy-atom 3D molecule
+        distance_matrix_3d_regular = DistanceMatrix3D(mol_regular, conf_id)
+        adjacency_matrix_hydrogens_conformer = AdjacencyMatrix(mol_hydrogens_conformer)
+
         descriptors_3d: list = [
             morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
             rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
             cpsa.calc_3d(mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens),
+            gravitational_index.calc(
+                mol_regular,
+                mol_hydrogens_conformer,
+                distance_matrix_3d_regular,
+                distance_matrix_3d,
+                adjacency_matrix_regular,
+                adjacency_matrix_hydrogens_conformer,
+            ),
+            geometric_index.calc(distance_matrix_3d),
         ]
 
         for values, feature_names in descriptors_3d:

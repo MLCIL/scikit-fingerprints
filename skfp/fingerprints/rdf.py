@@ -5,7 +5,7 @@ from rdkit.Chem import Mol
 from scipy.sparse import csr_array
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import require_mols_with_conf_ids
+from skfp.utils import get_conf_id, require_mols_with_conformations
 
 
 class RDFFingerprint(BaseFingerprintTransformer):
@@ -64,8 +64,10 @@ class RDFFingerprint(BaseFingerprintTransformer):
         Number of output features, size of fingerprints.
 
     requires_conformers : bool = True
-        Value is always True, as this fingerprint is 3D based. It always requires
-        molecules with conformers as inputs, with ``conf_id`` integer property set.
+        Value is always True, as this fingerprint is 3D-based. It always requires
+        molecules with conformers as input. If the ``conf_id`` property is set, it
+        will be used to determine the conformation. You can use
+        :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     See Also
     --------
@@ -187,6 +189,6 @@ class RDFFingerprint(BaseFingerprintTransformer):
     def _calculate_fingerprint(self, X: Sequence[Mol]) -> np.ndarray | csr_array:
         from rdkit.Chem.rdMolDescriptors import CalcRDF
 
-        X = require_mols_with_conf_ids(X)
-        X = [CalcRDF(mol, confId=mol.GetIntProp("conf_id")) for mol in X]
+        X = require_mols_with_conformations(X)
+        X = [CalcRDF(mol, confId=get_conf_id(mol)) for mol in X]
         return csr_array(X) if self.sparse else np.array(X)
