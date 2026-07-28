@@ -1,7 +1,8 @@
 from functools import cached_property
 
 import numpy as np
-from rdkit.Chem import Mol
+
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -19,10 +20,12 @@ class MatrixAttributes:
     molecules, all attributes propagate NaN.
     """
 
-    def __init__(self, matrix: np.ndarray, mol: Mol, hermitian: bool, n_frags: int):
+    def __init__(
+        self, matrix: np.ndarray, props: AtomicProperties, hermitian: bool, n_frags: int
+    ):
         self._matrix = matrix
-        self._mol = mol
-        self._n_atoms: int = mol.GetNumAtoms()
+        self._props = props
+        self._n_atoms: int = props.num_atoms
 
         # not connected
         if n_frags != 1:
@@ -136,16 +139,15 @@ class MatrixAttributes:
         return np.log(0.1 * self._n_atoms * self.ve1)
 
     @cached_property
-    def vr1(self) -> float:
+    @np.errstate(divide="ignore", invalid="ignore")
+    def vr1(self) -> np.floating:
         """
         Randic-like eigenvector-based index.
         """
-        s = 0.0
-        for bond in self._mol.GetBonds():
-            i = bond.GetBeginAtomIdx()
-            j = bond.GetEndAtomIdx()
-            s += (self._eigvecs[i, self._i_max] * self._eigvecs[j, self._i_max]) ** -0.5
-        return s
+        leading_eigvec = self._eigvecs[:, self._i_max]
+        begins = leading_eigvec[self._props.bond_begin_idxs]
+        ends = leading_eigvec[self._props.bond_end_idxs]
+        return ((begins * ends) ** -0.5).sum()
 
     @cached_property
     def vr2(self) -> np.floating:

@@ -1,6 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
@@ -28,7 +28,9 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_regular: Mol, n_frags: int, adjacency_matrix: AdjacencyMatrix
+    atomic_atomic_props_regular: AtomicProperties,
+    n_frags: int,
+    adjacency_matrix: AdjacencyMatrix,
 ) -> tuple[np.ndarray, list[str]]:
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
@@ -37,7 +39,7 @@ def calc(
     adj_matrix = adjacency_matrix.matrix
     attrs = MatrixAttributes(
         adj_matrix,
-        mol_regular,
+        atomic_atomic_props_regular,
         hermitian=adjacency_matrix.hermitian,
         n_frags=n_frags,
     )

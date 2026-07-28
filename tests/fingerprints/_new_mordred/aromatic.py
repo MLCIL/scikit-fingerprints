@@ -5,6 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.aromatic import FEATURE_NAMES, calc
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -24,7 +25,7 @@ with open(Path(__file__).parent / "references" / "aromatic.json") as f:
 def test_aromatic_reference_values(molecule, mordred_test_mols):
     mol = mordred_test_mols[molecule]
 
-    values, feature_names = calc(mol)
+    values, feature_names = calc(AtomicProperties(mol))
 
     assert feature_names == FEATURE_NAMES
     expected = [_REFERENCE[molecule][name] for name in feature_names]

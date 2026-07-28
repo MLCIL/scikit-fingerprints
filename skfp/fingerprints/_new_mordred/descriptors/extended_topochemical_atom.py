@@ -1,7 +1,11 @@
 import numpy as np
 from rdkit.Chem import AddHs, Atom, BondType, Kekulize, Mol, RWMol, SanitizeMol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import _RDKIT_PERIODIC_TABLE
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    _N_OUTER_ELECS,
+    _RDKIT_PERIODIC_TABLE,
+    AtomicProperties,
+)
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 from skfp.fingerprints._new_mordred.utils.periodic_table import PERIOD
@@ -65,7 +69,7 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_kekulized: Mol,
+    props_kekulized: AtomicProperties,
     distance_matrix: DistanceMatrix,
     mol_kekulized_hydrogens: Mol,
     ring_count: int,
@@ -75,23 +79,22 @@ def calc(
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
-    num_atoms = mol_kekulized.GetNumAtoms()
+    mol_kekulized = props_kekulized.mol
+    num_atoms = props_kekulized.num_atoms
 
     # atomic properties
     atomic_nums, core_counts, epsilons = _atom_properties(mol_kekulized)
-    degrees = np.fromiter(
-        (atom.GetDegree() for atom in mol_kekulized.GetAtoms()),
-        dtype=np.int32,
-        count=num_atoms,
-    )
+    degrees = props_kekulized.degrees
     gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
         mol_kekulized, atomic_nums, core_counts, epsilons
     )
 
     # reference variants of the molecule; each may fail to build (e.g. heavy atom
-    # with degree > 4), in which case the descriptors depending on it become NaN
+    # with degree > 4), in which case the descriptors depending on it become NaN.
+    # The hydrogen-explicit alkane is the alkane with hydrogens added, so only two
+    # skeletons have to be built.
     mol_alkane = build_reference_mol(mol_kekulized)
-    mol_alkane_hydrogens = build_reference_mol(mol_kekulized, explicit_hydrogens=True)
+    mol_alkane_hydrogens = None if mol_alkane is None else AddHs(mol_alkane)
     mol_saturated = build_reference_mol(
         mol_kekulized, explicit_hydrogens=True, saturated=True
     )
@@ -187,21 +190,19 @@ def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Return per-atom arrays of (atomic number, core count alpha, epsilon).
     """
-    num_atoms = mol.GetNumAtoms()
-    atomic_nums = np.empty(num_atoms, dtype=np.int32)
-    core_counts = np.empty(num_atoms, dtype=np.float32)
-    epsilons = np.empty(num_atoms, dtype=np.float32)
+    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol, np.int32)
+    outer_elecs = _N_OUTER_ELECS[atomic_nums]
 
-    for atom in mol.GetAtoms():
-        i = atom.GetIdx()
-        z = atom.GetAtomicNum()
-        zv = _GET_N_OUTER_ELECS(z)
-        alpha = 0.0 if z == 1 else (z - zv) / (zv * (PERIOD[z] - 1))
-        atomic_nums[i] = z
-        core_counts[i] = alpha
-        epsilons[i] = 0.3 * zv - alpha
+    # hydrogens have no core electrons, so their alpha is 0 by definition (and the
+    # general formula would divide by zero, since their period is 1)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        alphas = (atomic_nums - outer_elecs) / (
+            outer_elecs * (PERIOD.lookup(atomic_nums) - 1)
+        )
+    core_counts = np.where(atomic_nums == 1, 0.0, alphas)
+    epsilons = 0.3 * outer_elecs - core_counts
 
-    return atomic_nums, core_counts, epsilons
+    return atomic_nums, core_counts.astype(np.float32), epsilons.astype(np.float32)
 
 
 def _beta_and_gamma(

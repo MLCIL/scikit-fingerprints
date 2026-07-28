@@ -1,11 +1,8 @@
 import numpy as np
-from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    get_mass,
-    get_polarizability,
-    get_sanderson_electronegativity,
-    get_van_der_waals_volume,
+    CARBON_PROPERTY_VALUES,
+    AtomicProperties,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 
@@ -18,24 +15,22 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 # atomic properties used to weight distance matrices
 _PROPS = [
-    ("unweighted", None),  # pure interatomic distance
-    ("mass", get_mass),
-    ("van_der_Waals_volume", get_van_der_waals_volume),
-    ("Sanderson_electronegativity", get_sanderson_electronegativity),
-    ("polarizability", get_polarizability),
+    "unweighted",  # pure interatomic distance
+    "mass",
+    "van_der_Waals_volume",
+    "Sanderson_electronegativity",
+    "polarizability",
 ]
-_DISTANCES = range(1, 33)
+_DISTANCES = np.arange(1, 33)
 
 FEATURE_NAMES = [
-    f"MoRSE_{prop_name}_dist_{dist}"
-    for prop_name, prop_func in _PROPS
-    for dist in _DISTANCES
+    f"MoRSE_{prop_name}_dist_{dist}" for prop_name in _PROPS for dist in _DISTANCES
 ]
 
 
 @np.errstate(divide="ignore", invalid="ignore")
 def calc(
-    mol_3d: Mol, distance_matrix_3d: DistanceMatrix3D
+    props_3d: AtomicProperties, distance_matrix_3d: DistanceMatrix3D
 ) -> tuple[np.ndarray, list[str]]:
     """
     MoRSE descriptors.
@@ -44,37 +39,39 @@ def calc(
     properties. Property values are normalized by the value for carbon prior
     to weighting.
     """
-    atoms = list(mol_3d.GetAtoms())
-    num_atoms = len(atoms)
+    num_atoms = props_3d.num_atoms
 
     if num_atoms < 2:
-        return np.full(160, np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
-    dist_kernels = []
-    for distance in _DISTANCES:
-        if distance == 1:
-            value = np.ones((num_atoms, num_atoms), dtype=np.float32)
-        else:
-            dists = (distance - 1) * distance_matrix_3d.matrix
-            np.fill_diagonal(dists, 1.0)
-            value = np.sin(dists) / dists
-        np.fill_diagonal(value, 0.0)
-        dist_kernels.append(value)
+    # scaled distances for all 32 kernels, shape (32, n, n)
+    # the first kernel is the unscaled sin(x)/x limit of 1
+    scaled_dists = np.multiply.outer(_DISTANCES[1:] - 1, distance_matrix_3d.matrix)
+    diagonal = np.arange(num_atoms)
+    scaled_dists[:, diagonal, diagonal] = 1.0
 
-    prop_vectors = []
-    for name, func in _PROPS:
-        if name == "unweighted":
-            props = np.ones(num_atoms)
-        else:
-            props = np.fromiter(
-                (func(a) for a in atoms),  # type: ignore
-                dtype=np.float32,
-                count=num_atoms,
-            )
+    dist_kernels = np.empty((len(_DISTANCES), num_atoms, num_atoms), dtype=np.float64)
+    dist_kernels[0] = 1.0
+    dist_kernels[1:] = np.sin(scaled_dists) / scaled_dists
+    dist_kernels[:, diagonal, diagonal] = 0.0
+
+    prop_vectors = np.stack(
+        [
+            np.ones(num_atoms)
+            if name == "unweighted"
             # normalize by value for carbon
-            props = props / func(Atom(6))  # type: ignore
-        prop_vectors.append(props)
+            else props_3d.get(name) / CARBON_PROPERTY_VALUES[name]
+            for name in _PROPS
+        ]
+    )
 
-    values = [0.5 * (props @ n @ props) for props in prop_vectors for n in dist_kernels]
+    # one contraction for all property x kernel combinations, shape (n_props, 32)
+    values = 0.5 * np.einsum(
+        "pi,kij,pj->pk",
+        prop_vectors,
+        dist_kernels,
+        prop_vectors,
+        optimize=True,
+    )
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return values.ravel().astype(np.float32), FEATURE_NAMES

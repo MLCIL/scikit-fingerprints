@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
-from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
 """
@@ -29,7 +29,9 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
+def calc(
+    atomic_props_regular: AtomicProperties, n_frags: int
+) -> tuple[np.ndarray, list[str]]:
     """
     Detour matrix descriptor.
 
@@ -41,11 +43,11 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
 
-    detour_matrix = _get_detour_matrix(mol_regular)
+    detour_matrix = _get_detour_matrix(atomic_props_regular)
     attrs = MatrixAttributes(
         detour_matrix,
-        mol_regular,
-        hermitian=True,  # as in Mordred's reference implementation
+        atomic_props_regular,
+        hermitian=True,
         n_frags=n_frags,
     )
 
@@ -74,7 +76,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     return values, FEATURE_NAMES
 
 
-def _get_detour_matrix(mol: Mol) -> np.ndarray:
+def _get_detour_matrix(props: AtomicProperties) -> np.ndarray:
     """
     Build the detour (maximum topological distance) matrix of a molecule.
 
@@ -83,20 +85,26 @@ def _get_detour_matrix(mol: Mol) -> np.ndarray:
     simple paths are solved per block, and the blocks are stitched back
     together through their articulation nodes (see :func:`_merge`).
     """
-    n = mol.GetNumAtoms()
+    n = props.num_atoms
 
     if n == 1:
         return np.array([[0]], dtype=np.float32)
 
     # G: molecular graph
     G = nx.from_edgelist(
-        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
+        zip(props.bond_begin_idxs.tolist(), props.bond_end_idxs.tolist(), strict=True)
     )
     Q = []  # queue of biconnected blocks, each a nodes and longest-paths map pair
 
     for bcc in (G.subgraph(components) for components in nx.biconnected_components(G)):
-        lsp = _longest_simple_paths(bcc)
         nodes = set(bcc.nodes())
+        if len(nodes) == 2:
+            # bridge = the only simple path between its two ends is the bond itself
+            # we can avoid DFS in this case
+            u, v = sorted(nodes)
+            lsp = {(u, v): 1}
+        else:
+            lsp = _longest_simple_paths(bcc)
         Q.append((nodes, lsp))
 
     merged = _merge(Q, n)

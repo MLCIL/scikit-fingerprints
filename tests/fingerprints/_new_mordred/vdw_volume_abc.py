@@ -4,6 +4,8 @@ from numpy.testing import assert_allclose
 from rdkit import Chem
 
 from skfp.fingerprints._new_mordred.descriptors import vdw_volume_abc
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = ["Vabc"]
@@ -25,7 +27,8 @@ def test_vdw_volume_abc_values(smiles, expected):
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     mol_regular = preprocess_mol(mol)
 
-    values, feature_names = vdw_volume_abc.calc(mol_regular, mol_hydrogens)
+    rings = RingSets(mol_regular, AtomicProperties(mol_regular))
+    values, feature_names = vdw_volume_abc.calc(rings, mol_hydrogens)
 
     assert feature_names == FEATURE_NAMES
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

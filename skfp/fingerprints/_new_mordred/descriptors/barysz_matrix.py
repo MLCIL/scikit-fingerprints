@@ -1,9 +1,12 @@
 import numpy as np
-from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Atom
+from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import floyd_warshall
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import PROPERTY_FUNCS
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    CARBON_PROPERTY_VALUES,
+    ELEMENT_PROPERTY_TABLES,
+    AtomicProperties,
+)
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
 """
@@ -29,10 +32,14 @@ _ATTR_NAMES = [
     "VR3",
 ]
 
-FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in PROPERTY_FUNCS for attr in _ATTR_NAMES]
+FEATURE_NAMES = [
+    f"{attr}_Dz{prop}" for prop in ELEMENT_PROPERTY_TABLES for attr in _ATTR_NAMES
+]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
+def calc(
+    atomic_props_regular: AtomicProperties, n_frags: int
+) -> tuple[np.ndarray, list[str]]:
     """
     Barysz matrix spectral descriptors.
 
@@ -45,52 +52,51 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     """
     if n_frags != 1:
         values_nan = np.full(
-            len(PROPERTY_FUNCS) * len(_ATTR_NAMES), np.nan, dtype=np.float32
+            len(ELEMENT_PROPERTY_TABLES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
         )
 
         return values_nan, FEATURE_NAMES
 
     values: list = []
-    for prop_func in PROPERTY_FUNCS.values():
-        matrix = _barysz_matrix(mol_regular, prop_func)
+    for prop_name in ELEMENT_PROPERTY_TABLES:
+        matrix = _barysz_matrix(atomic_props_regular, prop_name)
         if matrix is None:
             values.extend([np.nan] * len(_ATTR_NAMES))
         else:
-            values.extend(_barysz_matrix_attribute_values(mol_regular, n_frags, matrix))
+            values.extend(
+                _barysz_matrix_attribute_values(atomic_props_regular, n_frags, matrix)
+            )
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
-    carbon_value = prop_func(Atom(6))  # Carbon
+def _barysz_matrix(props: AtomicProperties, prop_name: str) -> np.ndarray | None:
+    carbon_value = CARBON_PROPERTY_VALUES[prop_name]
 
-    property_values = np.asarray(
-        [prop_func(atom) for atom in mol.GetAtoms()], dtype=np.float32
-    )
-    if np.any(~np.isfinite(property_values)):
+    props_vals = props.get(prop_name).astype(np.float32)
+    if not np.isfinite(props_vals).all():
         return None
 
-    n_atoms = mol.GetNumAtoms()
-    matrix = np.full((n_atoms, n_atoms), np.inf, dtype=np.float32)
-    np.fill_diagonal(matrix, 0.0)
+    n_atoms = props.num_atoms
+    i_arr = props.bond_begin_idxs
+    j_arr = props.bond_end_idxs
+    weights = carbon_value**2 / (
+        props_vals[i_arr] * props_vals[j_arr] * props.bond_orders
+    )
+    if not np.isfinite(weights).all():
+        return None
 
-    bonds = mol.GetBonds()
-    if bonds:
-        i_arr = np.array([b.GetBeginAtomIdx() for b in bonds])
-        j_arr = np.array([b.GetEndAtomIdx() for b in bonds])
-        bo_arr = np.array([b.GetBondTypeAsDouble() for b in bonds])
-        weights = carbon_value**2 / (
-            property_values[i_arr] * property_values[j_arr] * bo_arr
-        )
-        if not np.all(np.isfinite(weights)):
-            return None
-        matrix[i_arr, j_arr] = weights
-        matrix[j_arr, i_arr] = weights
+    # Floyd-Warshall is the fastest on sparse COO adjacency matrix
+    graph = coo_matrix(
+        (weights.astype(np.float32), (i_arr, j_arr)),
+        shape=(n_atoms, n_atoms),
+        dtype=np.float32,
+    ).tocsr()
+    matrix = floyd_warshall(graph, directed=False)
 
-    matrix = floyd_warshall(matrix, directed=False)
-    diagonal = 1.0 - carbon_value / property_values
-    if np.any(~np.isfinite(diagonal)):
+    diagonal = 1.0 - carbon_value / props_vals
+    if not np.isfinite(diagonal).all():
         return None
 
     np.fill_diagonal(matrix, diagonal)
@@ -98,9 +104,9 @@ def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
 
 
 def _barysz_matrix_attribute_values(
-    mol: Mol, n_frags: int, matrix: np.ndarray
+    props: AtomicProperties, n_frags: int, matrix: np.ndarray
 ) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
+    attrs = MatrixAttributes(matrix, props, hermitian=True, n_frags=n_frags)
     return [
         attrs.graph_energy,
         attrs.leading_eigenvalue,

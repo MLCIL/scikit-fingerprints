@@ -60,14 +60,14 @@ def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
     ]
 
 
-def _average_exact_mol_wt(mol: Mol) -> float:
+def _average_exact_mol_wt(mol: Mol, exact_mol_wt: float) -> float:
     """
     Compute average exact molecular weight.
 
     The AMW descriptor is exact molecular weight divided by total atom count,
     including implicit hydrogens in the atom denominator.
     """
-    return Descriptors.ExactMolWt(mol) / rdMolDescriptors.CalcNumAtoms(mol)
+    return exact_mol_wt / rdMolDescriptors.CalcNumAtoms(mol)
 
 
 def calc_rdkit_2d(
@@ -77,6 +77,7 @@ def calc_rdkit_2d(
     """
     Compute 2D descriptors that map directly to RDKit descriptor functions.
     """
+    exact_mol_wt = Descriptors.ExactMolWt(mol_regular)
     values = [
         safe_value(
             GraphDescriptors.BalabanJ,
@@ -96,8 +97,8 @@ def calc_rdkit_2d(
         Crippen.MolMR(mol_regular),
         rdMolDescriptors.CalcTPSA(mol_regular),
         rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True),
-        Descriptors.ExactMolWt(mol_regular),
-        safe_value(_average_exact_mol_wt, mol_regular),
+        exact_mol_wt,
+        safe_value(_average_exact_mol_wt, mol_regular, exact_mol_wt),
     ]
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES_2D

@@ -10,7 +10,9 @@ from skfp.fingerprints._new_mordred.descriptors.chi import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -54,7 +56,8 @@ def computed_values():
     computed = {}
     for name, smiles in _SMILES.items():
         mol = preprocess_mol(MolFromSmiles(smiles))
-        values, feature_names = calc(mol)
+        props = AtomicProperties(mol)
+        values, feature_names = calc(props, Subgraphs(mol, props))
         computed[name] = dict(zip(feature_names, values, strict=True))
     return computed
 

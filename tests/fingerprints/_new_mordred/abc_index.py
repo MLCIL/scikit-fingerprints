@@ -6,6 +6,7 @@ from skfp.fingerprints._new_mordred.descriptors.abc_index import (
     _calc_abc_index,
     _calc_abcgg_index,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 """
@@ -30,5 +31,8 @@ def test_abc_index_reference_values(smiles, expected_abc, expected_abcgg):
     mol = MolFromSmiles(smiles)
     distance_matrix = DistanceMatrix(mol)
 
-    assert_allclose(_calc_abc_index(mol), expected_abc, atol=1e-2)
-    assert_allclose(_calc_abcgg_index(mol, distance_matrix), expected_abcgg, atol=1e-2)
+    props = AtomicProperties(mol)
+    assert_allclose(_calc_abc_index(props), expected_abc, atol=1e-2)
+    assert_allclose(
+        _calc_abcgg_index(props, distance_matrix), expected_abcgg, atol=1e-2
+    )

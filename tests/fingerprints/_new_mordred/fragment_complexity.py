@@ -5,6 +5,7 @@ from rdkit.Chem import MolFromSmiles
 from skfp.fingerprints._new_mordred.descriptors.fragment_complexity import (
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 _SMILES = {
@@ -47,7 +48,7 @@ def computed_values():
     computed = {}
     for name, smiles in _SMILES.items():
         mol = preprocess_mol(MolFromSmiles(smiles))
-        values, feature_names = calc(mol)
+        values, feature_names = calc(AtomicProperties(mol))
         computed[name] = dict(zip(feature_names, values, strict=True))
     return computed
 

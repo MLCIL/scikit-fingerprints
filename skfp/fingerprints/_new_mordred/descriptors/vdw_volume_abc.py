@@ -3,10 +3,7 @@ from math import pi
 import numpy as np
 from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.descriptors.ring_count import (
-    _ring_atom_sets,
-    _ring_properties,
-)
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 
 """
 van der Waals volume (ABC) descriptor.
@@ -40,7 +37,7 @@ _BONDI_RADII = {
 _ATOM_CONTRIB = {symbol: 4.0 / 3.0 * pi * r**3 for symbol, r in _BONDI_RADII.items()}
 
 
-def calc(mol_regular: Mol, mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
     r"""
     Compute the Mordred ABC van der Waals volume descriptor.
 
@@ -54,9 +51,10 @@ def calc(mol_regular: Mol, mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
     rings, and :math:`R_A` the number of non-aromatic rings. Returns NaN when the
     molecule contains an atom without a defined Bondi radius.
 
-    Atom volumes and bonds use the hydrogen-explicit molecule, while rings are
-    counted on ``mol_regular`` whose aromaticity is reliably perceived (unlike
-    ``AddHs``, ``RemoveHs`` re-sanitizes the molecule).
+    Atom volumes and bonds use the hydrogen-explicit molecule, while rings come
+    from ``rings_regular``, built on the hydrogen-suppressed molecule whose
+    aromaticity is reliably perceived (unlike ``AddHs``, ``RemoveHs``
+    re-sanitizes the molecule).
     """
     try:
         atom_volume = sum(
@@ -69,9 +67,9 @@ def calc(mol_regular: Mol, mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
 
     # reuse ring detection from the ring count descriptor: simple (non-fused)
     # aromatic and non-aromatic rings
-    rings = _ring_properties(mol_regular, _ring_atom_sets(mol_regular))
+    rings = rings_regular.simple_rings
     n_aromatic_rings = sum(1 for ring in rings if ring.is_aromatic)
-    n_aliphatic_rings = sum(1 for ring in rings if not ring.is_aromatic)
+    n_aliphatic_rings = len(rings) - n_aromatic_rings
 
     vabc = (
         atom_volume - 5.92 * n_bonds - 14.7 * n_aromatic_rings - 3.8 * n_aliphatic_rings

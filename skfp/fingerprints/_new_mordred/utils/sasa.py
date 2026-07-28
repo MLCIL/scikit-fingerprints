@@ -44,5 +44,7 @@ def solvent_accessible_surface_area(
     CalcSASA(mol, radii, confIdx=conformer, opts=opts)
 
     return np.fromiter(
-        (atom.GetDoubleProp("SASA") for atom in mol.GetAtoms()), dtype=np.float32
+        (atom.GetDoubleProp("SASA") for atom in mol.GetAtoms()),
+        dtype=np.float32,
+        count=mol.GetNumAtoms(),
     )

@@ -7,6 +7,7 @@ from numpy.testing import assert_allclose
 from rdkit.Chem import GetMolFrags, GetSymmSSSR, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.extended_topochemical_atom import calc
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
@@ -34,7 +35,7 @@ def _compute(mol):
     n_frags = len(GetMolFrags(mol))
 
     values, feature_names = calc(
-        mol_kekulized,
+        AtomicProperties(mol_kekulized),
         distance_matrix,
         mol_kekulized_hydrogens,
         ring_count,

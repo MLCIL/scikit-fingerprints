@@ -2,6 +2,7 @@ import pytest
 from rdkit import Chem
 
 from skfp.fingerprints._new_mordred.descriptors import ring_count
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 FEATURE_NAMES = ring_count.FEATURE_NAMES
 GENERAL_RING_FEATURE_NAMES = [
@@ -64,7 +65,8 @@ GENERAL_RING_FEATURE_NAMES = [
 def test_ring_count_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
 
-    values, feature_names = ring_count.calc(mol)
+    rings = ring_count.RingSets(mol, AtomicProperties(mol))
+    values, feature_names = ring_count.calc(rings)
     values_by_name = dict(zip(feature_names, values, strict=True))
 
     assert feature_names == FEATURE_NAMES

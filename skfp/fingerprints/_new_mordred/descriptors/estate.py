@@ -105,6 +105,8 @@ FEATURE_NAMES = list(
     )
 )
 
+_ATOM_TYPE_TO_IDX = {atom_type: i for i, atom_type in enumerate(_ATOM_TYPES)}
+
 
 def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     """
@@ -116,24 +118,26 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
     atom_types = EState.TypeAtoms(mol)
     indices = EState.EStateIndices(mol)
 
+    # per atom type: the EState index values of all atoms carrying it
+    matched: list[list[float]] = [[] for _ in _ATOM_TYPES]
+    for labels, index in zip(atom_types, indices, strict=True):
+        for label in labels:
+            type_idx = _ATOM_TYPE_TO_IDX.get(label)
+            if type_idx is not None:
+                matched[type_idx].append(index)
+
     values = []
-    for atom_type in _ATOM_TYPES:
-        # EState index values of all atoms carrying this atom type.
-        matched = [
-            index
-            for labels, index in zip(atom_types, indices, strict=True)
-            if atom_type in labels
-        ]
-
-        count = len(matched)
-        total = float(sum(matched))
-        if matched:
-            maximum = max(matched)
-            minimum = min(matched)
+    for type_indices in matched:
+        if type_indices:
+            values.extend(
+                [
+                    len(type_indices),
+                    float(sum(type_indices)),
+                    max(type_indices),
+                    min(type_indices),
+                ]
+            )
         else:
-            maximum = np.nan
-            minimum = np.nan
-
-        values.extend([count, total, maximum, minimum])
+            values.extend([0, 0.0, np.nan, np.nan])
 
     return np.asarray(values, dtype=np.float32), FEATURE_NAMES

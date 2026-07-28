@@ -1,13 +1,7 @@
-from collections import defaultdict
-
 import numpy as np
-from rdkit import Chem
-from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    get_sigma_electrons,
-    get_valence_electrons,
-)
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -74,7 +68,6 @@ FEATURE_NAMES = [
     "AXp-6dv",
     "AXp-7dv",
 ]
-_CHI_TYPES = ("chain", "path", "path_cluster", "cluster")
 _CHI_PREFIX_TO_TYPE = {
     "Xch": "chain",
     "Xp": "path",
@@ -84,94 +77,56 @@ _CHI_PREFIX_TO_TYPE = {
 }
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
-    """
-    Compute Mordred Chi descriptors without adding explicit hydrogens.
-    """
-    properties = {
-        "d": np.asarray(
-            [get_sigma_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=np.float32,
-        ),
-        "dv": np.asarray(
-            [get_valence_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=np.float32,
-        ),
-    }
-    subgraphs_by_order = {order: _chi_subgraphs(mol, order) for order in range(1, 8)}
-
-    values = []
-    for name in FEATURE_NAMES:
-        chi_type, order, prop, averaged = _parse_chi_feature_name(name)
-        if order == 0:
-            node_sets = [[atom.GetIdx()] for atom in mol.GetAtoms()]
-        else:
-            node_sets = subgraphs_by_order[order][chi_type]
-        values.append(_chi_value(node_sets, properties[prop], averaged))
-
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
-
-
-def _chi_subgraphs(mol: Mol, order: int) -> dict[str, list[list[int]]]:
-    classified: dict[str, list[list[int]]] = {chi_type: [] for chi_type in _CHI_TYPES}
-    bond_endpoints = [
-        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
-    ]
-
-    for bond_idxs in Chem.FindAllSubgraphsOfLengthN(mol, order):
-        # count how many subgraph edges are incident to each atom (its degree
-        # within this subgraph)
-        deg: defaultdict[int, int] = defaultdict(int)
-        for a, b in (bond_endpoints[i] for i in bond_idxs):
-            deg[a] += 1
-            deg[b] += 1
-
-        # A subgraph contains a cycle iff n_edges >= n_nodes (for connected subgraphs).
-        if len(bond_idxs) >= len(deg):
-            chi_type = "chain"
-        else:
-            d = set(deg.values())
-            if d <= {1, 2}:
-                chi_type = "path"
-            elif 2 in d:
-                chi_type = "path_cluster"
-            else:
-                chi_type = "cluster"
-
-        classified[chi_type].append(list(deg.keys()))
-
-    return classified
-
-
 def _parse_chi_feature_name(name: str) -> tuple[str, int, str, bool]:
     prefix, order_and_prop = name.split("-", maxsplit=1)
     averaged = prefix.startswith("A")
-    chi_type = _CHI_PREFIX_TO_TYPE[prefix]
+    subgraph_type = _CHI_PREFIX_TO_TYPE[prefix]
     order = int(order_and_prop[0])
     prop = order_and_prop[1:]
-    return chi_type, order, prop, averaged
+    return subgraph_type, order, prop, averaged
+
+
+_PARSED_FEATURE_NAMES = [_parse_chi_feature_name(name) for name in FEATURE_NAMES]
+
+
+def calc(props: AtomicProperties, subgraphs: Subgraphs) -> tuple[np.ndarray, list[str]]:
+    """
+    Compute Mordred Chi descriptors without adding explicit hydrogens.
+
+    Each descriptor sums ``prod(property over the subgraph atoms) ** -0.5`` over
+    the subgraphs of one order and type.
+    """
+    prop_vals = {
+        "d": props.sigma_electrons.astype(np.float64),
+        "dv": props.valence_electrons.astype(np.float64),
+    }
+    values = [
+        _chi_value(subgraphs.node_sets(order, subgraph_type), prop_vals[prop], averaged)
+        for subgraph_type, order, prop, averaged in _PARSED_FEATURE_NAMES
+    ]
+    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
 
 
 def _chi_value(
-    node_sets: list[list[int]],
-    prop_values: np.ndarray,
-    averaged: bool,
-) -> np.float32:
-    if averaged and len(node_sets) == 0:
-        return np.float32(np.nan)
+    node_sets: list[np.ndarray], prop_vals: np.ndarray, averaged: bool
+) -> float:
+    """
+    Sum of ``prod(prop_vals over the subgraph atoms) ** -0.5`` over subgraphs.
 
-    value = 0.0
+    NaN when any subgraph has a non-positive product, or when an averaged
+    descriptor has no subgraph to average over.
+    """
+    total = 0.0
+    num_subgraphs = 0
+
     for nodes in node_sets:
-        product = 1.0
-        for node in nodes:
-            product *= prop_values[node]
-
-        if product <= 0:
-            return np.float32(np.nan)
-
-        value += product**-0.5
+        products = prop_vals[nodes].prod(axis=1)
+        if np.any(products <= 0):
+            return np.nan
+        total += (products**-0.5).sum()
+        num_subgraphs += len(nodes)
 
     if averaged:
-        value /= len(node_sets)
+        return np.nan if num_subgraphs == 0 else total / num_subgraphs
 
-    return np.float32(value)
+    return total

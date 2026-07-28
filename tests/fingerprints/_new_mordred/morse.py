@@ -2,6 +2,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.morse import calc
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 
 """
@@ -26,7 +27,7 @@ def test_morse_unweighted_reference_values(
     mol = mordred_test_mols_hydrogens_3d[name]
     dists = DistanceMatrix3D(mol)
 
-    values, feature_names = calc(mol, dists)
+    values, feature_names = calc(AtomicProperties(mol), dists)
     values = dict(zip(feature_names, values, strict=True))
     values = [
         values[f"MoRSE_unweighted_dist_{dist}"]

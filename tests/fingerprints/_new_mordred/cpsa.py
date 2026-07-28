@@ -10,7 +10,7 @@ from skfp.fingerprints._new_mordred.descriptors.cpsa import (
     calc_2d,
     calc_3d,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -55,7 +55,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
     computed = {}
     for name in _MOLECULES:
         mol = mordred_test_mols_hydrogens_3d[name]
-        charges = gasteiger_charges(mol)
+        charges = AtomicProperties(mol).gasteiger_charges
         cpsa_2d = calc_2d(charges)
         values_3d, names_3d = calc_3d(mol, cpsa_2d, charges)
         computed[name] = dict(zip(cpsa_2d[1], cpsa_2d[0], strict=True)) | dict(
