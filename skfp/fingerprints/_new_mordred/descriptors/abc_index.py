@@ -15,7 +15,7 @@ FEATURE_NAMES = ["ABC", "ABCGG"]
 
 def calc(
     atomic_props_regular: AtomicProperties, distance_matrix_regular: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     ABC index descriptor, combining the classical ABC index and its
     Graovac-Ghorbani analog.
@@ -32,7 +32,7 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values
 
 
 def _calc_abc_index(props: AtomicProperties) -> float:

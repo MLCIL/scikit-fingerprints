@@ -25,7 +25,7 @@ FEATURE_NAMES = [
 def calc(
     adjacency_matrix_regular: AdjacencyMatrix,
     distance_matrix_regular: DistanceMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     Topological charge descriptors (Galvez charge indices).
 
@@ -63,7 +63,7 @@ def calc(
     global_charge = mean.sum()
 
     values = np.concatenate([raw, mean, [global_charge]], dtype=np.float32)
-    return values, FEATURE_NAMES
+    return values
 
 
 def _charge_term_matrix(adj_matrix: np.ndarray, dist_matrix: np.ndarray) -> np.ndarray:

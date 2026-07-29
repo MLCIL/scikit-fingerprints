@@ -58,8 +58,8 @@ def computed_values():
     computed = {}
     for name, smiles in _SMILES.items():
         mol = preprocess_mol(MolFromSmiles(smiles))
-        values, feature_names = calc(AtomicProperties(mol), n_frags=1)
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        values = calc(AtomicProperties(mol), n_frags=1)
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 

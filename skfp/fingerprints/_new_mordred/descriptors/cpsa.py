@@ -26,7 +26,7 @@ FEATURE_NAMES_3D = [
 ]
 
 
-def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> tuple[np.ndarray, list[str]]:
+def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> np.ndarray:
     """
     Relative negative (RNCG) and relative positive (RPCG) charge descriptors.
 
@@ -54,14 +54,14 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> tuple[np.ndarray, list[s
             q_max = charges[np.argmax(np.abs(charges))]
             values.append(q_max / np.sum(charges))
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES_2D
+    return np.asarray(values, dtype=np.float32)
 
 
 def calc_3d(
     mol_hydrogens_conformer: Mol,
-    cpsa_2d: tuple[np.ndarray, list[str]],
+    cpsa_2d: np.ndarray,
     gasteiger_charges_hydrogens: np.ndarray,
-):
+) -> np.ndarray:
     """
     Charged partial surface area (CPSA) descriptors.
 
@@ -102,9 +102,9 @@ def calc_3d(
     num_atoms = mol_hydrogens_conformer.GetNumAtoms()
     if num_atoms == 0:
         values = np.full(len(FEATURE_NAMES_3D), np.nan, dtype=np.float32)
-        return values, FEATURE_NAMES_3D
+        return values
 
-    rncg, rpcg = cpsa_2d[0]
+    rncg, rpcg = cpsa_2d
     surface_area = solvent_accessible_surface_area(mol_hydrogens_conformer)
     surface_area_sum = surface_area.sum()
     masks = [
@@ -129,7 +129,7 @@ def calc_3d(
         [tpsa / surface_area_sum],  # RPSA
     ]
 
-    return np.concatenate(values, dtype=np.float32), FEATURE_NAMES_3D
+    return np.concatenate(values, dtype=np.float32)
 
 
 def _pnsa_ppsa(

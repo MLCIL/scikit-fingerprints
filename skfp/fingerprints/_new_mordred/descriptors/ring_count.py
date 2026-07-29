@@ -244,7 +244,7 @@ _SIMPLE_RING_SELECTORS = _selector_matrix(use_fused_rings=False)
 _FUSED_RING_SELECTORS = _selector_matrix(use_fused_rings=True)
 
 
-def calc(rings: RingSets) -> tuple[np.ndarray, list[str]]:
+def calc(rings: RingSets) -> np.ndarray:
     """
     Count simple and fused rings across size, aromaticity, and heteroatom filters.
 
@@ -255,7 +255,7 @@ def calc(rings: RingSets) -> tuple[np.ndarray, list[str]]:
     values = _SIMPLE_RING_SELECTORS @ _histogram(rings.simple_rings).ravel()
     values += _FUSED_RING_SELECTORS @ _histogram(rings.fused_rings).ravel()
 
-    return values.astype(np.float32), FEATURE_NAMES
+    return values.astype(np.float32)
 
 
 def _fused_ring_atom_sets(rings: list[set[int]]) -> list[set[int]]:

@@ -43,7 +43,7 @@ FEATURE_NAMES = [
 
 def calc(
     atomic_props_hydrogens: AtomicProperties, distance_matrix_hydrogens: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     Autocorrelation descriptors.
 
@@ -93,7 +93,7 @@ def calc(
         gats.extend(prop_gats)
 
     all_values = np.concatenate([ats, aats, atsc, aatsc, mats, gats], dtype=np.float32)
-    return all_values, FEATURE_NAMES
+    return all_values
 
 
 @np.errstate(divide="ignore", invalid="ignore")

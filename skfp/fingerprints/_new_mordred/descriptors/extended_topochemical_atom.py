@@ -8,7 +8,7 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
-from skfp.fingerprints._new_mordred.utils.periodic_table import PERIOD
+from skfp.fingerprints._new_mordred.utils.periodic_table import ELEMENT_PERIOD
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -74,10 +74,10 @@ def calc(
     mol_kekulized_hydrogens: Mol,
     ring_count: int,
     n_frags: int,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     # ETA descriptors require a connected molecule
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     mol_kekulized = props_kekulized.mol
     num_atoms = props_kekulized.num_atoms
@@ -183,7 +183,7 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values
 
 
 def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -197,7 +197,7 @@ def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # general formula would divide by zero, since their period is 1)
     with np.errstate(divide="ignore", invalid="ignore"):
         alphas = (atomic_nums - outer_elecs) / (
-            outer_elecs * (PERIOD.lookup(atomic_nums) - 1)
+            outer_elecs * (ELEMENT_PERIOD.lookup(atomic_nums) - 1)
         )
     core_counts = np.where(atomic_nums == 1, 0.0, alphas)
     epsilons = 0.3 * outer_elecs - core_counts

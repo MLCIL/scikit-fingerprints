@@ -57,9 +57,9 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol = mordred_test_mols_hydrogens_3d[name]
         charges = AtomicProperties(mol).gasteiger_charges
         cpsa_2d = calc_2d(charges)
-        values_3d, names_3d = calc_3d(mol, cpsa_2d, charges)
-        computed[name] = dict(zip(cpsa_2d[1], cpsa_2d[0], strict=True)) | dict(
-            zip(names_3d, values_3d, strict=True)
+        values_3d = calc_3d(mol, cpsa_2d, charges)
+        computed[name] = dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
+            zip(FEATURE_NAMES_3D, values_3d, strict=True)
         )
     return computed
 

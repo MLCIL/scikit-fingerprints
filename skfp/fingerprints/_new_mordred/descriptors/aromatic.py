@@ -12,7 +12,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["nAromAtom", "nAromBond"]
 
 
-def calc(props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
+def calc(props: AtomicProperties) -> np.ndarray:
     """
     Compute the Mordred aromatic count descriptors.
 
@@ -20,4 +20,4 @@ def calc(props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
     aromatic bonds, both taken directly from RDKit's perceived aromaticity flags.
     """
     values = [props.is_aromatic.sum(), props.bond_is_aromatic.sum()]
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

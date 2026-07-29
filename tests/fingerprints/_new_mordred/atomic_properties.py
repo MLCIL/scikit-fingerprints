@@ -1,12 +1,14 @@
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, Atom, MolFromSmiles
+from rdkit.Chem import AddHs, Atom, Mol, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    AtomicProperties,
     get_intrinsic_state,
     get_sigma_electrons,
     get_valence_electrons,
 )
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -153,3 +155,67 @@ def test_intrinsic_state(label, expected_value, explicit_hs):
     atom = build_atom(label, explicit_hs)
     actual_value = get_intrinsic_state(atom)
     assert_allclose(actual_value, expected_value, atol=1e-3)
+
+
+# properties that the derived constructors below are expected to fill in
+_DERIVED_PROPERTY_NAMES = [
+    "atomic_nums",
+    "is_hydrogen",
+    "is_aromatic",
+    "degrees",
+    "formal_charges",
+    "num_hydrogens",
+    "sigma_electrons",
+    "valence_electrons",
+    "intrinsic_state",
+    "bond_begin_idxs",
+    "bond_end_idxs",
+    "bond_types",
+    "bond_orders",
+    "bond_is_aromatic",
+]
+
+_VARIANT_SMILES = [
+    "C",
+    "CCO",
+    "c1ccccc1",
+    "CC(=O)Oc1ccccc1C(=O)O",
+    "[NH4+]",
+    "[2H]OC",
+    "F[B-](F)(F)F",
+    "CO[13CH3]",
+    "c1ccc2[nH]ccc2c1",
+    "CC(=O)[O-].[Na+]",
+    "[H][H]",
+    "O=S(=O)(O)O",
+]
+
+
+@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
+@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
+def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name):
+    mol = preprocess_mol(MolFromSmiles(smiles))
+    mol_hydrogens = AddHs(mol)
+
+    derived = AtomicProperties.with_hydrogens_added(
+        mol_hydrogens, AtomicProperties(mol)
+    )
+    expected = AtomicProperties(mol_hydrogens)
+
+    assert_allclose(
+        getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6
+    )
+
+
+@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
+@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
+def test_kekulized_properties_match_recomputed(smiles, property_name):
+    mol = preprocess_mol(MolFromSmiles(smiles))
+    mol_kekulized = preprocess_mol(Mol(mol), kekulize=True, sanitize=False)
+
+    derived = AtomicProperties.kekulized(mol_kekulized, AtomicProperties(mol))
+    expected = AtomicProperties(mol_kekulized)
+
+    assert_allclose(
+        getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6
+    )

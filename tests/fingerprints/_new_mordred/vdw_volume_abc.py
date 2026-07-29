@@ -28,7 +28,5 @@ def test_vdw_volume_abc_values(smiles, expected):
     mol_regular = preprocess_mol(mol)
 
     rings = RingSets(mol_regular, AtomicProperties(mol_regular))
-    values, feature_names = vdw_volume_abc.calc(rings, mol_hydrogens)
-
-    assert feature_names == FEATURE_NAMES
+    values = vdw_volume_abc.calc(rings, mol_hydrogens)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

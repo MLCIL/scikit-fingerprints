@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.zagreb_index import (
-    FEATURE_NAMES,
     calc,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
@@ -39,9 +38,7 @@ def test_zagreb1_values(name, expected_zagreb1, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    values, feature_names = calc(mol_regular, adjacency_matrix_regular)
-
-    assert feature_names == FEATURE_NAMES
+    values = calc(mol_regular, adjacency_matrix_regular)
     assert_allclose(values[0], np.float32(expected_zagreb1), rtol=1e-6)
 
 
@@ -52,7 +49,5 @@ def test_zagreb_all_features(mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols["MethylCyclopropane"])
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    values, feature_names = calc(mol_regular, adjacency_matrix_regular)
-
-    assert feature_names == FEATURE_NAMES
+    values = calc(mol_regular, adjacency_matrix_regular)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), atol=1e-2)

@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import GetMolFrags, Mol, MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.bcut import calc
+from skfp.fingerprints._new_mordred.descriptors.bcut import FEATURE_NAMES, calc
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
@@ -39,8 +39,8 @@ def _calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
 def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_test_mols):
     mol = mordred_test_mols[name]
 
-    values, feature_names = _calc(mol)
-    values = dict(zip(feature_names, values, strict=True))
+    values = _calc(mol)
+    values = dict(zip(FEATURE_NAMES, values, strict=True))
     actual_smallest = values["BCUT_mass_smallest_eigval"]
     actual_largest = values["BCUT_mass_largest_eigval"]
 
@@ -51,7 +51,7 @@ def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_tes
 
 def test_disconnected_mol_all_nan():
     mol = MolFromSmiles("[Na].[Cl]")
-    values, feature_names = _calc(mol)
+    values = _calc(mol)
     assert_allclose(values, np.nan)
 
 
@@ -108,8 +108,8 @@ def test_bcut_matches_mordred_by_feature_name(smiles):
     mordred = pytest.importorskip("mordred")
 
     mol = MolFromSmiles(smiles)
-    values, feature_names = _calc(mol)
-    actual = dict(zip(feature_names, values, strict=True))
+    values = _calc(mol)
+    actual = dict(zip(FEATURE_NAMES, values, strict=True))
 
     calculator = mordred.Calculator(mordred.descriptors.BCUT, ignore_3D=True)
     expected = {

@@ -38,12 +38,11 @@ def test_rdkit_descriptors_avoid_lambda_wrappers():
 def test_2d_calculator_passes_regular_molecule_to_rdkit_descriptors(monkeypatch):
     from skfp.fingerprints._new_mordred import calculator
 
-    def calc_rdkit_2d_without_explicit_hydrogens(mol_regular, distance_matrix):
+    def calc_rdkit_2d_without_explicit_hydrogens(
+        mol_regular, props, distance_matrix, estate_indices
+    ):
         assert all(atom.GetAtomicNum() != 1 for atom in mol_regular.GetAtoms())
-        return (
-            np.zeros(len(rdkit_descriptors.FEATURE_NAMES_2D), dtype=np.float32),
-            rdkit_descriptors.FEATURE_NAMES_2D,
-        )
+        return np.zeros(len(rdkit_descriptors.FEATURE_NAMES_2D), dtype=np.float32)
 
     monkeypatch.setattr(
         calculator.rdkit_descriptors,

@@ -50,7 +50,7 @@ _ELEMENT_ATOMIC_NUMBERS = np.array(
 _HALOGEN_ATOMIC_NUMS = np.array(sorted(HALOGEN_ATOMIC_NUMS))
 
 
-def calc(mol: Mol, props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol, props: AtomicProperties) -> np.ndarray:
     """
     Count atoms by common element and structural category.
     """
@@ -70,4 +70,4 @@ def calc(mol: Mol, props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
         counts[_HALOGEN_ATOMIC_NUMS].sum(),
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

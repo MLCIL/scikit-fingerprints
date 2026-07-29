@@ -66,10 +66,8 @@ def test_ring_count_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
 
     rings = ring_count.RingSets(mol, AtomicProperties(mol))
-    values, feature_names = ring_count.calc(rings)
-    values_by_name = dict(zip(feature_names, values, strict=True))
-
-    assert feature_names == FEATURE_NAMES
+    values = ring_count.calc(rings)
+    values_by_name = dict(zip(FEATURE_NAMES, values, strict=True))
     for name, expected_value in expected.items():
         assert values_by_name[name] == expected_value
 

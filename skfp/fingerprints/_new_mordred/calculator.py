@@ -1,3 +1,5 @@
+from types import ModuleType
+
 import numpy as np
 from rdkit.Chem import AddHs, GetMolFrags, Mol
 
@@ -57,32 +59,83 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-_FEATURE_NAME_TO_IDX_2D = {name: i for i, name in enumerate(FEATURE_NAMES_2D)}
-_FEATURE_NAME_TO_IDX_ALL = {name: i for i, name in enumerate(ALL_FEATURE_NAMES)}
+MODULES_2D: list[ModuleType] = [
+    abc_index,
+    acid_base,
+    adjacency_matrix,
+    aromatic,
+    atom_count,
+    autocorrelation,
+    barysz_matrix,
+    bcut,
+    bond_count,
+    carbon_types,
+    chi,
+    cpsa,  # both 2D and 3D
+    detour_matrix,
+    distance_matrix,
+    eccentric_connectivity_index,
+    estate,
+    extended_topochemical_atom,
+    fragment_complexity,
+    molecular_distance_edge,
+    path_count,
+    polarizability,
+    rdkit_descriptors,  # both 2D and 3D
+    ring_count,
+    rotatable_bond,
+    topological_charge,
+    topological_index,
+    vdw_volume_abc,
+    vertex_adjacency_info,
+    walk_count,
+    wiener_index,
+    zagreb_index,
+]
 
-# every descriptor returns its own module-level, constant list of feature names, so
-# the positions they map to in the output can be resolved once and reused, instead
-# of looking up ~1800 names in a dict for every molecule
-# the cache holds the name list itself as well, both to key on identity and to keep
-# the list alive so that its id() cannot be reused by another object
-_OUTPUT_IDXS_CACHE: dict[tuple[int, bool], tuple[list[str], np.ndarray]] = {}
+MODULES_3D: list[ModuleType] = [
+    cpsa,  # both 2D and 3D
+    geometric_index,
+    gravitational_index,
+    morse,
+    rdkit_descriptors,  # both 2D and 3D
+]
 
 
 def _output_idxs(
-    feature_names: list[str], idx_map: dict[str, int], use_3D: bool
-) -> np.ndarray:
-    key = (id(feature_names), use_3D)
-    cached = _OUTPUT_IDXS_CACHE.get(key)
-    if cached is not None and cached[0] is feature_names:
-        return cached[1]
+    modules: list[ModuleType], use_3D: bool
+) -> dict[ModuleType, np.ndarray]:
+    """
+    Positions each module's features occupy in the output, resolved once per module.
 
-    idxs = np.fromiter(
-        (idx_map[name] for name in feature_names),
-        dtype=np.intp,
-        count=len(feature_names),
+    The 3D output appends the 3D features to the 2D ones, so a 2D feature has the
+    same position in both outputs and needs only one mapping.
+    """
+    name_to_idx = {name: idx for idx, name in enumerate(ALL_FEATURE_NAMES)}
+    return {
+        module: np.fromiter(
+            (name_to_idx[name] for name in _get_module_feature_names(module, use_3D)),
+            dtype=np.intp,
+        )
+        for module in modules
+    }
+
+
+def _get_module_feature_names(module: ModuleType, use_3D: bool) -> list[str]:
+    """
+    Feature names a descriptor module contributes to the 2D or the 3D output.
+
+    Modules contributing to both split their names into ``FEATURE_NAMES_2D`` and
+    ``FEATURE_NAMES_3D``; the rest declare a single ``FEATURE_NAMES``.
+    """
+    split_names = getattr(
+        module, "FEATURE_NAMES_3D" if use_3D else "FEATURE_NAMES_2D", None
     )
-    _OUTPUT_IDXS_CACHE[key] = (feature_names, idxs)
-    return idxs
+    return split_names if split_names is not None else module.FEATURE_NAMES
+
+
+_OUTPUT_IDXS_2D = _output_idxs(MODULES_2D, use_3D=False)
+_OUTPUT_IDXS_3D = _output_idxs(MODULES_3D, use_3D=True)
 
 
 def get_feature_names(use_3d: bool) -> np.ndarray:
@@ -95,7 +148,6 @@ def get_feature_names(use_3d: bool) -> np.ndarray:
 
 def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     n_features = len(ALL_FEATURE_NAMES) if use_3D else len(FEATURE_NAMES_2D)
-    idx_map = _FEATURE_NAME_TO_IDX_ALL if use_3D else _FEATURE_NAME_TO_IDX_2D
     result = np.full(n_features, np.nan, dtype=np.float32)
 
     # dependencies
@@ -106,88 +158,96 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
-    # per-atom property arrays
+    # per-atom property arrays, rings, connected subgraphs
     props_regular = AtomicProperties(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
-    # connected subgraphs, shared by the chi and path count descriptors
-    subgraphs_regular = Subgraphs(mol_regular, props_regular)
+    subgraphs_regular = Subgraphs(props_regular)
 
-    # hydrogen-explicit molecule; AddHs on the already-standardized molecule gives
-    # the same result as re-running the full preprocessing, for half the cost.
-    # Note that its hydrogens are freshly added and therefore carry no coordinates
-    # and sit after every heavy atom, so the 3D section below builds its own
-    # hydrogen-explicit molecule instead, with its own (possibly different) atom
-    # numbering; per-atom arrays of the two are not interchangeable.
+    # hydrogen-explicit molecule
+    # added hydrogens have no coordinates, so for 3D we build this separately
+    # note that atom numberings are different for those molecules
     mol_hydrogens = AddHs(mol_regular)
-    distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
-    props_hydrogens = AtomicProperties(mol_hydrogens)
-    gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
+    props_hydrogens = AtomicProperties.with_hydrogens_added(
+        mol_hydrogens, props_regular
+    )
+    distance_matrix_hydrogens = DistanceMatrix.with_hydrogens_added(
+        distance_matrix_regular, props_hydrogens
+    )
 
-    # cpsa_3d reuses cpsa_2d values
-    cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
-
-    # kekulized molecule (aromatic -> single/double bonds); kekulizing a copy of
-    # the standardized molecule avoids a second round of hydrogen removal, and the
-    # copy is required because Kekulize modifies the molecule in place
+    # kekulized molecule (aromatic -> single/double bonds, keeps same topology)
+    # need to copy, since Kekulize modifies in place
     mol_kekulized = preprocess_mol(Mol(mol_regular), kekulize=True, sanitize=False)
-    distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
-    props_kekulized = AtomicProperties(mol_kekulized)
+    props_kekulized = AtomicProperties.kekulized(mol_kekulized, props_regular)
     mol_kekulized_hydrogens = AddHs(mol_kekulized)
-    # kekulization does not change the ring perception, so the ring count of the
-    # hydrogen-suppressed molecule can be reused here
+    distance_matrix_kekulized = distance_matrix_regular
     num_rings = rings_regular.num_rings
 
-    # graph radius and diameter from the hydrogen-suppressed distance matrix
+    # cpsa_3d reuses cpsa_2d values
+    cpsa_2d = cpsa.calc_2d(props_hydrogens.gasteiger_charges)
+
     graph_radius = distance_matrix_regular.radius
     graph_diameter = distance_matrix_regular.diameter
 
+    # E-state indices are shared by EState and VSA descriptors
+    estate_indices = estate.calc_indices(props_regular, distance_matrix_regular)
+
     # 2D descriptors
-    descriptors_2d = [
-        abc_index.calc(props_regular, distance_matrix_regular),
-        walk_count.calc(mol_regular, adjacency_matrix_regular),
-        path_count.calc(mol_regular, props_regular, subgraphs_regular),
-        adjacency_matrix.calc(props_regular, n_frags, adjacency_matrix_regular),
-        wiener_index.calc(mol_regular, distance_matrix_regular),
-        zagreb_index.calc(mol_regular, adjacency_matrix_regular),
-        acid_base.calc(mol_regular),
-        autocorrelation.calc(props_hydrogens, distance_matrix_hydrogens),
-        estate.calc(mol_regular),
-        rdkit_descriptors.calc_rdkit_2d(mol_regular, distance_matrix_regular),
-        atom_count.calc(mol_regular, props_regular),
-        bond_count.calc(props_hydrogens, mol_kekulized_hydrogens),
-        carbon_types.calc(mol_kekulized),
-        rotatable_bond.calc(mol_regular),
-        vertex_adjacency_info.calc(props_regular),
-        ring_count.calc(rings_regular),
-        vdw_volume_abc.calc(rings_regular, mol_hydrogens),
-        topological_index.calc(graph_radius, graph_diameter),
-        extended_topochemical_atom.calc(
+    descriptors_2d = {
+        abc_index: abc_index.calc(props_regular, distance_matrix_regular),
+        walk_count: walk_count.calc(mol_regular, adjacency_matrix_regular),
+        path_count: path_count.calc(props_regular, subgraphs_regular),
+        adjacency_matrix: adjacency_matrix.calc(
+            props_regular, n_frags, adjacency_matrix_regular
+        ),
+        wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
+        zagreb_index: zagreb_index.calc(mol_regular, adjacency_matrix_regular),
+        acid_base: acid_base.calc(mol_regular),
+        autocorrelation: autocorrelation.calc(
+            props_hydrogens, distance_matrix_hydrogens
+        ),
+        estate: estate.calc(mol_regular, estate_indices),
+        rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
+            mol_regular, props_regular, distance_matrix_regular, estate_indices
+        ),
+        atom_count: atom_count.calc(mol_regular, props_regular),
+        bond_count: bond_count.calc(props_hydrogens, mol_kekulized_hydrogens),
+        carbon_types: carbon_types.calc(mol_kekulized),
+        rotatable_bond: rotatable_bond.calc(mol_regular),
+        vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
+        ring_count: ring_count.calc(rings_regular),
+        vdw_volume_abc: vdw_volume_abc.calc(rings_regular, mol_hydrogens),
+        topological_index: topological_index.calc(graph_radius, graph_diameter),
+        extended_topochemical_atom: extended_topochemical_atom.calc(
             props_kekulized,
             distance_matrix_kekulized,
             mol_kekulized_hydrogens,
             num_rings,
             n_frags,
         ),
-        barysz_matrix.calc(props_regular, n_frags),
-        bcut.calc(props_regular, n_frags),
-        aromatic.calc(props_regular),
-        topological_charge.calc(adjacency_matrix_regular, distance_matrix_regular),
-        cpsa_2d,
-        polarizability.calc(props_hydrogens),
-        chi.calc(props_regular, subgraphs_regular),
-        fragment_complexity.calc(props_regular),
-        eccentric_connectivity_index.calc(
+        barysz_matrix: barysz_matrix.calc(props_regular, n_frags),
+        bcut: bcut.calc(props_regular, n_frags),
+        aromatic: aromatic.calc(props_regular),
+        topological_charge: topological_charge.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),
-        distance_matrix.calc(props_regular, n_frags, distance_matrix_regular),
-        detour_matrix.calc(props_regular, n_frags),
-        molecular_distance_edge.calc(
+        cpsa: cpsa_2d,
+        polarizability: polarizability.calc(props_hydrogens),
+        chi: chi.calc(props_regular, subgraphs_regular),
+        fragment_complexity: fragment_complexity.calc(props_regular),
+        eccentric_connectivity_index: eccentric_connectivity_index.calc(
+            adjacency_matrix_regular, distance_matrix_regular
+        ),
+        distance_matrix: distance_matrix.calc(
+            props_regular, n_frags, distance_matrix_regular
+        ),
+        detour_matrix: detour_matrix.calc(props_regular, n_frags),
+        molecular_distance_edge: molecular_distance_edge.calc(
             props_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
-    ]
+    }
 
-    for values, feature_names in descriptors_2d:
-        result[_output_idxs(feature_names, idx_map, use_3D)] = values
+    for module, values in descriptors_2d.items():
+        result[_OUTPUT_IDXS_2D[module]] = values
 
     # 3D descriptors
     if use_3D:
@@ -203,17 +263,17 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         distance_matrix_3d_regular = DistanceMatrix3D(mol_regular, conf_id)
         adjacency_matrix_hydrogens_conformer = AdjacencyMatrix(mol_hydrogens_conformer)
 
-        descriptors_3d: list = [
-            morse.calc(props_hydrogens_conformer, distance_matrix_3d),
-            rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
+        descriptors_3d = {
+            morse: morse.calc(props_hydrogens_conformer, distance_matrix_3d),
+            rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
             # the charges must come from the conformer molecule, since CPSA pairs
             # them atom by atom with surface areas computed from that same molecule
-            cpsa.calc_3d(
+            cpsa: cpsa.calc_3d(
                 mol_hydrogens_conformer,
                 cpsa_2d,
                 props_hydrogens_conformer.gasteiger_charges,
             ),
-            gravitational_index.calc(
+            gravitational_index: gravitational_index.calc(
                 props_regular,
                 props_hydrogens_conformer,
                 distance_matrix_3d_regular,
@@ -221,10 +281,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
                 adjacency_matrix_regular,
                 adjacency_matrix_hydrogens_conformer,
             ),
-            geometric_index.calc(distance_matrix_3d),
-        ]
+            geometric_index: geometric_index.calc(distance_matrix_3d),
+        }
 
-        for values, feature_names in descriptors_3d:
-            result[_output_idxs(feature_names, idx_map, use_3D)] = values
+        for module, values in descriptors_3d.items():
+            result[_OUTPUT_IDXS_3D[module]] = values
 
     return result

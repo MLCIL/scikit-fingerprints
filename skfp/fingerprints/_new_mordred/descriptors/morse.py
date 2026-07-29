@@ -31,7 +31,7 @@ FEATURE_NAMES = [
 @np.errstate(divide="ignore", invalid="ignore")
 def calc(
     props_3d: AtomicProperties, distance_matrix_3d: DistanceMatrix3D
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -42,7 +42,7 @@ def calc(
     num_atoms = props_3d.num_atoms
 
     if num_atoms < 2:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     # scaled distances for all 32 kernels, shape (32, n, n)
     # the first kernel is the unscaled sin(x)/x limit of 1
@@ -74,4 +74,4 @@ def calc(
         optimize=True,
     )
 
-    return values.ravel().astype(np.float32), FEATURE_NAMES
+    return values.ravel().astype(np.float32)

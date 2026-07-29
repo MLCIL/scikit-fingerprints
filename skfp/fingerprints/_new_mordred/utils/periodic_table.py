@@ -92,7 +92,7 @@ VAN_DER_WAALS_VOLUME = VAN_DER_WAALS_RADII.map(
     lambda radius: 4.0 / 3.0 * np.pi * radius**3
 )
 
-PERIOD = PeriodicTable(
+ELEMENT_PERIOD = PeriodicTable(
     [1.0] * 2
     + [2.0] * 8
     + [3.0] * 8

@@ -26,7 +26,7 @@ FEATURE_NAMES = [
 
 def calc(
     atomic_props_hydrogens: AtomicProperties, mol_kekulized_hydrogens: Mol
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     Bond count descriptors.
 
@@ -78,4 +78,4 @@ def calc(
             n_bonds_kd,
         ],
         dtype=np.float32,
-    ), FEATURE_NAMES
+    )

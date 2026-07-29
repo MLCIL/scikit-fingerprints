@@ -12,7 +12,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["fragCpx"]
 
 
-def calc(props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
+def calc(props: AtomicProperties) -> np.ndarray:
     """
     Compute the Mordred fragment complexity descriptor.
     """
@@ -20,4 +20,4 @@ def calc(props: AtomicProperties) -> tuple[np.ndarray, list[str]]:
     n_bonds = props.num_bonds
     n_hetero = int(np.count_nonzero(props.atomic_nums != 6))
     value = abs(n_bonds**2 - n_atoms**2 + n_atoms) + n_hetero / 100
-    return np.asarray([value], dtype=np.float32), FEATURE_NAMES
+    return np.asarray([value], dtype=np.float32)

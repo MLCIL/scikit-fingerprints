@@ -5,6 +5,19 @@ from numpy.testing import assert_allclose, assert_equal
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
 
 
+def _renamed_mask(feature_names: np.ndarray) -> np.ndarray:
+    """Descriptor families that this implementation exposes under other names."""
+    return np.array(
+        [
+            "autocorr" in feature
+            or "MoRSE" in feature
+            or "BCUT" in feature
+            or "Dz" in feature
+            for feature in feature_names
+        ]
+    )
+
+
 def _logee_mask(feature_names: np.ndarray) -> np.ndarray:
     # LogEE intentionally diverges from mordred-community, whose implementation
     # adds a spurious exp(-a) term and computes log(1 + sum(exp(lambda_i)))
@@ -12,6 +25,20 @@ def _logee_mask(feature_names: np.ndarray) -> np.ndarray:
     # log(1 + 1/EE), so only small-EE features exceed atol.
     # See https://github.com/JacksonBurns/mordred-community/issues/24.
     return np.array(["LogEE" in name for name in feature_names])
+
+
+def _as_2d_then_3d(X_old: np.ndarray, feature_names_old: np.ndarray) -> np.ndarray:
+    """
+    Rearrange mordred's columns into this fingerprint's 3D layout, which appends
+    the conformer descriptors after the 2D ones instead of interleaving them.
+
+    Within each of the two blocks the layouts agree position by position, so the
+    rearrangement needs no names -- which matters for the descriptor families that
+    this implementation exposes under different names.
+    """
+    names_2d = MordredFingerprint().get_feature_names_out()
+    is_2d = np.isin(feature_names_old, names_2d)
+    return np.hstack([X_old[:, is_2d], X_old[:, ~is_2d]])
 
 
 def test_new_mordred_fingerprint(smallest_mols_list):
@@ -72,7 +99,9 @@ def test_new_mordred_3D_fingerprint(mols_conformers_list, smallest_mols_list):
     X_new = new_mordred_fp.transform(mols_conformers_list)
 
     mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
-    X_old = mordred_fp.transform(smallest_mols_list)
+    X_old = _as_2d_then_3d(
+        mordred_fp.transform(smallest_mols_list), mordred_fp.get_feature_names_out()
+    )
 
     feature_names = new_mordred_fp.get_feature_names_out()
     # temporary mask - will be eventually removed; LogEE is also excluded, as it
@@ -97,10 +126,11 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_l
     X_new = new_mordred_fp.transform(mols_conformers_list)
 
     mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
-    X_old = mordred_fp.transform(smallest_mols_list)
-
     X_new = X_new.toarray()
-    X_old = X_old.toarray()
+    X_old = _as_2d_then_3d(
+        mordred_fp.transform(smallest_mols_list).toarray(),
+        mordred_fp.get_feature_names_out(),
+    )
 
     feature_names = new_mordred_fp.get_feature_names_out()
     # temporary mask - will be eventually removed; LogEE is also excluded, as it
@@ -151,19 +181,10 @@ def test_new_mordred_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
-    # we exclude changed feature names
-    changed_name = np.array(
-        [
-            "autocorr" in feature
-            or "MoRSE" in feature
-            or "BCUT" in feature
-            or "Dz" in feature
-            for feature in feature_names_new
-        ]
-    )
-    # sets, since the order does not matter
-    feature_names_new = set(feature_names_new[~changed_name])
-    feature_names_old = set(feature_names_old[~changed_name])
+    # sets, since the order does not matter, and without the renamed families,
+    # which each list has to be filtered by on its own names
+    feature_names_new = set(feature_names_new[~_renamed_mask(feature_names_new)])
+    feature_names_old = set(feature_names_old[~_renamed_mask(feature_names_old)])
 
     diff_names = feature_names_new - feature_names_old
     assert not diff_names
@@ -179,19 +200,10 @@ def test_new_mordred_3D_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
-    # we exclude changed feature names
-    changed_name = np.array(
-        [
-            "autocorr" in feature
-            or "MoRSE" in feature
-            or "BCUT" in feature
-            or "Dz" in feature
-            for feature in feature_names_new
-        ]
-    )
-    # sets, since the order does not matter
-    feature_names_new = set(feature_names_new[~changed_name])
-    feature_names_old = set(feature_names_old[~changed_name])
+    # sets, since the order does not matter, and without the renamed families,
+    # which each list has to be filtered by on its own names
+    feature_names_new = set(feature_names_new[~_renamed_mask(feature_names_new)])
+    feature_names_old = set(feature_names_old[~_renamed_mask(feature_names_old)])
 
     diff_names = feature_names_new - feature_names_old
     assert not diff_names

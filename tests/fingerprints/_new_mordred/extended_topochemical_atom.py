@@ -6,7 +6,10 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import GetMolFrags, GetSymmSSSR, MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.extended_topochemical_atom import calc
+from skfp.fingerprints._new_mordred.descriptors.extended_topochemical_atom import (
+    FEATURE_NAMES,
+    calc,
+)
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
@@ -34,14 +37,14 @@ def _compute(mol):
     ring_count = len(GetSymmSSSR(mol_kekulized))
     n_frags = len(GetMolFrags(mol))
 
-    values, feature_names = calc(
+    values = calc(
         AtomicProperties(mol_kekulized),
         distance_matrix,
         mol_kekulized_hydrogens,
         ring_count,
         n_frags,
     )
-    return dict(zip(feature_names, values, strict=True))
+    return dict(zip(FEATURE_NAMES, values, strict=True))
 
 
 @pytest.mark.parametrize("molecule", list(_REFERENCE["expected"]))

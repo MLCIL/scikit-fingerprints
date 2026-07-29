@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.path_count import (
-    FEATURE_NAMES,
     calc,
 )
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
@@ -339,7 +338,5 @@ def test_path_count_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
     props = AtomicProperties(mol_regular)
-    values, feature_names = calc(mol_regular, props, Subgraphs(mol_regular, props))
-
-    assert feature_names == FEATURE_NAMES
+    values = calc(props, Subgraphs(props))
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-5)

@@ -29,9 +29,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(
-    atomic_props_regular: AtomicProperties, n_frags: int
-) -> tuple[np.ndarray, list[str]]:
+def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     Detour matrix descriptor.
 
@@ -41,7 +39,7 @@ def calc(
     """
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     detour_matrix = _get_detour_matrix(atomic_props_regular)
     attrs = MatrixAttributes(
@@ -73,7 +71,7 @@ def calc(
         dtype=np.float32,
     )
 
-    return values, FEATURE_NAMES
+    return values
 
 
 def _get_detour_matrix(props: AtomicProperties) -> np.ndarray:

@@ -20,7 +20,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(props: AtomicProperties, n_frags: int) -> tuple[np.ndarray, list[str]]:
+def calc(props: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     BCUT descriptors.
 
@@ -31,7 +31,7 @@ def calc(props: AtomicProperties, n_frags: int) -> tuple[np.ndarray, list[str]]:
     Requires a connected molecule (single fragment).
     """
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     burden_matrix = _get_burden_matrix(props)
 
@@ -47,7 +47,7 @@ def calc(props: AtomicProperties, n_frags: int) -> tuple[np.ndarray, list[str]]:
         eigvals = np.linalg.eigvalsh(burden_matrix)  # ascending order
         values.extend([eigvals[0], eigvals[-1]])
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 def _get_burden_matrix(props: AtomicProperties) -> np.ndarray:

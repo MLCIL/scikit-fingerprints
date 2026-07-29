@@ -13,7 +13,7 @@ from rdkit.Chem import Mol, rdMolDescriptors
 FEATURE_NAMES = ["nRot", "RotRatio"]
 
 
-def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol) -> np.ndarray:
     """
     Compute the Mordred rotatable bond ratio descriptor.
 
@@ -24,4 +24,4 @@ def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
     n_rotatable = rdMolDescriptors.CalcNumRotatableBonds(mol_regular)
     rot_ratio = np.nan if n_bonds == 0 else n_rotatable / n_bonds
 
-    return np.asarray([n_rotatable, rot_ratio], dtype=np.float32), FEATURE_NAMES
+    return np.asarray([n_rotatable, rot_ratio], dtype=np.float32)

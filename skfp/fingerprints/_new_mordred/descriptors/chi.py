@@ -89,7 +89,7 @@ def _parse_chi_feature_name(name: str) -> tuple[str, int, str, bool]:
 _PARSED_FEATURE_NAMES = [_parse_chi_feature_name(name) for name in FEATURE_NAMES]
 
 
-def calc(props: AtomicProperties, subgraphs: Subgraphs) -> tuple[np.ndarray, list[str]]:
+def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     """
     Compute Mordred Chi descriptors without adding explicit hydrogens.
 
@@ -104,7 +104,7 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> tuple[np.ndarray, lis
         _chi_value(subgraphs.node_sets(order, subgraph_type), prop_vals[prop], averaged)
         for subgraph_type, order, prop, averaged in _PARSED_FEATURE_NAMES
     ]
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 def _chi_value(

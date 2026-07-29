@@ -56,7 +56,7 @@ def calc(
     atomic_props_regular: AtomicProperties,
     adjacency_matrix_regular: AdjacencyMatrix,
     distance_matrix_regular: DistanceMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     num_atoms = atomic_props_regular.num_atoms
     dists = distance_matrix_regular.matrix
 
@@ -83,4 +83,4 @@ def calc(
 
     values = counts * np.exp(-sum_log / counts)
 
-    return values.astype(np.float32), FEATURE_NAMES
+    return values.astype(np.float32)

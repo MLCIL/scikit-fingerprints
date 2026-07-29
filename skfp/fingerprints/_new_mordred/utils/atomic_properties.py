@@ -2,19 +2,22 @@ from functools import cached_property
 
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem.rdchem import Atom, Mol
+from rdkit.Chem.rdchem import Atom, Bond, BondType, Mol
 from rdkit.Chem.rdPartialCharges import ComputeGasteigerCharges
 
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
+    atoms_apply_func,
+    bonds_apply_func,
+)
 
 from .periodic_table import (
     ALLRED_ROCHOW_ELECTRONEGATIVITY,
     ATOMIC_NUMBER,
+    ELEMENT_PERIOD,
     IONIZATION_POTENTIAL,
     MASS,
     MC_GOWAN_VOLUME,
     PAULING_ELECTRONEGATIVITY,
-    PERIOD,
     POLARIZABILITY_94,
     SANDERSON_ELECTRONEGATIVITY,
     VAN_DER_WAALS_RADII,
@@ -171,7 +174,7 @@ def get_intrinsic_state(atom: Atom) -> float:
     if d == 0:
         return np.nan
     dv = get_valence_electrons(atom)
-    return ((2.0 / PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
+    return ((2.0 / ELEMENT_PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
 
 
 def get_gasteiger_charge(atom: Atom) -> float:
@@ -196,6 +199,82 @@ class AtomicProperties:
         self.mol = mol
         self.num_atoms: int = mol.GetNumAtoms()
         self.num_bonds: int = mol.GetNumBonds()
+
+    @classmethod
+    def with_hydrogens_added(
+        cls, mol_hydrogens: Mol, props: "AtomicProperties"
+    ) -> "AtomicProperties":
+        """
+        Properties of ``AddHs(mol)``, derived from the properties of ``mol``.
+
+        ``AddHs`` leaves the heavy atoms and their bonds untouched and appends one
+        hydrogen per implicit hydrogen, grouped by the atom they belong to, in
+        ascending order of that atom. Every array below therefore follows from the
+        hydrogen-suppressed molecule, which saves a second pass over twice as many
+        atoms and bonds in Python.
+        """
+        num_hydrogens = props.total_num_hs  # the hydrogens AddHs makes explicit
+        num_added = mol_hydrogens.GetNumAtoms() - props.num_atoms
+        derived = cls(mol_hydrogens)
+        if num_added != num_hydrogens.sum():
+            # AddHs did not do what is assumed above, so nothing can be reused
+            return derived
+
+        # per-hydrogen values, in the order the hydrogens were appended
+        parents = np.repeat(np.arange(props.num_atoms), num_hydrogens)
+        hydrogen_idxs = props.num_atoms + np.arange(num_added)
+        # hydrogen has atomic number 1, exactly one bond, no charge and no hydrogens
+        ones = np.ones(num_added, dtype=np.intp)
+        zeros = np.zeros(num_added, dtype=np.intp)
+        not_aromatic = np.zeros(num_added, dtype=bool)
+        single_bonds = np.full(num_added, int(BondType.SINGLE), dtype=np.intp)
+
+        derived._prefill(
+            atomic_nums=np.concatenate([props.atomic_nums, ones]),
+            formal_charges=np.concatenate([props.formal_charges, zeros]),
+            is_aromatic=np.concatenate([props.is_aromatic, not_aromatic]),
+            # each hydrogen bond also raises the degree of the atom it belongs to
+            degrees=np.concatenate([props.degrees + num_hydrogens, ones]),
+            # the hydrogens are now the neighbors they used to be counted as
+            num_hydrogens=np.concatenate([props.num_hydrogens, zeros]),
+            # each new bond runs from an atom to one of its hydrogens
+            bond_begin_idxs=np.concatenate([props.bond_begin_idxs, parents]),
+            bond_end_idxs=np.concatenate([props.bond_end_idxs, hydrogen_idxs]),
+            bond_types=np.concatenate([props.bond_types, single_bonds]),
+            bond_orders=np.concatenate([props.bond_orders, np.ones(num_added)]),
+            bond_is_aromatic=np.concatenate([props.bond_is_aromatic, not_aromatic]),
+        )
+        return derived
+
+    @classmethod
+    def kekulized(
+        cls, mol_kekulized: Mol, props: "AtomicProperties"
+    ) -> "AtomicProperties":
+        """
+        Properties of the kekulized ``mol``, derived from the properties of ``mol``.
+
+        Kekulization only rewrites bond types, leaving the atoms, the bonds they
+        connect and the aromaticity flags alone, so everything but the bond types
+        and orders carries over.
+        """
+        derived = cls(mol_kekulized)
+        derived._prefill(
+            atomic_nums=props.atomic_nums,
+            formal_charges=props.formal_charges,
+            is_aromatic=props.is_aromatic,
+            degrees=props.degrees,
+            total_num_hs=props.total_num_hs,
+            bond_begin_idxs=props.bond_begin_idxs,
+            bond_end_idxs=props.bond_end_idxs,
+        )
+        return derived
+
+    def _prefill(self, **arrays: np.ndarray) -> None:
+        """
+        Store property arrays that are already known, so that the matching
+        :func:`cached_property` never reads them off the molecule.
+        """
+        self.__dict__.update(arrays)
 
     def get(self, name: str) -> np.ndarray:
         """
@@ -262,40 +341,22 @@ class AtomicProperties:
 
     @cached_property
     def bond_types(self) -> np.ndarray:
-        return np.fromiter(
-            (bond.GetBondType() for bond in self.mol.GetBonds()),
-            dtype=np.intp,
-            count=self.num_bonds,
-        )
+        return bonds_apply_func(Bond.GetBondType, self.mol, np.intp)
 
     @cached_property
     def bond_is_aromatic(self) -> np.ndarray:
-        return np.fromiter(
-            (bond.GetIsAromatic() for bond in self.mol.GetBonds()),
-            dtype=bool,
-            count=self.num_bonds,
-        )
+        return bonds_apply_func(Bond.GetIsAromatic, self.mol, bool)
 
     @cached_property
     def bond_orders(self) -> np.ndarray:
-        return np.fromiter(
-            (bond.GetBondTypeAsDouble() for bond in self.mol.GetBonds()),
-            dtype=np.float64,
-            count=self.num_bonds,
-        )
+        return bonds_apply_func(Bond.GetBondTypeAsDouble, self.mol, np.float64)
 
     @cached_property
     def _bond_endpoints(self) -> tuple[np.ndarray, np.ndarray]:
-        endpoints = np.fromiter(
-            (
-                idx
-                for bond in self.mol.GetBonds()
-                for idx in (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
-            ),
-            dtype=np.intp,
-            count=2 * self.num_bonds,
-        ).reshape(-1, 2)
-        return endpoints[:, 0].copy(), endpoints[:, 1].copy()
+        return (
+            bonds_apply_func(Bond.GetBeginAtomIdx, self.mol, np.intp),
+            bonds_apply_func(Bond.GetEndAtomIdx, self.mol, np.intp),
+        )
 
     # connectivity properties
 
@@ -304,9 +365,14 @@ class AtomicProperties:
         return self._neighbor_counts(~self.is_hydrogen)
 
     @cached_property
+    def outer_electrons(self) -> np.ndarray:
+        """Number of outer (valence) shell electrons of the neutral atom."""
+        return _N_OUTER_ELECS[self.atomic_nums]
+
+    @cached_property
     def valence_electrons(self) -> np.ndarray:
         atomic_nums = self.atomic_nums
-        outer_elecs = _N_OUTER_ELECS[atomic_nums]
+        outer_elecs = self.outer_electrons
 
         # the formal charge cancels out of the denominator: (Z - q) - (Zv - q) - 1
         numerator = outer_elecs - self.formal_charges - self.num_hydrogens
@@ -317,7 +383,7 @@ class AtomicProperties:
     @cached_property
     def intrinsic_state(self) -> np.ndarray:
         sigma_electrons = self.sigma_electrons
-        periods = PERIOD.lookup(self.atomic_nums)
+        periods = ELEMENT_PERIOD.lookup(self.atomic_nums)
         with np.errstate(divide="ignore", invalid="ignore"):
             values = (
                 (2.0 / periods) ** 2 * self.valence_electrons + 1

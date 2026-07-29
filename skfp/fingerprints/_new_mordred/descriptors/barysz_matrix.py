@@ -37,9 +37,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(
-    atomic_props_regular: AtomicProperties, n_frags: int
-) -> tuple[np.ndarray, list[str]]:
+def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     Barysz matrix spectral descriptors.
 
@@ -55,7 +53,7 @@ def calc(
             len(ELEMENT_PROPERTY_TABLES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
         )
 
-        return values_nan, FEATURE_NAMES
+        return values_nan
 
     values: list = []
     for prop_name in ELEMENT_PROPERTY_TABLES:
@@ -67,7 +65,7 @@ def calc(
                 _barysz_matrix_attribute_values(atomic_props_regular, n_frags, matrix)
             )
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 @np.errstate(divide="ignore", invalid="ignore")

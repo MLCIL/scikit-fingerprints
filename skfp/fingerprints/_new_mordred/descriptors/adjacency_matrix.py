@@ -31,10 +31,10 @@ def calc(
     atomic_atomic_props_regular: AtomicProperties,
     n_frags: int,
     adjacency_matrix: AdjacencyMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     adj_matrix = adjacency_matrix.matrix
     attrs = MatrixAttributes(
@@ -60,4 +60,4 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

@@ -37,7 +37,7 @@ _BONDI_RADII = {
 _ATOM_CONTRIB = {symbol: 4.0 / 3.0 * pi * r**3 for symbol, r in _BONDI_RADII.items()}
 
 
-def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> np.ndarray:
     r"""
     Compute the Mordred ABC van der Waals volume descriptor.
 
@@ -61,7 +61,7 @@ def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> tuple[np.ndarray, list[
             _ATOM_CONTRIB[atom.GetSymbol()] for atom in mol_hydrogens.GetAtoms()
         )
     except KeyError:
-        return np.asarray([np.nan], dtype=np.float32), FEATURE_NAMES
+        return np.asarray([np.nan], dtype=np.float32)
 
     n_bonds = mol_hydrogens.GetNumBonds()
 
@@ -75,4 +75,4 @@ def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> tuple[np.ndarray, list[
         atom_volume - 5.92 * n_bonds - 14.7 * n_aromatic_rings - 3.8 * n_aliphatic_rings
     )
 
-    return np.asarray([vabc], dtype=np.float32), FEATURE_NAMES
+    return np.asarray([vabc], dtype=np.float32)
