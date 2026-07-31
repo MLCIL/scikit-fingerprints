@@ -27,7 +27,7 @@ def test_morse_unweighted_reference_values(
     mol = mordred_test_mols_hydrogens_3d[name]
     dists = DistanceMatrix3D(mol)
 
-    values = calc(AtomicProperties(mol), dists)
+    values = calc(AtomicProperties.from_mol(mol), dists)
     values = dict(zip(FEATURE_NAMES, values, strict=True))
     values = [
         values[f"MoRSE_unweighted_dist_{dist}"]

@@ -22,7 +22,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def histidine_estate_features() -> dict[str, float]:
     # histidine tests in Mordred use a different tautomer from regular SDF file one
     mol = MolFromSmiles("NC(Cc1c[nH]cn1)C(=O)O")
-    indices = calc_indices(AtomicProperties(mol), DistanceMatrix(mol))
+    indices = calc_indices(AtomicProperties.from_mol(mol), DistanceMatrix.from_mol(mol))
     values = calc(mol, indices)
     return dict(zip(FEATURE_NAMES, values, strict=True))
 

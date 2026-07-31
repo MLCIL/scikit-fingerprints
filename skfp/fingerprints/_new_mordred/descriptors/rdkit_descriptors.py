@@ -9,7 +9,6 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 import numpy as np
 from rdkit.Chem import Crippen, Descriptors, Mol, rdMolDescriptors
-from rdkit.Chem.EState import EState_VSA
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import safe_value
@@ -38,7 +37,12 @@ FEATURE_NAMES_2D = [
 FEATURE_NAMES_3D = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
 
 
-def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
+# the bin edges RDKit uses for the E-state and surface-area MOE-type descriptors
+_ESTATE_BINS = [-0.390, 0.290, 0.717, 1.165, 1.540, 1.807, 2.05, 4.69, 9.17, 15.0]
+_SURFACE_AREA_BINS = [4.78, 5.00, 5.410, 5.740, 6.00, 6.07, 6.45, 7.00, 11.0]
+
+
+def _calc_moe_type_descriptors(mol: Mol, estate_indices: np.ndarray) -> list[float]:
     """
     Compute RDKit MOE-type VSA descriptors.
 
@@ -48,14 +52,29 @@ def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
 
     The charge, refractivity and logP groups are read from RDKit's C++ functions,
     which return all bins of a group at once; the per-bin functions in
-    ``rdkit.Chem.MolSurf`` are Python wrappers around the very same values.
+    ``rdkit.Chem.MolSurf`` are Python wrappers around the very same values. The
+    E-state groups are binned here instead, because RDKit does that in Python and
+    would recompute the E-state indices it is given here to do it.
     """
+    # per-atom surface areas; the second element is the hydrogen contribution
+    surface_areas = np.asarray(rdMolDescriptors._CalcLabuteASAContribs(mol)[0])
+
+    # a bin holds the values from its lower edge up to, but excluding, the next one
+    estate_bins = np.searchsorted(_ESTATE_BINS, estate_indices, side="right")
+    surface_area_bins = np.searchsorted(_SURFACE_AREA_BINS, surface_areas, side="right")
     return [
         *rdMolDescriptors.PEOE_VSA_(mol)[:13],
         *rdMolDescriptors.SMR_VSA_(mol)[:9],
         *rdMolDescriptors.SlogP_VSA_(mol)[:11],
-        *[getattr(EState_VSA, f"EState_VSA{idx}")(mol) for idx in range(1, 11)],
-        *[getattr(EState_VSA, f"VSA_EState{idx}")(mol) for idx in range(1, 10)],
+        # surface area of the atoms in each E-state bin, and the other way round
+        *np.bincount(
+            estate_bins, weights=surface_areas, minlength=len(_ESTATE_BINS) + 1
+        )[:10],
+        *np.bincount(
+            surface_area_bins,
+            weights=estate_indices,
+            minlength=len(_SURFACE_AREA_BINS) + 1,
+        )[:9],
     ]
 
 
@@ -155,8 +174,13 @@ def _bertz_connection_counts(
         axis=1,
     )
     counts = np.concatenate([within_bond_counts, at_hinge_counts])
-    kind_idxs = np.unique(kinds, axis=1, return_inverse=True)[1]
-    return np.bincount(kind_idxs, weights=counts)
+    # symmetry classes are atom-index sized, so a triple of them packs into one
+    # integer, which groups faster than comparing the triples themselves; shifting
+    # by one keeps the padding class of the pair kinds non-negative
+    shifted = kinds + 1
+    num_classes = props.num_atoms + 1
+    keys = (shifted[0] * num_classes + shifted[1]) * num_classes + shifted[2]
+    return np.bincount(np.unique(keys, return_inverse=True)[1], weights=counts)
 
 
 def _bertz_complexity(props: AtomicProperties, weighted_distances: np.ndarray) -> float:
@@ -192,7 +216,9 @@ def _bertz_complexity(props: AtomicProperties, weighted_distances: np.ndarray) -
 
 
 def _information_entropy(counts: np.ndarray) -> np.floating:
-    """Shannon entropy in bits of the distribution the counts describe."""
+    """
+    Shannon entropy in bits of the distribution the counts describe.
+    """
     probabilities = counts / counts.sum()
     nonzero = probabilities[probabilities > 0]
     return -(nonzero * np.log2(nonzero)).sum()
@@ -217,14 +243,11 @@ def calc_rdkit_2d(
     """
     Compute 2D descriptors that map directly to RDKit descriptor functions.
     """
-    # the E-state VSA descriptors below need the E-state indices, which RDKit
-    # computes in Python and memoizes on the molecule under this name; they are
-    # already known here, so they are handed over through that memo
-    mol_regular._eStateIndices = estate_indices
-
     # the complexity index groups atoms by distances that weigh every bond by the
     # inverse of its bond order
-    weighted_distances = DistanceMatrix(mol_regular, use_bond_orders=True).matrix
+    weighted_distances = DistanceMatrix.from_mol(
+        mol_regular, use_bond_orders=True
+    ).matrix
 
     exact_mol_wt = Descriptors.ExactMolWt(mol_regular)
     values = [
@@ -233,7 +256,7 @@ def calc_rdkit_2d(
         rdMolDescriptors.CalcNumHBA(mol_regular),
         rdMolDescriptors.CalcNumHBD(mol_regular),
         rdMolDescriptors.CalcLabuteASA(mol_regular),
-        *_calc_moe_type_descriptors(mol_regular),
+        *_calc_moe_type_descriptors(mol_regular, estate_indices),
         Crippen.MolLogP(mol_regular),
         Crippen.MolMR(mol_regular),
         rdMolDescriptors.CalcTPSA(mol_regular),

@@ -69,32 +69,36 @@ FEATURE_NAMES = [
 
 
 def calc(
-    props_kekulized: AtomicProperties,
+    mol_kekulized: Mol,
+    props: AtomicProperties,
     distance_matrix: DistanceMatrix,
     mol_kekulized_hydrogens: Mol,
     ring_count: int,
     n_frags: int,
 ) -> np.ndarray:
+    """
+    Compute extended topochemical atom (ETA) descriptors.
+
+    Kekulization changes neither the atoms nor the skeleton, so the properties and
+    the distances of the hydrogen-suppressed molecule apply to the kekulized one as
+    well; only the bond types, which the beta indices read, are different.
+    """
     # ETA descriptors require a connected molecule
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
-    mol_kekulized = props_kekulized.mol
-    num_atoms = props_kekulized.num_atoms
+    num_atoms = props.num_atoms
 
     # atomic properties
-    atomic_nums, core_counts, epsilons = _atom_properties(mol_kekulized)
-    degrees = props_kekulized.degrees
+    atomic_nums = props.atomic_nums
+    core_counts, epsilons = _core_counts_and_epsilons(atomic_nums)
+    degrees = props.degrees
     gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
         mol_kekulized, atomic_nums, core_counts, epsilons
     )
 
-    # reference variants of the molecule; each may fail to build (e.g. heavy atom
-    # with degree > 4), in which case the descriptors depending on it become NaN.
-    # The hydrogen-explicit alkane is the alkane with hydrogens added, so only two
-    # skeletons have to be built.
-    mol_alkane = build_reference_mol(mol_kekulized)
-    mol_alkane_hydrogens = None if mol_alkane is None else AddHs(mol_alkane)
+    # the saturated reference variant of the molecule, which may fail to build, in
+    # which case the descriptors depending on it become NaN
     mol_saturated = build_reference_mol(
         mol_kekulized, explicit_hydrogens=True, saturated=True
     )
@@ -124,30 +128,25 @@ def calc(
         dtype=np.float32,
     )
 
-    # composite + functionality indices
-    if mol_alkane is None:
-        gamma_alkane = None
-        distance_matrix_alkane = None
-    else:
-        z_a, core_a, eps_a = _atom_properties(mol_alkane)
-        gamma_alkane, *_ = _beta_and_gamma(mol_alkane, z_a, core_a, eps_a)
-        distance_matrix_alkane = DistanceMatrix(mol_alkane).matrix
-
+    # composite + functionality indices, which compare the molecule with its alkane
+    # reference: the same skeleton with every atom a carbon and every bond single
+    gamma_alkane = _alkane_gamma(degrees)
     eta_composite = _composite_and_functionality(
         gamma,
         distance_matrix.matrix,
         gamma_alkane,
-        distance_matrix_alkane,
+        # the alkane has the same skeleton, and therefore the same distances
+        None if gamma_alkane is None else distance_matrix.matrix,
         num_atoms,
     )
 
     eta_branching = _branching_indices(eta_composite[6], ring_count, num_atoms)
 
     # ETA delta alpha
-    if mol_alkane is None:
+    if gamma_alkane is None:
         eta_delta_alpha = np.array([np.nan, np.nan], dtype=np.float32)
     else:
-        core_count_alkane = core_a.sum()
+        core_count_alkane = num_atoms * _CARBON_CORE_COUNT
         d_a = max((core_count - core_count_alkane) / num_atoms, 0.0)
         d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
         eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
@@ -155,7 +154,7 @@ def calc(
     eta_epsilon_values = _epsilon_values(
         epsilons,
         mol_kekulized_hydrogens,
-        mol_alkane_hydrogens,
+        _alkane_hydrogens_mean_epsilon(degrees) if gamma_alkane is not None else np.nan,
         mol_saturated,
     )
 
@@ -191,6 +190,14 @@ def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     Return per-atom arrays of (atomic number, core count alpha, epsilon).
     """
     atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol, np.int32)
+    return atomic_nums, *_core_counts_and_epsilons(atomic_nums)
+
+
+def _core_counts_and_epsilons(atomic_nums: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Core count alpha and epsilon of every atom, both of which follow from the
+    atomic number alone.
+    """
     outer_elecs = _N_OUTER_ELECS[atomic_nums]
 
     # hydrogens have no core electrons, so their alpha is 0 by definition (and the
@@ -202,7 +209,7 @@ def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     core_counts = np.where(atomic_nums == 1, 0.0, alphas)
     epsilons = 0.3 * outer_elecs - core_counts
 
-    return atomic_nums, core_counts.astype(np.float32), epsilons.astype(np.float32)
+    return core_counts.astype(np.float32), epsilons.astype(np.float32)
 
 
 def _beta_and_gamma(
@@ -370,7 +377,7 @@ def _branching_indices(
 def _epsilon_values(
     epsilons: np.ndarray,
     mol_hydrogens: Mol,
-    mol_alkane_hydrogens: Mol | None,
+    alkane_hydrogens_mean_epsilon: float,
     mol_saturated: Mol | None,
 ) -> np.ndarray:
     """
@@ -383,11 +390,7 @@ def _epsilon_values(
 
     eps_1 = eps_hydrogens.mean()
     eps_2 = epsilons.mean()
-    eps_3 = (
-        _atom_properties(mol_alkane_hydrogens)[2].mean()
-        if mol_alkane_hydrogens is not None
-        else np.nan
-    )
+    eps_3 = alkane_hydrogens_mean_epsilon
     eps_4 = (
         _atom_properties(mol_saturated)[2].mean()
         if mol_saturated is not None
@@ -416,6 +419,46 @@ def _epsilon_values(
         ],
         dtype=np.float32,
     )
+
+
+# the alkane reference replaces every heavy atom with a carbon, which caps the
+# degree it can have, and every bond with a single one
+_MAX_CARBON_DEGREE = 4
+_CARBON_CORE_COUNT, _CARBON_EPSILON = (
+    value.item() for value in _core_counts_and_epsilons(np.array([6]))
+)
+_HYDROGEN_EPSILON = _core_counts_and_epsilons(np.array([1]))[1].item()
+
+
+def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
+    """
+    Gamma of every atom of the alkane reference: the same skeleton with every atom
+    a carbon and every bond single.
+
+    All of its atoms have the same core count and the same epsilon, so every bond
+    contributes half a beta unit to both of its atoms and gamma comes out as the
+    reciprocal of the degree. ``None`` when the reference does not exist, which is
+    the case exactly when some atom has more bonds than a carbon can have.
+    """
+    if degrees.max(initial=0) > _MAX_CARBON_DEGREE:
+        return None
+
+    with np.errstate(divide="ignore"):
+        # a lone atom has no bonds and therefore no beta to divide by
+        return np.where(degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * degrees))
+
+
+def _alkane_hydrogens_mean_epsilon(degrees: np.ndarray) -> float:
+    """
+    Mean epsilon over the hydrogen-explicit alkane reference.
+
+    Its carbons fill their remaining bonds with hydrogens, so only how many atoms of
+    either element there are matters, not how they are arranged.
+    """
+    num_carbons = len(degrees)
+    num_hydrogens = num_carbons * _MAX_CARBON_DEGREE - degrees.sum()
+    total = num_carbons * _CARBON_EPSILON + num_hydrogens * _HYDROGEN_EPSILON
+    return float(total / (num_carbons + num_hydrogens))
 
 
 def build_reference_mol(

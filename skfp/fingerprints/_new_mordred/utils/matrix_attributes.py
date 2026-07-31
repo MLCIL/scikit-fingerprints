@@ -1,5 +1,3 @@
-from functools import cached_property
-
 import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
@@ -16,151 +14,86 @@ class MatrixAttributes:
     """
     Spectral attributes derived from a graph matrix.
 
-    Requires a connected molecule (single fragment). For disconnected
-    molecules, all attributes propagate NaN.
+    Requires a connected molecule (single fragment). For disconnected molecules, all
+    attributes propagate NaN.
     """
 
     def __init__(
         self, matrix: np.ndarray, props: AtomicProperties, hermitian: bool, n_frags: int
     ):
-        self._matrix = matrix
-        self._props = props
-        self._n_atoms: int = props.num_atoms
+        num_atoms = props.num_atoms
+        eigvals, eigvecs = _eigendecomposition(matrix, hermitian, n_frags, num_atoms)
+        i_min, i_max = int(np.argmin(eigvals)), int(np.argmax(eigvals))
+        leading_eigvec = eigvecs[:, i_max]
 
-        # not connected
-        if n_frags != 1:
-            n = self._n_atoms
-            self._eigvals = np.full(n, np.nan)
-            self._eigvecs = np.full((n, n), np.nan)
-            self._i_min = 0
-            self._i_max = 0
-            return
+        # graph energy (SpAbs)
+        self.graph_energy = np.abs(eigvals).sum()
+        # leading eigenvalue (SpMax)
+        self.leading_eigenvalue = eigvals[i_max]
+        # spectral diameter (SpDiam)
+        self.spectral_diameter = self.leading_eigenvalue - eigvals[i_min]
+        # mean of the eigenvalues (SpMean)
+        self.mean_eigenvalue = np.mean(eigvals)
+        # spectral absolute deviation, and its mean over the atoms
+        self.sp_ad = np.abs(eigvals - self.mean_eigenvalue).sum()
+        self.sp_mad = self.sp_ad / num_atoms
+        # spectral moment
+        self.sm1 = np.trace(matrix)
+        self.log_ee = _log_estrada_index(eigvals, i_max)
 
-        eig_func = np.linalg.eigh if hermitian else np.linalg.eig
-        w, v = eig_func(matrix)
+        # coefficient sum of the leading eigenvector, its average and its logarithm
+        self.ve1 = np.abs(leading_eigvec).sum()
+        self.ve2 = self.ve1 / num_atoms
+        self.ve3 = np.log(0.1 * num_atoms * self.ve1)
 
-        if np.iscomplexobj(w):
-            w = w.real
-        if np.iscomplexobj(v):
-            v = v.real
+        # Randic-like eigenvector-based index, its average and its logarithm
+        self.vr1 = _randic_like_index(leading_eigvec, props)
+        self.vr2 = self.vr1 / num_atoms
+        self.vr3 = (
+            np.log(0.1 * num_atoms * self.vr1) if self.vr1 > 0 else np.float64(np.nan)
+        )
 
-        self._eigvals = w
-        self._eigvecs = v
-        self._i_min = int(np.argmin(w))
-        self._i_max = int(np.argmax(w))
 
-    @cached_property
-    def graph_energy(self) -> np.floating:
-        """
-        Graph energy (originally ``SpAbs``).
-        """
-        return np.abs(self._eigvals).sum()
+def _eigendecomposition(
+    matrix: np.ndarray, hermitian: bool, n_frags: int, num_atoms: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Eigenvalues and eigenvectors of a graph matrix.
 
-    @cached_property
-    def leading_eigenvalue(self) -> np.floating:
-        """
-        Leading eigenvalue (originally ``SpMax``).
-        """
-        return self._eigvals[self._i_max]
+    NaN for multi-fragment molecules.
+    """
+    if n_frags != 1:
+        return np.full(num_atoms, np.nan), np.full((num_atoms, num_atoms), np.nan)
 
-    @cached_property
-    def spectral_diameter(self) -> np.floating:
-        """
-        Spectral diameter (originally ``SpDiam``).
-        """
-        return self.leading_eigenvalue - self._eigvals[self._i_min]
+    eigvals, eigvecs = np.linalg.eigh(matrix) if hermitian else np.linalg.eig(matrix)
+    return np.real(eigvals), np.real(eigvecs)
 
-    @cached_property
-    def mean_eigenvalue(self) -> np.floating:
-        """
-        Mean of eigenvalues (originally ``SpMean``).
-        """
-        return np.mean(self._eigvals)
 
-    @cached_property
-    def sp_ad(self) -> np.floating:
-        """
-        Spectral absolute deviation.
-        """
-        return np.abs(self._eigvals - self.mean_eigenvalue).sum()
+def _log_estrada_index(eigvals: np.ndarray, i_max: int) -> np.floating:
+    """
+    Estrada-like index, defined as ``LogEE = log(sum(exp(lambda_i)))`` over the
+    eigenvalues ``lambda_i``.
 
-    @cached_property
-    def sp_mad(self) -> np.floating:
-        """
-        Spectral mean absolute deviation.
-        """
-        return self.sp_ad / self._n_atoms
+    Computed via the log-sum-exp trick for numerical stability
+    (see https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp):
+    ``log(sum(exp(x_i))) = a + log(sum(exp(x_i - a)))`` with ``a = max(x_i)``.
 
-    @cached_property
-    def log_ee(self) -> np.floating:
-        """
-        Estrada-like index, defined as ``LogEE = log(sum(exp(lambda_i)))``
-        over the eigenvalues ``lambda_i``.
+    Note that this intentionally diverges from mordred-community, whose
+    implementation adds a spurious ``exp(-a)`` term and thus computes
+    ``log(1 + sum(exp(lambda_i)))`` instead of the documented formula.
+    See https://github.com/JacksonBurns/mordred-community/issues/24.
+    """
+    a = np.maximum(eigvals[i_max], 0)
+    return a + np.log(np.exp(eigvals - a).sum())
 
-        Computed via the log-sum-exp trick for numerical stability
-        (see https://hips.seas.harvard.edu/blog/2013/01/09/computing-log-sum-exp):
-        ``log(sum(exp(x_i))) = a + log(sum(exp(x_i - a)))`` with ``a = max(x_i)``.
 
-        Note that this intentionally diverges from mordred-community, whose
-        implementation adds a spurious ``exp(-a)`` term and thus computes
-        ``log(1 + sum(exp(lambda_i)))`` instead of the documented formula.
-        See https://github.com/JacksonBurns/mordred-community/issues/24.
-        """
-        a = np.maximum(self._eigvals[self._i_max], 0)
-        sx = np.exp(self._eigvals - a).sum()
-        return a + np.log(sx)
-
-    @cached_property
-    def sm1(self) -> np.floating:
-        """
-        Spectral moment.
-        """
-        return np.trace(self._matrix)
-
-    @cached_property
-    def ve1(self) -> np.floating:
-        """
-        Coefficient sum of the last eigenvector.
-        """
-        return np.abs(self._eigvecs[:, self._i_max]).sum()
-
-    @cached_property
-    def ve2(self) -> np.floating:
-        """
-        Average coefficient of the last eigenvector.
-        """
-        return self.ve1 / self._n_atoms
-
-    @cached_property
-    def ve3(self) -> np.floating:
-        """
-        Logarithmic coefficient sum of the last eigenvector.
-        """
-        return np.log(0.1 * self._n_atoms * self.ve1)
-
-    @cached_property
-    @np.errstate(divide="ignore", invalid="ignore")
-    def vr1(self) -> np.floating:
-        """
-        Randic-like eigenvector-based index.
-        """
-        leading_eigvec = self._eigvecs[:, self._i_max]
-        begins = leading_eigvec[self._props.bond_begin_idxs]
-        ends = leading_eigvec[self._props.bond_end_idxs]
-        return ((begins * ends) ** -0.5).sum()
-
-    @cached_property
-    def vr2(self) -> np.floating:
-        """
-        Normalized Randic-like eigenvector-based index.
-        """
-        return self.vr1 / self._n_atoms
-
-    @cached_property
-    def vr3(self) -> np.floating:
-        """
-        Logarithmic Randic-like eigenvector-based index.
-        """
-        if self.vr1 <= 0:
-            return np.nan
-        return np.log(0.1 * self._n_atoms * self.vr1)
+@np.errstate(divide="ignore", invalid="ignore")
+def _randic_like_index(
+    leading_eigvec: np.ndarray, props: AtomicProperties
+) -> np.floating:
+    """
+    Randic-like index over the bonds, weighted by the leading eigenvector.
+    """
+    begins = leading_eigvec[props.bond_begin_idxs]
+    ends = leading_eigvec[props.bond_end_idxs]
+    return ((begins * ends) ** -0.5).sum()

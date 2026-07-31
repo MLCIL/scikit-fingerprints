@@ -1,5 +1,3 @@
-from functools import cached_property
-
 import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
@@ -15,6 +13,8 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 # connected subgraphs are enumerated up to this many bonds, the largest order the
 # chi descriptors use
 MAX_ORDER = 7
+
+_MAX_INT64 = int(np.iinfo(np.int64).max)
 
 # subgraph classes used by the chi descriptors: a chain contains a cycle, a path
 # is an unbranched acyclic subgraph, and clusters are branched acyclic subgraphs,
@@ -39,6 +39,16 @@ class Subgraphs:
         )
         self._num_atoms = props.num_atoms
         self._num_bonds = props.num_bonds
+
+        # which bonds an atom takes part in, and which bonds share an atom
+        self._atom_adjacency = self._build_atom_adjacency()
+        self._bond_adjacency = self._build_bond_adjacency()
+
+        # subgraphs, their classification and their paths, filled in per order as
+        # the descriptors ask for them
+        self._subgraph_cache: dict[int, np.ndarray] = {}
+        self._classified_cache: dict[int, dict[str, list[np.ndarray]]] = {}
+        self._path_cache: dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
 
     def node_sets(self, order: int, subgraph_type: str) -> list[np.ndarray]:
         """
@@ -65,20 +75,7 @@ class Subgraphs:
         """
         return self._paths(order)[0]
 
-    @cached_property
-    def _subgraph_cache(self) -> dict[int, np.ndarray]:
-        return {}
-
-    @cached_property
-    def _classified_cache(self) -> dict[int, dict[str, list[np.ndarray]]]:
-        return {}
-
-    @cached_property
-    def _path_cache(self) -> dict[int, tuple[np.ndarray, np.ndarray, np.ndarray]]:
-        return {}
-
-    @cached_property
-    def _bond_adjacency(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _build_bond_adjacency(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Bonds sharing an atom with each bond, as (starts, counts, flat) arrays,
         i.e. the neighbors of bond ``b`` are
@@ -96,8 +93,7 @@ class Subgraphs:
         neighbor_counts = np.bincount(pairs[:, 0], minlength=self._num_bonds)
         return run_starts(neighbor_counts), neighbor_counts, pairs[:, 1]
 
-    @cached_property
-    def _atom_adjacency(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _build_atom_adjacency(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Bonds incident to each atom, as (starts, counts, flat) arrays.
         """
@@ -227,13 +223,23 @@ def _unique_row_idxs(rows: np.ndarray, num_values: int) -> np.ndarray:
 
     # rows of small integers pack into a single integer key, which deduplicates
     # much faster than comparing the rows themselves
-    if num_values**num_cols <= np.iinfo(np.int64).max:
-        powers = np.asarray(
-            [num_values**exponent for exponent in range(num_cols)], dtype=np.int64
-        )
-        return np.unique(rows @ powers, return_index=True)[1]
+    if num_values**num_cols > _MAX_INT64:
+        return np.unique(rows, axis=0, return_index=True)[1]
 
-    return np.unique(rows, axis=0, return_index=True)[1]
+    powers = np.asarray(
+        [num_values**exponent for exponent in range(num_cols)], dtype=np.int64
+    )
+    return _first_of_each_value(rows @ powers)
+
+
+def _first_of_each_value(keys: np.ndarray) -> np.ndarray:
+    """
+    Find the index of the first occurrence of every distinct value.
+    """
+    order = np.argsort(keys, kind="stable")
+    is_first = np.ones(len(keys), dtype=bool)
+    is_first[1:] = np.diff(keys[order]) != 0
+    return order[is_first]
 
 
 def _classify_subgraphs(
@@ -301,7 +307,7 @@ def _gather_node_sets(
     node count.
     """
     node_sets = []
-    for size in np.unique(num_nodes[selected]):
+    for size in np.flatnonzero(np.bincount(num_nodes[selected])):
         rows = selected[num_nodes[selected] == size]
         node_sets.append(nodes[first_run[rows][:, None] + np.arange(size)])
     return node_sets

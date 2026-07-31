@@ -19,7 +19,7 @@ def _calc(smiles: str) -> np.ndarray:
     mol = AddHs(MolFromSmiles(smiles))
     mol_kek = RWMol(AddHs(MolFromSmiles(smiles)))
     Kekulize(mol_kek)
-    values = calc(AtomicProperties(mol), mol_kek)
+    values = calc(AtomicProperties.from_mol(mol), mol_kek)
     return values
 
 

@@ -30,7 +30,7 @@ with open(Path(__file__).parent / "references" / "eta.json") as file:
 
 def _compute(mol):
     mol_kekulized = preprocess_mol(mol, kekulize=True)
-    distance_matrix = DistanceMatrix(mol_kekulized)
+    distance_matrix = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
@@ -38,7 +38,8 @@ def _compute(mol):
     n_frags = len(GetMolFrags(mol))
 
     values = calc(
-        AtomicProperties(mol_kekulized),
+        mol_kekulized,
+        AtomicProperties.from_mol(mol_kekulized),
         distance_matrix,
         mol_kekulized_hydrogens,
         ring_count,

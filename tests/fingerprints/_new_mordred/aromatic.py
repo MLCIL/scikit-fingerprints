@@ -25,6 +25,6 @@ with open(Path(__file__).parent / "references" / "aromatic.json") as f:
 def test_aromatic_reference_values(molecule, mordred_test_mols):
     mol = mordred_test_mols[molecule]
 
-    values = calc(AtomicProperties(mol))
+    values = calc(AtomicProperties.from_mol(mol))
     expected = [_REFERENCE[molecule][name] for name in FEATURE_NAMES]
     assert_allclose(values, expected)

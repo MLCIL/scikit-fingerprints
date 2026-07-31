@@ -64,7 +64,7 @@ def _variant_values(
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
     """
-    masses = props.rdkit_masses
+    masses = props.masses
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 

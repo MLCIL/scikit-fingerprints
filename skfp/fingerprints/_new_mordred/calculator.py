@@ -155,11 +155,11 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
-    distance_matrix_regular = DistanceMatrix(mol_regular)
+    distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
     # per-atom property arrays, rings, connected subgraphs
-    props_regular = AtomicProperties(mol_regular)
+    props_regular = AtomicProperties.from_mol(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
     subgraphs_regular = Subgraphs(props_regular)
 
@@ -177,9 +177,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # kekulized molecule (aromatic -> single/double bonds, keeps same topology)
     # need to copy, since Kekulize modifies in place
     mol_kekulized = preprocess_mol(Mol(mol_regular), kekulize=True, sanitize=False)
-    props_kekulized = AtomicProperties.kekulized(mol_kekulized, props_regular)
     mol_kekulized_hydrogens = AddHs(mol_kekulized)
-    distance_matrix_kekulized = distance_matrix_regular
     num_rings = rings_regular.num_rings
 
     # cpsa_3d reuses cpsa_2d values
@@ -218,8 +216,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         vdw_volume_abc: vdw_volume_abc.calc(rings_regular, mol_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
-            props_kekulized,
-            distance_matrix_kekulized,
+            mol_kekulized,
+            props_regular,
+            distance_matrix_regular,
             mol_kekulized_hydrogens,
             num_rings,
             n_frags,
@@ -256,7 +255,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         )
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
-        props_hydrogens_conformer = AtomicProperties(mol_hydrogens_conformer)
+        props_hydrogens_conformer = AtomicProperties.from_mol(mol_hydrogens_conformer)
 
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
         # coordinates), so it is the heavy-atom 3D molecule

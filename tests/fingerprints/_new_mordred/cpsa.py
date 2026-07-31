@@ -55,7 +55,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
     computed = {}
     for name in _MOLECULES:
         mol = mordred_test_mols_hydrogens_3d[name]
-        charges = AtomicProperties(mol).gasteiger_charges
+        charges = AtomicProperties.from_mol(mol).gasteiger_charges
         cpsa_2d = calc_2d(charges)
         values_3d = calc_3d(mol, cpsa_2d, charges)
         computed[name] = dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(

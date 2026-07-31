@@ -1,5 +1,3 @@
-from functools import cached_property
-
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdchem import Atom, Bond, BondType, Mol
@@ -34,6 +32,9 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 _RDKIT_PERIODIC_TABLE = Chem.GetPeriodicTable()
+
+# mass of the hydrogens that AddHs appends, which are never isotopes
+_HYDROGEN_MASS = _RDKIT_PERIODIC_TABLE.GetAtomicWeight(1)
 
 # number of outer (valence) electrons per atomic number
 _N_OUTER_ELECS = np.array(
@@ -193,12 +194,78 @@ def get_gasteiger_charge(atom: Atom) -> float:
 class AtomicProperties:
     """
     Per-molecule atom and bond property arrays.
+
+    Note that from_mol() or with_hydrogens_added() should be used to calculate this.
     """
 
-    def __init__(self, mol: Mol):
+    def __init__(
+        self,
+        mol: Mol,
+        *,
+        atomic_nums: np.ndarray,
+        is_aromatic: np.ndarray,
+        degrees: np.ndarray,
+        formal_charges: np.ndarray,
+        masses: np.ndarray,
+        total_num_hs: np.ndarray,
+        bond_begin_idxs: np.ndarray,
+        bond_end_idxs: np.ndarray,
+        bond_types: np.ndarray,
+        bond_is_aromatic: np.ndarray,
+        bond_orders: np.ndarray,
+        gasteiger_charges: np.ndarray,
+    ):
+        # properties read off the molecule
         self.mol = mol
-        self.num_atoms: int = mol.GetNumAtoms()
-        self.num_bonds: int = mol.GetNumBonds()
+        self.atomic_nums = atomic_nums
+        self.is_aromatic = is_aromatic
+        self.degrees = degrees
+        self.formal_charges = formal_charges
+        # atom masses as reported by RDKit, honoring isotopes
+        self.masses = masses
+        # implicit and stored hydrogens, excluding neighbor hydrogen atoms
+        self.total_num_hs = total_num_hs
+        self.bond_begin_idxs = bond_begin_idxs
+        self.bond_end_idxs = bond_end_idxs
+        self.bond_types = bond_types
+        self.bond_is_aromatic = bond_is_aromatic
+        self.bond_orders = bond_orders
+        self.gasteiger_charges = gasteiger_charges
+
+        self.num_atoms: int = len(atomic_nums)
+        self.num_bonds: int = len(bond_types)
+        self.is_hydrogen = atomic_nums == 1
+        self.outer_electrons = _N_OUTER_ELECS[atomic_nums]
+
+        # hydrogens per atom, counting neighbor hydrogen atoms as well, so that the
+        # count is the same with and without explicit hydrogens
+        self.num_hydrogens = total_num_hs + self._count_neighbors(self.is_hydrogen)
+        # sigma electrons: the non-hydrogen neighbors of an atom
+        self.sigma_electrons = self._count_neighbors(~self.is_hydrogen)
+        self.valence_electrons = self._valence_electrons()
+        self.intrinsic_state = self._intrinsic_state()
+
+    @classmethod
+    def from_mol(cls, mol: Mol) -> "AtomicProperties":
+        """
+        Read every property off a molecule.
+        """
+        ComputeGasteigerCharges(mol)
+        return cls(
+            mol,
+            atomic_nums=atoms_apply_func(Atom.GetAtomicNum, mol, np.intp),
+            is_aromatic=atoms_apply_func(Atom.GetIsAromatic, mol, bool),
+            degrees=atoms_apply_func(Atom.GetDegree, mol, np.intp),
+            formal_charges=atoms_apply_func(Atom.GetFormalCharge, mol, np.intp),
+            masses=atoms_apply_func(Atom.GetMass, mol, np.float64),
+            total_num_hs=atoms_apply_func(Atom.GetTotalNumHs, mol, np.intp),
+            bond_begin_idxs=bonds_apply_func(Bond.GetBeginAtomIdx, mol, np.intp),
+            bond_end_idxs=bonds_apply_func(Bond.GetEndAtomIdx, mol, np.intp),
+            bond_types=bonds_apply_func(Bond.GetBondType, mol, np.intp),
+            bond_is_aromatic=bonds_apply_func(Bond.GetIsAromatic, mol, bool),
+            bond_orders=bonds_apply_func(Bond.GetBondTypeAsDouble, mol, np.float64),
+            gasteiger_charges=atoms_apply_func(get_gasteiger_charge, mol),
+        )
 
     @classmethod
     def with_hydrogens_added(
@@ -211,70 +278,42 @@ class AtomicProperties:
         hydrogen per implicit hydrogen, grouped by the atom they belong to, in
         ascending order of that atom. Every array below therefore follows from the
         hydrogen-suppressed molecule, which saves a second pass over twice as many
-        atoms and bonds in Python.
+        atoms and bonds in Python. Gasteiger charges are the exception: they
+        redistribute over the whole molecule and have to be computed again.
         """
-        num_hydrogens = props.total_num_hs  # the hydrogens AddHs makes explicit
         num_added = mol_hydrogens.GetNumAtoms() - props.num_atoms
-        derived = cls(mol_hydrogens)
-        if num_added != num_hydrogens.sum():
+        if num_added != props.total_num_hs.sum():
             # AddHs did not do what is assumed above, so nothing can be reused
-            return derived
+            return cls.from_mol(mol_hydrogens)
 
         # per-hydrogen values, in the order the hydrogens were appended
-        parents = np.repeat(np.arange(props.num_atoms), num_hydrogens)
+        parents = np.repeat(np.arange(props.num_atoms), props.total_num_hs)
         hydrogen_idxs = props.num_atoms + np.arange(num_added)
-        # hydrogen has atomic number 1, exactly one bond, no charge and no hydrogens
+        # hydrogen has atomic number 1, one single bond, no charge and no hydrogens
         ones = np.ones(num_added, dtype=np.intp)
         zeros = np.zeros(num_added, dtype=np.intp)
         not_aromatic = np.zeros(num_added, dtype=bool)
         single_bonds = np.full(num_added, int(BondType.SINGLE), dtype=np.intp)
 
-        derived._prefill(
+        ComputeGasteigerCharges(mol_hydrogens)
+        return cls(
+            mol_hydrogens,
             atomic_nums=np.concatenate([props.atomic_nums, ones]),
-            formal_charges=np.concatenate([props.formal_charges, zeros]),
             is_aromatic=np.concatenate([props.is_aromatic, not_aromatic]),
             # each hydrogen bond also raises the degree of the atom it belongs to
-            degrees=np.concatenate([props.degrees + num_hydrogens, ones]),
-            # the hydrogens are now the neighbors they used to be counted as
-            num_hydrogens=np.concatenate([props.num_hydrogens, zeros]),
+            degrees=np.concatenate([props.degrees + props.total_num_hs, ones]),
+            formal_charges=np.concatenate([props.formal_charges, zeros]),
+            masses=np.concatenate([props.masses, np.full(num_added, _HYDROGEN_MASS)]),
+            # the hydrogens are now neighbors rather than counts on their atom
+            total_num_hs=np.zeros(mol_hydrogens.GetNumAtoms(), dtype=np.intp),
             # each new bond runs from an atom to one of its hydrogens
             bond_begin_idxs=np.concatenate([props.bond_begin_idxs, parents]),
             bond_end_idxs=np.concatenate([props.bond_end_idxs, hydrogen_idxs]),
             bond_types=np.concatenate([props.bond_types, single_bonds]),
-            bond_orders=np.concatenate([props.bond_orders, np.ones(num_added)]),
             bond_is_aromatic=np.concatenate([props.bond_is_aromatic, not_aromatic]),
+            bond_orders=np.concatenate([props.bond_orders, np.ones(num_added)]),
+            gasteiger_charges=atoms_apply_func(get_gasteiger_charge, mol_hydrogens),
         )
-        return derived
-
-    @classmethod
-    def kekulized(
-        cls, mol_kekulized: Mol, props: "AtomicProperties"
-    ) -> "AtomicProperties":
-        """
-        Properties of the kekulized ``mol``, derived from the properties of ``mol``.
-
-        Kekulization only rewrites bond types, leaving the atoms, the bonds they
-        connect and the aromaticity flags alone, so everything but the bond types
-        and orders carries over.
-        """
-        derived = cls(mol_kekulized)
-        derived._prefill(
-            atomic_nums=props.atomic_nums,
-            formal_charges=props.formal_charges,
-            is_aromatic=props.is_aromatic,
-            degrees=props.degrees,
-            total_num_hs=props.total_num_hs,
-            bond_begin_idxs=props.bond_begin_idxs,
-            bond_end_idxs=props.bond_end_idxs,
-        )
-        return derived
-
-    def _prefill(self, **arrays: np.ndarray) -> None:
-        """
-        Store property arrays that are already known, so that the matching
-        :func:`cached_property` never reads them off the molecule.
-        """
-        self.__dict__.update(arrays)
 
     def get(self, name: str) -> np.ndarray:
         """
@@ -290,115 +329,29 @@ class AtomicProperties:
             raise KeyError(f'"{name}" is not an atomic weighting property')
         return getattr(self, attr).astype(np.float64)
 
-    # atomic properties
+    def _count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
+        """For every atom, the number of its neighbors satisfying the mask."""
+        begins, ends = self.bond_begin_idxs, self.bond_end_idxs
+        counts = np.bincount(begins, weights=atom_mask[ends], minlength=self.num_atoms)
+        counts += np.bincount(ends, weights=atom_mask[begins], minlength=self.num_atoms)
+        return counts.astype(np.intp)
 
-    @cached_property
-    def atomic_nums(self) -> np.ndarray:
-        return atoms_apply_func(Atom.GetAtomicNum, self.mol, np.intp)
-
-    @cached_property
-    def is_hydrogen(self) -> np.ndarray:
-        return self.atomic_nums == 1
-
-    @cached_property
-    def is_aromatic(self) -> np.ndarray:
-        return atoms_apply_func(Atom.GetIsAromatic, self.mol, bool)
-
-    @cached_property
-    def degrees(self) -> np.ndarray:
-        return atoms_apply_func(Atom.GetDegree, self.mol, np.intp)
-
-    @cached_property
-    def formal_charges(self) -> np.ndarray:
-        return atoms_apply_func(Atom.GetFormalCharge, self.mol, np.intp)
-
-    @cached_property
-    def rdkit_masses(self) -> np.ndarray:
-        # atom masses as reported by RDKit, honoring isotopes
-        return atoms_apply_func(Atom.GetMass, self.mol, np.float64)
-
-    @cached_property
-    def total_num_hs(self) -> np.ndarray:
-        # RDKit ``GetTotalNumHs``
-        # implicit + stored H count, excluding neighbor H atoms
-        return atoms_apply_func(Atom.GetTotalNumHs, self.mol, np.intp)
-
-    @cached_property
-    def num_hydrogens(self) -> np.ndarray:
-        # total hydrogens per atom, counting neighbor H atoms
-        # same value with or without explicit Hs
-        return self.total_num_hs + self._neighbor_counts(self.is_hydrogen)
-
-    # bond properties
-
-    @cached_property
-    def bond_begin_idxs(self) -> np.ndarray:
-        return self._bond_endpoints[0]
-
-    @cached_property
-    def bond_end_idxs(self) -> np.ndarray:
-        return self._bond_endpoints[1]
-
-    @cached_property
-    def bond_types(self) -> np.ndarray:
-        return bonds_apply_func(Bond.GetBondType, self.mol, np.intp)
-
-    @cached_property
-    def bond_is_aromatic(self) -> np.ndarray:
-        return bonds_apply_func(Bond.GetIsAromatic, self.mol, bool)
-
-    @cached_property
-    def bond_orders(self) -> np.ndarray:
-        return bonds_apply_func(Bond.GetBondTypeAsDouble, self.mol, np.float64)
-
-    @cached_property
-    def _bond_endpoints(self) -> tuple[np.ndarray, np.ndarray]:
-        return (
-            bonds_apply_func(Bond.GetBeginAtomIdx, self.mol, np.intp),
-            bonds_apply_func(Bond.GetEndAtomIdx, self.mol, np.intp),
-        )
-
-    # connectivity properties
-
-    @cached_property
-    def sigma_electrons(self) -> np.ndarray:
-        return self._neighbor_counts(~self.is_hydrogen)
-
-    @cached_property
-    def outer_electrons(self) -> np.ndarray:
-        """Number of outer (valence) shell electrons of the neutral atom."""
-        return _N_OUTER_ELECS[self.atomic_nums]
-
-    @cached_property
-    def valence_electrons(self) -> np.ndarray:
-        atomic_nums = self.atomic_nums
-        outer_elecs = self.outer_electrons
-
+    def _valence_electrons(self) -> np.ndarray:
+        """
+        Valence delta-value of every atom, as in :func:`get_valence_electrons`.
+        """
         # the formal charge cancels out of the denominator: (Z - q) - (Zv - q) - 1
-        numerator = outer_elecs - self.formal_charges - self.num_hydrogens
-        denominator = atomic_nums - outer_elecs - 1
-
+        numerator = self.outer_electrons - self.formal_charges - self.num_hydrogens
+        denominator = self.atomic_nums - self.outer_electrons - 1
         return np.where(self.is_hydrogen, 0.0, numerator / denominator)
 
-    @cached_property
-    def intrinsic_state(self) -> np.ndarray:
-        sigma_electrons = self.sigma_electrons
+    def _intrinsic_state(self) -> np.ndarray:
+        """
+        Intrinsic state of every atom, as in :func:`get_intrinsic_state`.
+        """
         periods = ELEMENT_PERIOD.lookup(self.atomic_nums)
         with np.errstate(divide="ignore", invalid="ignore"):
             values = (
                 (2.0 / periods) ** 2 * self.valence_electrons + 1
-            ) / sigma_electrons
-        return np.where(sigma_electrons == 0, np.nan, values)
-
-    @cached_property
-    def gasteiger_charges(self) -> np.ndarray:
-        ComputeGasteigerCharges(self.mol)
-        return atoms_apply_func(get_gasteiger_charge, self.mol)
-
-    def _neighbor_counts(self, atom_mask: np.ndarray) -> np.ndarray:
-        # for every atom, count neighbors satisfying atom_mask
-        begins = self.bond_begin_idxs
-        ends = self.bond_end_idxs
-        counts = np.bincount(begins, weights=atom_mask[ends], minlength=self.num_atoms)
-        counts += np.bincount(ends, weights=atom_mask[begins], minlength=self.num_atoms)
-        return counts.astype(np.intp)
+            ) / self.sigma_electrons
+        return np.where(self.sigma_electrons == 0, np.nan, values)

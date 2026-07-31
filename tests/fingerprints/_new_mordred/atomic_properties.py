@@ -1,6 +1,6 @@
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, Atom, Mol, MolFromSmiles
+from rdkit.Chem import AddHs, Atom, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     AtomicProperties,
@@ -198,23 +198,9 @@ def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name)
     mol_hydrogens = AddHs(mol)
 
     derived = AtomicProperties.with_hydrogens_added(
-        mol_hydrogens, AtomicProperties(mol)
+        mol_hydrogens, AtomicProperties.from_mol(mol)
     )
-    expected = AtomicProperties(mol_hydrogens)
-
-    assert_allclose(
-        getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6
-    )
-
-
-@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
-@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
-def test_kekulized_properties_match_recomputed(smiles, property_name):
-    mol = preprocess_mol(MolFromSmiles(smiles))
-    mol_kekulized = preprocess_mol(Mol(mol), kekulize=True, sanitize=False)
-
-    derived = AtomicProperties.kekulized(mol_kekulized, AtomicProperties(mol))
-    expected = AtomicProperties(mol_kekulized)
+    expected = AtomicProperties.from_mol(mol_hydrogens)
 
     assert_allclose(
         getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6

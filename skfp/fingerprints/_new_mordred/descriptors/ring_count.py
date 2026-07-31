@@ -8,7 +8,6 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 from dataclasses import dataclass
-from functools import cached_property
 
 import numpy as np
 from rdkit import Chem
@@ -40,7 +39,7 @@ class RingProperties:
 
 class RingSets:
     """
-    SSSR rings of a molecule and their per-ring properties, computed lazily once.
+    SSSR rings of a molecule and their per-ring properties.
 
     Shared by the ring count and van der Waals volume descriptors, which would
     otherwise each re-run ``GetSymmSSSR`` and re-inspect every ring atom.
@@ -50,21 +49,12 @@ class RingSets:
         self.mol = mol
         self._props = props
 
-    @cached_property
-    def simple_ring_atom_sets(self) -> list[set[int]]:
-        return [set(ring) for ring in Chem.GetSymmSSSR(self.mol)]
-
-    @cached_property
-    def num_rings(self) -> int:
-        return len(self.simple_ring_atom_sets)
-
-    @cached_property
-    def simple_rings(self) -> list[RingProperties]:
-        return self._ring_properties(self.simple_ring_atom_sets)
-
-    @cached_property
-    def fused_rings(self) -> list[RingProperties]:
-        return self._ring_properties(_fused_ring_atom_sets(self.simple_ring_atom_sets))
+        self.simple_ring_atom_sets = [set(ring) for ring in Chem.GetSymmSSSR(mol)]
+        self.num_rings = len(self.simple_ring_atom_sets)
+        self.simple_rings = self._ring_properties(self.simple_ring_atom_sets)
+        self.fused_rings = self._ring_properties(
+            _fused_ring_atom_sets(self.simple_ring_atom_sets)
+        )
 
     def _ring_properties(self, ring_atom_sets: list[set[int]]) -> list[RingProperties]:
         """

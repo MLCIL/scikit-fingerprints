@@ -25,5 +25,5 @@ def test_vertex_adjacency_info_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
     mol_regular = preprocess_mol(mol)
 
-    values = vertex_adjacency_info.calc(AtomicProperties(mol_regular))
+    values = vertex_adjacency_info.calc(AtomicProperties.from_mol(mol_regular))
     assert_allclose(values, np.float32(expected), rtol=1e-6)

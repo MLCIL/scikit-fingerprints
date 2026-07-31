@@ -42,9 +42,9 @@ def computed_values(mordred_test_mols):
     for name in _REFERENCE:
         mol_regular = preprocess_mol(mordred_test_mols[name])
         values = calc(
-            AtomicProperties(mol_regular),
+            AtomicProperties.from_mol(mol_regular),
             AdjacencyMatrix(mol_regular),
-            DistanceMatrix(mol_regular),
+            DistanceMatrix.from_mol(mol_regular),
         )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
@@ -64,9 +64,9 @@ def test_molecular_distance_edge_reference_values(
 def test_molecular_distance_edge_output_shape(mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols["Caffeine"])
     values = calc(
-        AtomicProperties(mol_regular),
+        AtomicProperties.from_mol(mol_regular),
         AdjacencyMatrix(mol_regular),
-        DistanceMatrix(mol_regular),
+        DistanceMatrix.from_mol(mol_regular),
     )
 
     assert isinstance(values, np.ndarray)
@@ -79,9 +79,9 @@ def test_molecular_distance_edge_no_matching_atoms(mordred_test_mols):
     # while carbon buckets that occur are finite
     mol_regular = preprocess_mol(mordred_test_mols["Hexane"])
     values = calc(
-        AtomicProperties(mol_regular),
+        AtomicProperties.from_mol(mol_regular),
         AdjacencyMatrix(mol_regular),
-        DistanceMatrix(mol_regular),
+        DistanceMatrix.from_mol(mol_regular),
     )
     result = dict(zip(FEATURE_NAMES, values, strict=True))
 

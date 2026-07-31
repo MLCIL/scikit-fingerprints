@@ -15,7 +15,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 def _calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
-    return calc(AtomicProperties(mol), len(GetMolFrags(mol)))
+    return calc(AtomicProperties.from_mol(mol), len(GetMolFrags(mol)))
 
 
 @pytest.mark.parametrize(

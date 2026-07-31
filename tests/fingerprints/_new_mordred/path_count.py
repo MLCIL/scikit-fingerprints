@@ -337,6 +337,6 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_path_count_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
-    props = AtomicProperties(mol_regular)
+    props = AtomicProperties.from_mol(mol_regular)
     values = calc(props, Subgraphs(props))
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-5)

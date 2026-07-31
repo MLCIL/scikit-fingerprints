@@ -45,8 +45,8 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol_regular = preprocess_mol(mol_hydrogens)
 
         values = calc(
-            AtomicProperties(mol_regular),
-            AtomicProperties(mol_hydrogens),
+            AtomicProperties.from_mol(mol_regular),
+            AtomicProperties.from_mol(mol_hydrogens),
             DistanceMatrix3D(mol_regular, conf_id),
             DistanceMatrix3D(mol_hydrogens, conf_id),
             AdjacencyMatrix(mol_regular),

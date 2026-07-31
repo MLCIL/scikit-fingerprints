@@ -35,7 +35,7 @@ def computed_values():
     for name, smiles in _REFERENCE["SMILES"].items():
         # Mordred uses explicit-hydrogen molecules
         mol = AddHs(MolFromSmiles(smiles))
-        values = calc(AtomicProperties(mol), DistanceMatrix(mol))
+        values = calc(AtomicProperties.from_mol(mol), DistanceMatrix.from_mol(mol))
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=False))
     return computed
 

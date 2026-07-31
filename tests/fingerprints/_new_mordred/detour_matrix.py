@@ -56,7 +56,7 @@ def computed_values(mordred_test_mols):
         mol = mordred_test_mols[name]
         n_frags = len(GetMolFrags(mol))
         mol_regular = preprocess_mol(mol)
-        values = calc(AtomicProperties(mol_regular), n_frags)
+        values = calc(AtomicProperties.from_mol(mol_regular), n_frags)
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 

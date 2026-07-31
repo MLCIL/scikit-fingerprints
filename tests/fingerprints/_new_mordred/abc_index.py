@@ -29,9 +29,9 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 )
 def test_abc_index_reference_values(smiles, expected_abc, expected_abcgg):
     mol = MolFromSmiles(smiles)
-    distance_matrix = DistanceMatrix(mol)
+    distance_matrix = DistanceMatrix.from_mol(mol)
 
-    props = AtomicProperties(mol)
+    props = AtomicProperties.from_mol(mol)
     assert_allclose(_calc_abc_index(props), expected_abc, atol=1e-2)
     assert_allclose(
         _calc_abcgg_index(props, distance_matrix), expected_abcgg, atol=1e-2
