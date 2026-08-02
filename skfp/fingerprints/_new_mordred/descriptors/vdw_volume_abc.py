@@ -1,9 +1,12 @@
 from math import pi
 
 import numpy as np
-from rdkit.Chem import Mol
 
 from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    AtomicProperties,
+    get_atomic_number_from_symbol,
+)
 
 """
 van der Waals volume (ABC) descriptor.
@@ -34,10 +37,13 @@ _BONDI_RADII = {
 }
 
 # Per-atom van der Waals volume contribution, i.e. sphere volume 4/3 * pi * r^3.
-_ATOM_CONTRIB = {symbol: 4.0 / 3.0 * pi * r**3 for symbol, r in _BONDI_RADII.items()}
+# Bondi sphere volume per atomic number, NaN where the element has no Bondi radius
+_ATOM_VOLUMES = np.full(119, np.nan)
+for _symbol, _radius in _BONDI_RADII.items():
+    _ATOM_VOLUMES[get_atomic_number_from_symbol(_symbol)] = 4.0 / 3.0 * pi * _radius**3
 
 
-def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> np.ndarray:
+def calc(rings_regular: RingSets, props_hydrogens: AtomicProperties) -> np.ndarray:
     r"""
     Compute the Mordred ABC van der Waals volume descriptor.
 
@@ -56,14 +62,12 @@ def calc(rings_regular: RingSets, mol_hydrogens: Mol) -> np.ndarray:
     aromaticity is reliably perceived (unlike ``AddHs``, ``RemoveHs``
     re-sanitizes the molecule).
     """
-    try:
-        atom_volume = sum(
-            _ATOM_CONTRIB[atom.GetSymbol()] for atom in mol_hydrogens.GetAtoms()
-        )
-    except KeyError:
+    # an element without a Bondi radius makes the whole descriptor undefined
+    atom_volume = _ATOM_VOLUMES[props_hydrogens.atomic_nums].sum()
+    if not np.isfinite(atom_volume):
         return np.asarray([np.nan], dtype=np.float32)
 
-    n_bonds = mol_hydrogens.GetNumBonds()
+    n_bonds = props_hydrogens.num_bonds
 
     # reuse ring detection from the ring count descriptor: simple (non-fused)
     # aromatic and non-aromatic rings

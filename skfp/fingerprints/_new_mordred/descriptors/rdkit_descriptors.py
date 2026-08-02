@@ -106,9 +106,21 @@ def _symmetry_classes(weighted_distances: np.ndarray) -> np.ndarray:
     when their sorted vectors of distances to all other atoms agree.
 
     RDKit compares these vectors as strings of four decimals, hence the rounding.
+
+    Sorting the vectors lexicographically brings equal ones together, which labels
+    the classes in the same order that comparing the vectors themselves would, for
+    a fraction of the cost.
     """
     distance_vectors = np.round(np.sort(weighted_distances, axis=1), 4)
-    return np.unique(distance_vectors, axis=0, return_inverse=True)[1]
+
+    lexicographic = np.lexsort(distance_vectors.T[::-1])
+    ordered = distance_vectors[lexicographic]
+    starts_class = np.ones(len(ordered), dtype=bool)
+    starts_class[1:] = (ordered[1:] != ordered[:-1]).any(axis=1)
+
+    classes = np.empty(len(ordered), dtype=np.intp)
+    classes[lexicographic] = np.cumsum(starts_class) - 1
+    return classes
 
 
 def _bertz_connection_counts(

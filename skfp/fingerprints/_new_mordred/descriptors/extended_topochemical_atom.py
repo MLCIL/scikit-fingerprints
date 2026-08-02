@@ -1,13 +1,16 @@
 import numpy as np
 from rdkit.Chem import AddHs, Atom, BondType, Kekulize, Mol, RWMol, SanitizeMol
 
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     _N_OUTER_ELECS,
     _RDKIT_PERIODIC_TABLE,
     AtomicProperties,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
+    atoms_apply_func,
+)
 from skfp.fingerprints._new_mordred.utils.periodic_table import ELEMENT_PERIOD
 
 """
@@ -69,11 +72,11 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_kekulized: Mol,
+    kekulized_bond_types: np.ndarray,
     props: AtomicProperties,
+    props_hydrogens: AtomicProperties,
     distance_matrix: DistanceMatrix,
-    mol_kekulized_hydrogens: Mol,
-    ring_count: int,
+    rings: RingSets,
     n_frags: int,
 ) -> np.ndarray:
     """
@@ -88,19 +91,18 @@ def calc(
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     num_atoms = props.num_atoms
+    ring_count = rings.num_rings
 
     # atomic properties
     atomic_nums = props.atomic_nums
     core_counts, epsilons = _core_counts_and_epsilons(atomic_nums)
     degrees = props.degrees
-    gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
-        mol_kekulized, atomic_nums, core_counts, epsilons
-    )
 
-    # the saturated reference variant of the molecule, which may fail to build, in
-    # which case the descriptors depending on it become NaN
-    mol_saturated = build_reference_mol(
-        mol_kekulized, explicit_hydrogens=True, saturated=True
+    ring_atoms = np.zeros(num_atoms, dtype=bool)
+    ring_atoms[[atom for ring in rings.simple_ring_atom_sets for atom in ring]] = True
+
+    gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
+        props, kekulized_bond_types, ring_atoms, core_counts, epsilons
     )
 
     core_count = core_counts.sum()
@@ -153,9 +155,9 @@ def calc(
 
     eta_epsilon_values = _epsilon_values(
         epsilons,
-        mol_kekulized_hydrogens,
+        props_hydrogens,
         _alkane_hydrogens_mean_epsilon(degrees) if gamma_alkane is not None else np.nan,
-        mol_saturated,
+        _saturated_mean_epsilon(props, _BOND_ORDER_OF_TYPE[kekulized_bond_types]),
     )
 
     # ETA delta beta
@@ -213,39 +215,43 @@ def _core_counts_and_epsilons(atomic_nums: np.ndarray) -> tuple[np.ndarray, np.n
 
 
 def _beta_and_gamma(
-    mol: Mol,
-    atomic_nums: np.ndarray,
+    props: AtomicProperties,
+    bond_types: np.ndarray,
+    ring_atoms: np.ndarray,
     core_counts: np.ndarray,
     epsilons: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute per-atom sigma, non-sigma, and delta beta contributions and gamma.
+
+    The bond types are those of the kekulized molecule, where the aromatic bonds
+    have become single and double ones while keeping their aromatic flag.
     """
-    num_atoms = mol.GetNumAtoms()
-    beta_sigma = np.zeros(num_atoms, dtype=np.float32)
-    beta_non_sigma = np.zeros(num_atoms, dtype=np.float32)
+    begins, ends = props.bond_begin_idxs, props.bond_end_idxs
+    is_hydrogen = props.is_hydrogen
+    epsilon_gaps = np.abs(epsilons[begins] - epsilons[ends])
 
-    for bond in mol.GetBonds():
-        a = bond.GetBeginAtomIdx()
-        b = bond.GetEndAtomIdx()
-        za = atomic_nums[a]
-        zb = atomic_nums[b]
+    # sigma contribution: only between heavy-atom neighbors
+    between_heavy = ~is_hydrogen[begins] & ~is_hydrogen[ends]
+    sigma_weights = np.where(epsilon_gaps <= 0.3, 0.5, 0.75) * between_heavy
+    beta_sigma = _sum_over_bonds(props, sigma_weights, sigma_weights)
 
-        # sigma contribution: only between heavy-atom neighbors
-        if za != 1 and zb != 1:
-            weight = 0.5 if abs(epsilons[a] - epsilons[b]) <= 0.3 else 0.75
-            beta_sigma[a] += weight
-            beta_sigma[b] += weight
+    # non-sigma (pi / aromatic) bond contribution, which an atom only takes from a
+    # bond leading to a heavy atom
 
-        # non-sigma (pi / aromatic) bond contribution
-        contribution = _nonsigma_contribute(bond, epsilons)
-        if contribution:
-            if zb != 1:
-                beta_non_sigma[a] += contribution
-            if za != 1:
-                beta_non_sigma[b] += contribution
+    # a triple bond holds two pi bonds, any other multiple bond one
+    pi_bonds = np.where(bond_types == int(BondType.TRIPLE), 2.0, 1.0)
+    # an aromatic bond counts double, and one between unlike atoms counts one and a half
+    weights = np.where(
+        props.bond_is_aromatic, 2.0, np.where(epsilon_gaps > 0.3, 1.5, 1.0)
+    )
+    non_sigma = np.where(bond_types == int(BondType.SINGLE), 0.0, weights * pi_bonds)
 
-    beta_delta = atoms_apply_func(_beta_delta, mol, np.float32)
+    beta_non_sigma = _sum_over_bonds(
+        props, non_sigma * ~is_hydrogen[ends], non_sigma * ~is_hydrogen[begins]
+    )
+
+    beta_delta = _beta_delta(props, bond_types, ring_atoms)
 
     beta = beta_sigma + beta_non_sigma + beta_delta
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -254,37 +260,41 @@ def _beta_and_gamma(
     return gamma, beta_sigma, beta_non_sigma, beta_delta
 
 
-def _nonsigma_contribute(bond, epsilons: np.ndarray) -> float:
+def _sum_over_bonds(
+    props: AtomicProperties, at_begin: np.ndarray, at_end: np.ndarray
+) -> np.ndarray:
     """
-    Non-sigma (pi, aromatic) contribution of a single bond to the ETA beta index.
+    Gather per-bond contributions onto the atoms at either end of the bonds.
     """
-    if bond.GetBondType() is BondType.SINGLE:
-        return 0.0
-
-    f = 2.0 if bond.GetBondTypeAsDouble() == BondType.TRIPLE else 1.0
-
-    if bond.GetIsAromatic():
-        y = 2.0
-    else:
-        d_eps = abs(epsilons[bond.GetBeginAtomIdx()] - epsilons[bond.GetEndAtomIdx()])
-        y = 1.5 if d_eps > 0.3 else 1.0
-
-    return y * f
+    totals = np.bincount(
+        props.bond_begin_idxs, weights=at_begin, minlength=props.num_atoms
+    )
+    totals += np.bincount(
+        props.bond_end_idxs, weights=at_end, minlength=props.num_atoms
+    )
+    return totals.astype(np.float32)
 
 
-def _beta_delta(atom) -> float:
+def _beta_delta(
+    props: AtomicProperties, bond_types: np.ndarray, ring_atoms: np.ndarray
+) -> np.ndarray:
     """
-    Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that
-    is adjacent to an aromatic neighbor, otherwise 0.
+    Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that is
+    adjacent to an aromatic neighbor, otherwise 0.
     """
-    if atom.GetIsAromatic() or atom.IsInRing():
-        return 0.0
-    if _GET_N_OUTER_ELECS(atom.GetAtomicNum()) - atom.GetTotalValence() <= 0:
-        return 0.0
-    for neighbor in atom.GetNeighbors():
-        if neighbor.GetIsAromatic():
-            return 0.5
-    return 0.0
+    begins, ends = props.bond_begin_idxs, props.bond_end_idxs
+    # RDKit's total valence: the bonds an atom has, plus its hydrogens
+    bond_orders = _BOND_ORDER_OF_TYPE[bond_types]
+    valences = props.total_num_hs + _sum_over_bonds(props, bond_orders, bond_orders)
+    has_lone_pairs = props.outer_electrons - valences > 0
+
+    aromatic_neighbors = _sum_over_bonds(
+        props, props.is_aromatic[ends], props.is_aromatic[begins]
+    )
+    eligible = (
+        ~props.is_aromatic & ~ring_atoms & has_lone_pairs & (aromatic_neighbors > 0)
+    )
+    return np.where(eligible, 0.5, 0.0).astype(np.float32)
 
 
 def _composite_index_pair(gamma: np.ndarray, dists: np.ndarray) -> tuple[float, float]:
@@ -376,34 +386,31 @@ def _branching_indices(
 
 def _epsilon_values(
     epsilons: np.ndarray,
-    mol_hydrogens: Mol,
+    props_hydrogens: AtomicProperties,
     alkane_hydrogens_mean_epsilon: float,
-    mol_saturated: Mol | None,
+    saturated_mean_epsilon: float,
 ) -> np.ndarray:
     """
     ETA epsilon and epsilon delta descriptors.
 
     Types 3 and 4 (and the epsilon deltas derived from them) are NaN when the
-    respective reference molecule could not be built.
+    respective reference variant does not exist.
     """
-    _, _, eps_hydrogens = _atom_properties(mol_hydrogens)
+    atomic_nums = props_hydrogens.atomic_nums
+    eps_hydrogens = _core_counts_and_epsilons(atomic_nums)[1]
 
     eps_1 = eps_hydrogens.mean()
     eps_2 = epsilons.mean()
     eps_3 = alkane_hydrogens_mean_epsilon
-    eps_4 = (
-        _atom_properties(mol_saturated)[2].mean()
-        if mol_saturated is not None
-        else np.nan
-    )
+    eps_4 = saturated_mean_epsilon
 
     # heavy atoms and hydrogens bonded to heteroatoms, on the H-explicit molecule
-    keep = [
-        atom.GetIdx()
-        for atom in mol_hydrogens.GetAtoms()
-        if atom.GetAtomicNum() != 1 or atom.GetNeighbors()[0].GetAtomicNum() != 6
-    ]
-    eps_5 = eps_hydrogens[keep].mean()
+    is_hydrogen = props_hydrogens.is_hydrogen
+    bonded_to_carbon = np.zeros(props_hydrogens.num_atoms, dtype=bool)
+    begins, ends = props_hydrogens.bond_begin_idxs, props_hydrogens.bond_end_idxs
+    bonded_to_carbon[begins] = atomic_nums[ends] == 6
+    bonded_to_carbon[ends] |= atomic_nums[begins] == 6
+    eps_5 = eps_hydrogens[~is_hydrogen | ~bonded_to_carbon].mean()
 
     return np.array(
         [
@@ -424,6 +431,29 @@ def _epsilon_values(
 # the alkane reference replaces every heavy atom with a carbon, which caps the
 # degree it can have, and every bond with a single one
 _MAX_CARBON_DEGREE = 4
+
+# bond order per bond type, for the kekulized bonds read above
+_BOND_ORDER_OF_TYPE = np.full(max(int(t) for t in BondType.values) + 1, np.nan)
+_BOND_ORDER_OF_TYPE[[int(BondType.SINGLE), int(BondType.DOUBLE)]] = [1.0, 2.0]
+_BOND_ORDER_OF_TYPE[[int(BondType.TRIPLE), int(BondType.AROMATIC)]] = [3.0, 1.5]
+
+# the valences RDKit allows each element, padded to a rectangle; an element with no
+# allowed valence, such as a transition metal, takes no implicit hydrogens at all
+_MAX_ALLOWED_VALENCES = 4
+_ALLOWED_VALENCES = np.full((119, _MAX_ALLOWED_VALENCES), -np.inf)
+_TAKES_HYDROGENS = np.zeros(119, dtype=bool)
+# a positive charge widens the valence budget of the elements holding few outer
+# electrons and narrows it for the ones holding many
+_CHARGE_DIRECTION = np.zeros(119)
+for _atomic_num in range(1, 119):
+    _allowed = [v for v in _RDKIT_PERIODIC_TABLE.GetValenceList(_atomic_num) if v >= 0]
+    _TAKES_HYDROGENS[_atomic_num] = bool(_allowed)
+    _ALLOWED_VALENCES[_atomic_num, : len(_allowed)] = _allowed
+    if _allowed:
+        _ALLOWED_VALENCES[_atomic_num, len(_allowed) :] = np.inf
+    _CHARGE_DIRECTION[_atomic_num] = (
+        1.0 if _RDKIT_PERIODIC_TABLE.GetNOuterElecs(_atomic_num) >= 4 else -1.0
+    )
 _CARBON_CORE_COUNT, _CARBON_EPSILON = (
     value.item() for value in _core_counts_and_epsilons(np.array([6]))
 )
@@ -446,6 +476,58 @@ def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
     with np.errstate(divide="ignore"):
         # a lone atom has no bonds and therefore no beta to divide by
         return np.where(degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * degrees))
+
+
+def _saturated_mean_epsilon(props: AtomicProperties, bond_orders: np.ndarray) -> float:
+    """
+    Mean epsilon over the hydrogen-explicit saturated reference variant.
+
+    That variant keeps every element and formal charge, turns carbon-carbon bonds
+    into single ones and leaves the rest as they are, then fills the free valences
+    with hydrogens. Epsilon depends only on the element, so only how many hydrogens
+    end up being added matters, not where they go.
+    """
+    is_carbon = props.atomic_nums == 6
+    begins, ends = props.bond_begin_idxs, props.bond_end_idxs
+    orders = np.where(is_carbon[begins] & is_carbon[ends], 1.0, bond_orders)
+    valences = np.bincount(
+        begins, weights=orders, minlength=props.num_atoms
+    ) + np.bincount(ends, weights=orders, minlength=props.num_atoms)
+
+    num_hydrogens = _implicit_hydrogen_count(
+        props.atomic_nums, props.formal_charges, valences
+    )
+    if num_hydrogens is None:
+        return np.nan
+
+    epsilons = _core_counts_and_epsilons(props.atomic_nums)[1]
+    total = epsilons.sum() + num_hydrogens * _HYDROGEN_EPSILON
+    return float(total / (props.num_atoms + num_hydrogens))
+
+
+def _implicit_hydrogen_count(
+    atomic_nums: np.ndarray, formal_charges: np.ndarray, valences: np.ndarray
+) -> int | None:
+    """
+    How many hydrogens RDKit would add to fill the free valences, or None if some
+    atom has more bonds than its element allows, where sanitization would fail.
+
+    An atom is given the smallest of the valences its element allows that covers the
+    bonds it already has, and the rest is filled with hydrogens. A charge shifts that
+    budget: it adds capacity to the elements holding few outer electrons and takes it
+    away from the ones holding many.
+    """
+    needed = valences - _CHARGE_DIRECTION[atomic_nums] * formal_charges
+    allowed = _ALLOWED_VALENCES[atomic_nums]
+
+    fits = allowed >= needed[:, np.newaxis]
+    takes_hydrogens = _TAKES_HYDROGENS[atomic_nums]
+    if not fits.any(axis=1)[takes_hydrogens].all():
+        return None
+
+    smallest_fitting = allowed[np.arange(len(allowed)), fits.argmax(axis=1)]
+    counts = np.where(takes_hydrogens, smallest_fitting - needed, 0.0)
+    return int(counts.sum())
 
 
 def _alkane_hydrogens_mean_epsilon(degrees: np.ndarray) -> float:

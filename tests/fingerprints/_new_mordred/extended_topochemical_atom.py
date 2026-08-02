@@ -4,15 +4,20 @@ from pathlib import Path
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import GetMolFrags, GetSymmSSSR, MolFromSmiles
+from rdkit.Chem import GetMolFrags, MolFromSmiles
+from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors.extended_topochemical_atom import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
+    bonds_apply_func,
+    preprocess_mol,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -34,15 +39,15 @@ def _compute(mol):
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
-    ring_count = len(GetSymmSSSR(mol_kekulized))
     n_frags = len(GetMolFrags(mol))
 
+    props = AtomicProperties.from_mol(mol_kekulized)
     values = calc(
-        mol_kekulized,
-        AtomicProperties.from_mol(mol_kekulized),
+        bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp),
+        props,
+        AtomicProperties.from_mol(mol_kekulized_hydrogens),
         distance_matrix,
-        mol_kekulized_hydrogens,
-        ring_count,
+        RingSets(mol_kekulized, props),
         n_frags,
     )
     return dict(zip(FEATURE_NAMES, values, strict=True))

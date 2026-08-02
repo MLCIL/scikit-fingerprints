@@ -21,10 +21,12 @@ Reference values generated from mordred-community and stored at
 
 Surface-area-dependent descriptors are compared with rtol=0.05, matching the
 5% relative tolerance mordred itself uses for SASA (see mordred/tests/test_SASA.py).
-mordred-community reproduces these reference values exactly. RNCS/RPCS, however,
-hinge on a single atom's SASA rather than the total: RDKit's per-atom SASA
-diverges too much from mordred's own SurfaceArea there (even though total SASA
-agrees within 5%), so they are marked xfail.
+We share mordred's van der Waals radii, but integrate each atom's exposed fraction
+on FreeSASA's 100 test points rather than mordred's 5112-point icosphere, which
+leaves a few percent of quadrature noise per atom.
+
+RNCS/RPCS get 20%: they divide by a single atom's surface area instead of the
+total, so that per-atom noise reaches them undamped.
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
@@ -36,18 +38,7 @@ _MOLECULES = list(_REFERENCE)
 
 _PER_ATOM_SASA = {"RNCS", "RPCS"}
 
-_FEATURE_NAMES = [
-    pytest.param(
-        name,
-        marks=pytest.mark.xfail(
-            reason="depends on per-atom SASA; RDKit and mordred diverge",
-            strict=False,
-        ),
-    )
-    if name in _PER_ATOM_SASA
-    else name
-    for name in [*FEATURE_NAMES_2D, *FEATURE_NAMES_3D]
-]
+_FEATURE_NAMES = [*FEATURE_NAMES_2D, *FEATURE_NAMES_3D]
 
 
 @pytest.fixture(scope="module")
@@ -69,4 +60,5 @@ def computed_values(mordred_test_mols_hydrogens_3d):
 def test_cpsa_reference_values(feature_name, molecule, computed_values):
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]
-    assert_allclose(actual, expected, rtol=0.05, equal_nan=True)
+    rtol = 0.2 if feature_name in _PER_ATOM_SASA else 0.05
+    assert_allclose(actual, expected, rtol=rtol, equal_nan=True)

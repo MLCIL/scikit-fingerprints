@@ -31,6 +31,7 @@ def calc(
     atomic_atomic_props_regular: AtomicProperties,
     n_frags: int,
     adjacency_matrix: AdjacencyMatrix,
+    eigendecomposition: tuple[np.ndarray, np.ndarray],
 ) -> np.ndarray:
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
@@ -42,6 +43,7 @@ def calc(
         atomic_atomic_props_regular,
         hermitian=adjacency_matrix.hermitian,
         n_frags=n_frags,
+        eigendecomposition=eigendecomposition,
     )
     values = np.asarray(
         [

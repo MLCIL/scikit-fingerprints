@@ -6,7 +6,9 @@ from numpy.testing import assert_allclose
 from rdkit.Chem import GetMolFrags
 
 from skfp.fingerprints._new_mordred.descriptors.detour_matrix import FEATURE_NAMES, calc
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -56,7 +58,13 @@ def computed_values(mordred_test_mols):
         mol = mordred_test_mols[name]
         n_frags = len(GetMolFrags(mol))
         mol_regular = preprocess_mol(mol)
-        values = calc(AtomicProperties.from_mol(mol_regular), n_frags)
+        props = AtomicProperties.from_mol(mol_regular)
+        values = calc(
+            props,
+            DistanceMatrix.from_mol(mol_regular),
+            RingSets(mol_regular, props),
+            n_frags,
+        )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 

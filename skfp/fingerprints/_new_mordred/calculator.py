@@ -2,6 +2,7 @@ from types import ModuleType
 
 import numpy as np
 from rdkit.Chem import AddHs, GetMolFrags, Mol
+from rdkit.Chem.rdchem import Atom, Bond
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -39,7 +40,10 @@ from skfp.fingerprints._new_mordred.descriptors import (
     wiener_index,
     zagreb_index,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    AtomicProperties,
+    gasteiger_charges,
+)
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -49,7 +53,11 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix,
     DistanceMatrix3D,
 )
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
+    atoms_apply_func,
+    bonds_apply_func,
+    preprocess_mol,
+)
 from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
 
 """
@@ -157,6 +165,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
+    adjacency_eigendecomposition = np.linalg.eigh(adjacency_matrix_regular.matrix)
 
     # per-atom property arrays, rings, connected subgraphs
     props_regular = AtomicProperties.from_mol(mol_regular)
@@ -177,8 +186,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # kekulized molecule (aromatic -> single/double bonds, keeps same topology)
     # need to copy, since Kekulize modifies in place
     mol_kekulized = preprocess_mol(Mol(mol_regular), kekulize=True, sanitize=False)
-    mol_kekulized_hydrogens = AddHs(mol_kekulized)
-    num_rings = rings_regular.num_rings
+    kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
 
     # cpsa_3d reuses cpsa_2d values
     cpsa_2d = cpsa.calc_2d(props_hydrogens.gasteiger_charges)
@@ -192,13 +200,16 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # 2D descriptors
     descriptors_2d = {
         abc_index: abc_index.calc(props_regular, distance_matrix_regular),
-        walk_count: walk_count.calc(mol_regular, adjacency_matrix_regular),
+        walk_count: walk_count.calc(props_regular, adjacency_eigendecomposition),
         path_count: path_count.calc(props_regular, subgraphs_regular),
         adjacency_matrix: adjacency_matrix.calc(
-            props_regular, n_frags, adjacency_matrix_regular
+            props_regular,
+            n_frags,
+            adjacency_matrix_regular,
+            adjacency_eigendecomposition,
         ),
         wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
-        zagreb_index: zagreb_index.calc(mol_regular, adjacency_matrix_regular),
+        zagreb_index: zagreb_index.calc(props_regular, adjacency_matrix_regular),
         acid_base: acid_base.calc(mol_regular),
         autocorrelation: autocorrelation.calc(
             props_hydrogens, distance_matrix_hydrogens
@@ -208,19 +219,19 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             mol_regular, props_regular, distance_matrix_regular, estate_indices
         ),
         atom_count: atom_count.calc(mol_regular, props_regular),
-        bond_count: bond_count.calc(props_hydrogens, mol_kekulized_hydrogens),
+        bond_count: bond_count.calc(props_hydrogens, kekulized_bond_types),
         carbon_types: carbon_types.calc(mol_kekulized),
         rotatable_bond: rotatable_bond.calc(mol_regular),
         vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
         ring_count: ring_count.calc(rings_regular),
-        vdw_volume_abc: vdw_volume_abc.calc(rings_regular, mol_hydrogens),
+        vdw_volume_abc: vdw_volume_abc.calc(rings_regular, props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
-            mol_kekulized,
+            kekulized_bond_types,
             props_regular,
+            props_hydrogens,
             distance_matrix_regular,
-            mol_kekulized_hydrogens,
-            num_rings,
+            rings_regular,
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(props_regular, n_frags),
@@ -239,7 +250,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         distance_matrix: distance_matrix.calc(
             props_regular, n_frags, distance_matrix_regular
         ),
-        detour_matrix: detour_matrix.calc(props_regular, n_frags),
+        detour_matrix: detour_matrix.calc(
+            props_regular, distance_matrix_regular, rings_regular, n_frags
+        ),
         molecular_distance_edge: molecular_distance_edge.calc(
             props_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
@@ -255,7 +268,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         )
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
-        props_hydrogens_conformer = AtomicProperties.from_mol(mol_hydrogens_conformer)
+
+        # the 3D descriptors need only these two props of conformer
+        atomic_nums_conformer = atoms_apply_func(
+            Atom.GetAtomicNum, mol_hydrogens_conformer, np.intp
+        )
+        charges_conformer = gasteiger_charges(mol_hydrogens_conformer)
 
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
         # coordinates), so it is the heavy-atom 3D molecule
@@ -263,18 +281,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         adjacency_matrix_hydrogens_conformer = AdjacencyMatrix(mol_hydrogens_conformer)
 
         descriptors_3d = {
-            morse: morse.calc(props_hydrogens_conformer, distance_matrix_3d),
+            morse: morse.calc(atomic_nums_conformer, distance_matrix_3d),
             rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
-            # the charges must come from the conformer molecule, since CPSA pairs
-            # them atom by atom with surface areas computed from that same molecule
-            cpsa: cpsa.calc_3d(
-                mol_hydrogens_conformer,
-                cpsa_2d,
-                props_hydrogens_conformer.gasteiger_charges,
-            ),
+            # the charges must come from conformer, since CPSA pairs them
+            # atom by atom with surface areas computed from that same molecule
+            cpsa: cpsa.calc_3d(mol_hydrogens_conformer, cpsa_2d, charges_conformer),
             gravitational_index: gravitational_index.calc(
-                props_regular,
-                props_hydrogens_conformer,
+                mol_regular,
+                mol_hydrogens_conformer,
                 distance_matrix_3d_regular,
                 distance_matrix_3d,
                 adjacency_matrix_regular,

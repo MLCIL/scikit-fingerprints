@@ -2,7 +2,7 @@ import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     CARBON_PROPERTY_VALUES,
-    AtomicProperties,
+    ELEMENT_PROPERTY_TABLES,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 
@@ -28,9 +28,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(
-    props_3d: AtomicProperties, distance_matrix_3d: DistanceMatrix3D
-) -> np.ndarray:
+def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -42,7 +40,7 @@ def calc(
     pairs, for one atom weighting ``w`` and one scale ``s``. Only distinct pairs
     contribute, so we cna sum over them, rather than using a symmetric matrix.
     """
-    num_atoms = props_3d.num_atoms
+    num_atoms = len(atomic_nums)
 
     if num_atoms < 2:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
@@ -64,7 +62,8 @@ def calc(
             np.ones(num_atoms)
             if name == "unweighted"
             # normalize by value for carbon
-            else props_3d.get(name) / CARBON_PROPERTY_VALUES[name]
+            else ELEMENT_PROPERTY_TABLES[name].lookup(atomic_nums)
+            / CARBON_PROPERTY_VALUES[name]
             for name in _PROPS
         ]
     )

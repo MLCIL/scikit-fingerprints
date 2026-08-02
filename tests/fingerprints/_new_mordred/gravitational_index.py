@@ -8,7 +8,6 @@ from skfp.fingerprints._new_mordred.descriptors.gravitational_index import (
     FEATURE_NAMES,
     calc,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix3D,
@@ -45,8 +44,8 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol_regular = preprocess_mol(mol_hydrogens)
 
         values = calc(
-            AtomicProperties.from_mol(mol_regular),
-            AtomicProperties.from_mol(mol_hydrogens),
+            mol_regular,
+            mol_hydrogens,
             DistanceMatrix3D(mol_regular, conf_id),
             DistanceMatrix3D(mol_hydrogens, conf_id),
             AdjacencyMatrix(mol_regular),

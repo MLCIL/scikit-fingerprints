@@ -91,42 +91,53 @@ _PARSED_FEATURE_NAMES = [_parse_chi_feature_name(name) for name in FEATURE_NAMES
 
 def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     """
-    Compute Mordred Chi descriptors without adding explicit hydrogens.
+    Chi descriptors.
 
     Each descriptor sums ``prod(property over the subgraph atoms) ** -0.5`` over
-    the subgraphs of one order and type.
+    the subgraphs of one order and type. Both properties are summed in the same
+    pass over each set of subgraphs, since the two differ only in what they weigh
+    the same atoms by.
     """
-    prop_vals = {
-        "d": props.sigma_electrons.astype(np.float64),
-        "dv": props.valence_electrons.astype(np.float64),
-    }
-    values = [
-        _chi_value(subgraphs.node_sets(order, subgraph_type), prop_vals[prop], averaged)
-        for subgraph_type, order, prop, averaged in _PARSED_FEATURE_NAMES
-    ]
+    prop_vals = np.stack(
+        [props.sigma_electrons.astype(np.float64), props.valence_electrons]
+    )
+    prop_idxs = {"d": 0, "dv": 1}
+
+    sums: dict[tuple[str, int], tuple[np.ndarray, int]] = {}
+    values = []
+    for subgraph_type, order, prop, averaged in _PARSED_FEATURE_NAMES:
+        key = (subgraph_type, order)
+        if key not in sums:
+            node_set = subgraphs.node_sets(order, subgraph_type)
+            sums[key] = _chi_sums(node_set, prop_vals)
+
+        totals, num_subgraphs = sums[key]
+        total = totals[prop_idxs[prop]]
+        if averaged:
+            total = total / num_subgraphs if num_subgraphs else np.nan
+        values.append(total)
+
     return np.asarray(values, dtype=np.float32)
 
 
-def _chi_value(
-    node_sets: list[np.ndarray], prop_vals: np.ndarray, averaged: bool
-) -> float:
+def _chi_sums(
+    node_sets: list[np.ndarray], prop_vals: np.ndarray
+) -> tuple[np.ndarray, int]:
     """
-    Sum of ``prod(prop_vals over the subgraph atoms) ** -0.5`` over subgraphs.
+    Sum of ``prod(prop_vals over the subgraph atoms) ** -0.5`` over subgraphs, for
+    every property at once, together with the number of subgraphs summed over.
 
-    NaN when any subgraph has a non-positive product, or when an averaged
-    descriptor has no subgraph to average over.
+    A property whose subgraph product is non-positive anywhere sums to NaN.
     """
-    total = 0.0
+    totals = np.zeros(len(prop_vals))
     num_subgraphs = 0
 
     for nodes in node_sets:
-        products = prop_vals[nodes].prod(axis=1)
-        if np.any(products <= 0):
-            return np.nan
-        total += (products**-0.5).sum()
+        # (n_props, n_subgraphs), the property product over each subgraph's atoms
+        products = prop_vals[:, nodes].prod(axis=2)
+        totals += np.where(
+            (products <= 0).any(axis=1), np.nan, (products**-0.5).sum(axis=1)
+        )
         num_subgraphs += len(nodes)
 
-    if averaged:
-        return np.nan if num_subgraphs == 0 else total / num_subgraphs
-
-    return total
+    return totals, num_subgraphs

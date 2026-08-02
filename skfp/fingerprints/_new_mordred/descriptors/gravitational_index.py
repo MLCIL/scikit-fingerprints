@@ -1,10 +1,11 @@
 import numpy as np
+from rdkit.Chem.rdchem import Atom, Mol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix3D,
 )
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -17,8 +18,8 @@ FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
 
 
 def calc(
-    atomic_props_regular: AtomicProperties,
-    atomic_props_3d_hydrogens: AtomicProperties,
+    mol_regular: Mol,
+    mol_hydrogens_conformer: Mol,
     distance_matrix_3d_regular: DistanceMatrix3D,
     distance_matrix_3d_hydrogens: DistanceMatrix3D,
     adjacency_matrix_regular: AdjacencyMatrix,
@@ -34,20 +35,19 @@ def calc(
     The four variants are the 2x2 product of two flags:
 
     - ``H`` suffix: use the hydrogen-explicit molecule
-      (``atomic_props_hydrogens_conformer``) instead of the heavy-atom-only molecule
-      (``atomic_props_regular``, with hydrogens suppressed).
+      (``mol_hydrogens_conformer``) instead of the heavy-atom-only molecule
+      (``mol_regular``, with hydrogens suppressed).
     - ``p`` suffix: sum only over bonded pairs (adjacency matrix) instead of
       over all atom pairs.
 
     The hydrogen-suppressed molecule still carries the 3D conformer (``RemoveHs``
-    preserves the heavy-atom coordinates), so its 3D distance matrix is well
-    defined.
+    preserves the heavy-atom coordinates), so its 3D distance matrix is well-defined.
     """
     grav, grav_pair = _variant_values(
-        atomic_props_regular, distance_matrix_3d_regular, adjacency_matrix_regular
+        mol_regular, distance_matrix_3d_regular, adjacency_matrix_regular
     )
     grav_h, grav_h_pair = _variant_values(
-        atomic_props_3d_hydrogens,
+        mol_hydrogens_conformer,
         distance_matrix_3d_hydrogens,
         adjacency_matrix_hydrogens,
     )
@@ -57,14 +57,15 @@ def calc(
 
 
 def _variant_values(
-    props: AtomicProperties,
+    mol: Mol,
     distance_matrix_3d: DistanceMatrix3D,
     adjacency_matrix: AdjacencyMatrix,
 ) -> tuple[np.float32, np.float32]:
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
     """
-    masses = props.masses
+    # atom masses are the only thing this descriptor needs off the molecule
+    masses = atoms_apply_func(Atom.GetMass, mol, np.float64)
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 

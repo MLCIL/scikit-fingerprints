@@ -33,21 +33,23 @@ def calc(props: AtomicProperties, n_frags: int) -> np.ndarray:
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
-    burden_matrix = _get_burden_matrix(props)
+    # the properties differ only along the diagonal, so the matrices are stacked and
+    # decomposed in one call; an undefined property, such as the Gasteiger charge of
+    # a metal, has no matrix of its own and stays NaN
+    prop_vals = np.stack([props.get(name) for name in WEIGHTING_PROPERTY_NAMES])
+    is_defined = np.isfinite(prop_vals).all(axis=1)
 
-    values = []
-    for prop_name in WEIGHTING_PROPERTY_NAMES:
-        prop_vals = props.get(prop_name)
-        if not np.isfinite(prop_vals).all():
-            # undefined property, e.g. Gasteiger charge of a metal
-            values.extend([np.nan, np.nan])
-            continue
+    matrices = np.repeat(
+        _get_burden_matrix(props)[np.newaxis], is_defined.sum(), axis=0
+    )
+    diagonal = np.arange(props.num_atoms)
+    matrices[:, diagonal, diagonal] = prop_vals[is_defined]
 
-        np.fill_diagonal(burden_matrix, prop_vals)
-        eigvals = np.linalg.eigvalsh(burden_matrix)  # ascending order
-        values.extend([eigvals[0], eigvals[-1]])
+    values = np.full((len(prop_vals), 2), np.nan)
+    eigvals = np.linalg.eigvalsh(matrices)  # ascending order
+    values[is_defined] = eigvals[:, [0, -1]]
 
-    return np.asarray(values, dtype=np.float32)
+    return values.ravel().astype(np.float32)
 
 
 def _get_burden_matrix(props: AtomicProperties) -> np.ndarray:

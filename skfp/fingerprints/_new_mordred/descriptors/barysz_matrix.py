@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 from scipy.sparse.csgraph import floyd_warshall
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
@@ -7,7 +7,7 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     ELEMENT_PROPERTY_TABLES,
     AtomicProperties,
 )
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import spectral_attributes
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -55,68 +55,79 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
 
         return values_nan
 
-    values: list = []
-    for prop_name in ELEMENT_PROPERTY_TABLES:
-        matrix = _barysz_matrix(atomic_props_regular, prop_name)
-        if matrix is None:
-            values.extend([np.nan] * len(_ATTR_NAMES))
-        else:
-            values.extend(
-                _barysz_matrix_attribute_values(atomic_props_regular, n_frags, matrix)
-            )
+    # bond graph is the same for all properties, only the shortest paths weighted
+    # by properties and the spectral attributes differ
+    bond_graph = _BondGraph(atomic_props_regular)
+    weights, diagonals = _bond_weights_and_diagonals(atomic_props_regular)
+    is_defined = np.isfinite(weights).all(axis=1) & np.isfinite(diagonals).all(axis=1)
 
-    return np.asarray(values, dtype=np.float32)
+    matrices = []
+    for weight_row, diagonal in zip(
+        weights[is_defined], diagonals[is_defined], strict=True
+    ):
+        matrix = floyd_warshall(
+            bond_graph.get_prop_weighted_matrix(weight_row.astype(np.float32)),
+            directed=False,
+        )
+        np.fill_diagonal(matrix, diagonal)
+        matrices.append(matrix)
+
+    # a property whose matrix does not exist keeps its attributes at NaN
+    values = np.full((len(ELEMENT_PROPERTY_TABLES), len(_ATTR_NAMES)), np.nan)
+    if matrices:
+        values[is_defined] = spectral_attributes(
+            np.stack(matrices), atomic_props_regular, hermitian=True, n_frags=n_frags
+        )
+
+    return values.ravel().astype(np.float32)
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def _barysz_matrix(props: AtomicProperties, prop_name: str) -> np.ndarray | None:
-    carbon_value = CARBON_PROPERTY_VALUES[prop_name]
+def _bond_weights_and_diagonals(
+    props: AtomicProperties,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Bond weights and matrix diagonals of every atomic property, of shapes
+    ``(n_props, n_bonds)`` and ``(n_props, n_atoms)``.
 
-    props_vals = props.get(prop_name).astype(np.float32)
-    if not np.isfinite(props_vals).all():
-        return None
-
-    n_atoms = props.num_atoms
-    i_arr = props.bond_begin_idxs
-    j_arr = props.bond_end_idxs
-    weights = carbon_value**2 / (
-        props_vals[i_arr] * props_vals[j_arr] * props.bond_orders
+    A bond weighs the inverse of the properties of the atoms it joins and of its own
+    order, normalized by the value a carbon-carbon bond of that kind would have.
+    """
+    carbon_values = np.array(list(CARBON_PROPERTY_VALUES.values()))
+    prop_vals = np.stack([props.get(name) for name in ELEMENT_PROPERTY_TABLES]).astype(
+        np.float32
     )
-    if not np.isfinite(weights).all():
-        return None
 
-    # Floyd-Warshall is the fastest on sparse COO adjacency matrix
-    graph = coo_matrix(
-        (weights.astype(np.float32), (i_arr, j_arr)),
-        shape=(n_atoms, n_atoms),
-        dtype=np.float32,
-    ).tocsr()
-    matrix = floyd_warshall(graph, directed=False)
-
-    diagonal = 1.0 - carbon_value / props_vals
-    if not np.isfinite(diagonal).all():
-        return None
-
-    np.fill_diagonal(matrix, diagonal)
-    return matrix
+    begins, ends = props.bond_begin_idxs, props.bond_end_idxs
+    weights = (carbon_values**2)[:, np.newaxis] / (
+        prop_vals[:, begins] * prop_vals[:, ends] * props.bond_orders
+    )
+    diagonals = 1.0 - carbon_values.astype(np.float32)[:, np.newaxis] / prop_vals
+    return weights, diagonals
 
 
-def _barysz_matrix_attribute_values(
-    props: AtomicProperties, n_frags: int, matrix: np.ndarray
-) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, props, hermitian=True, n_frags=n_frags)
-    return [
-        attrs.graph_energy,
-        attrs.leading_eigenvalue,
-        attrs.spectral_diameter,
-        attrs.sp_ad,
-        attrs.sp_mad,
-        attrs.log_ee,
-        attrs.sm1,
-        attrs.ve1,
-        attrs.ve2,
-        attrs.ve3,
-        attrs.vr1,
-        attrs.vr2,
-        attrs.vr3,
-    ]
+class _BondGraph:
+    """
+    COO sparse matrix graph representation. Easy to add weighting by properties
+    later.
+    """
+
+    def __init__(self, props: AtomicProperties):
+        self.shape = (props.num_atoms, props.num_atoms)
+        # compressing sorts the bonds by atom, which reorders their weights as well
+        pattern = coo_matrix(
+            (np.arange(props.num_bonds), (props.bond_begin_idxs, props.bond_end_idxs)),
+            shape=self.shape,
+            dtype=np.intp,
+        ).tocsr()
+        self._bond_order = pattern.data
+        self._indices = pattern.indices
+        self._indptr = pattern.indptr
+
+    def get_prop_weighted_matrix(self, weights: np.ndarray) -> csr_matrix:
+        """
+        Return the same bonds, carrying the given weights.
+        """
+        return csr_matrix(
+            (weights[self._bond_order], self._indices, self._indptr), shape=self.shape
+        )
