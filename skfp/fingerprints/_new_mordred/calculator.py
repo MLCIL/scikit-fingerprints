@@ -16,6 +16,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     bond_count,
     carbon_types,
     chi,
+    constitutional,
     cpsa,
     detour_matrix,
     distance_matrix,
@@ -79,6 +80,7 @@ MODULES_2D: list[ModuleType] = [
     bond_count,
     carbon_types,
     chi,
+    constitutional,
     cpsa,  # both 2D and 3D
     detour_matrix,
     distance_matrix,
@@ -240,6 +242,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_charge: topological_charge.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),
+        constitutional: constitutional.calc(props_hydrogens),
         cpsa: cpsa_2d,
         polarizability: polarizability.calc(props_hydrogens),
         chi: chi.calc(props_regular, subgraphs_regular),

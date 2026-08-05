@@ -36,7 +36,7 @@ def calc(props: AtomicProperties, n_frags: int) -> np.ndarray:
     # the properties differ only along the diagonal, so the matrices are stacked and
     # decomposed in one call; an undefined property, such as the Gasteiger charge of
     # a metal, has no matrix of its own and stays NaN
-    prop_vals = np.stack([props.get(name) for name in WEIGHTING_PROPERTY_NAMES])
+    prop_vals = props.weighting_properties
     is_defined = np.isfinite(prop_vals).all(axis=1)
 
     matrices = np.repeat(

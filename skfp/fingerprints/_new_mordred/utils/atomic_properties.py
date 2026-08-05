@@ -65,6 +65,21 @@ CARBON_PROPERTY_VALUES: dict[str, float] = {
     name: table[6] for name, table in ELEMENT_PROPERTY_TABLES.items()
 }
 
+_NUM_ELEMENTS = 119
+
+# every element property of every element, as one (n_element_props, n_elements) table,
+# so that a molecule reads all of its property values with a single indexing operation
+# instead of one table lookup per property
+ELEMENT_PROPERTY_MATRIX = np.vstack(
+    [
+        table.lookup(np.arange(_NUM_ELEMENTS))
+        for table in ELEMENT_PROPERTY_TABLES.values()
+    ]
+)
+
+# the carbon values again, in the row order of ELEMENT_PROPERTY_MATRIX
+CARBON_ELEMENT_PROPERTIES = np.array(list(CARBON_PROPERTY_VALUES.values()))
+
 
 def get_element_symbol(atomic_num: int) -> str:
     return _RDKIT_PERIODIC_TABLE.GetElementSymbol(atomic_num)
@@ -136,6 +151,11 @@ WEIGHTING_PROPERTY_NAMES: list[str] = [
     *ELEMENT_PROPERTY_TABLES,
     *CONNECTIVITY_PROPERTY_ATTRS,
 ]
+
+# name -> its row in AtomicProperties.weighting_properties
+_WEIGHTING_PROPERTY_ROWS: dict[str, int] = {
+    name: row for row, name in enumerate(WEIGHTING_PROPERTY_NAMES)
+}
 
 
 def get_sigma_electrons(atom: Atom) -> int:
@@ -253,6 +273,21 @@ class AtomicProperties:
         self.valence_electrons = self._valence_electrons()
         self.intrinsic_state = self._intrinsic_state()
 
+        # every element property of every atom, shape (n_element_props, n_atoms).
+        # gathering columns of the table yields a Fortran-ordered array, and every
+        # descriptor here reduces along the atom axis, so keep the rows contiguous
+        self.element_properties = np.ascontiguousarray(
+            ELEMENT_PROPERTY_MATRIX[:, atomic_nums]
+        )
+        # the same, followed by the connectivity properties, so that the descriptors
+        # weighting atoms by each property in turn get them all in one array
+        self.weighting_properties = np.vstack(
+            [
+                self.element_properties,
+                *(getattr(self, attr) for attr in CONNECTIVITY_PROPERTY_ATTRS.values()),
+            ]
+        )
+
     @classmethod
     def from_mol(cls, mol: Mol) -> "AtomicProperties":
         """
@@ -317,16 +352,13 @@ class AtomicProperties:
     def get(self, name: str) -> np.ndarray:
         """
         Weighting property array by name, for any of
-        :data:`WEIGHTING_PROPERTY_NAMES`.
+        :data:`WEIGHTING_PROPERTY_NAMES`. The array is a row of
+        :attr:`weighting_properties` and must not be modified.
         """
-        table = ELEMENT_PROPERTY_TABLES.get(name)
-        if table is not None:
-            return table.lookup(self.atomic_nums)
-
-        attr = CONNECTIVITY_PROPERTY_ATTRS.get(name)
-        if attr is None:
+        row = _WEIGHTING_PROPERTY_ROWS.get(name)
+        if row is None:
             raise KeyError(f'"{name}" is not an atomic weighting property')
-        return getattr(self, attr).astype(np.float64)
+        return self.weighting_properties[row]
 
     def _count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
         """For every atom, the number of its neighbors satisfying the mask."""

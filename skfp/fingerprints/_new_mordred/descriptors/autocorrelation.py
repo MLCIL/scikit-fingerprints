@@ -72,9 +72,7 @@ def calc(
     pair_counts = 0.5 * neighbor_counts.sum(axis=1)
 
     # every weighting property at once, shape (n_props, n)
-    props = np.stack(
-        [atomic_props_hydrogens.get(name) for name in WEIGHTING_PROPERTY_NAMES]
-    )
+    props = atomic_props_hydrogens.weighting_properties
     ats, aats, atsc, aatsc, mats, gats = _get_autocorrelations(
         props, dist_masks, neighbor_counts, pair_counts, num_atoms
     )

@@ -3,7 +3,7 @@ from scipy.sparse import coo_matrix, csr_matrix
 from scipy.sparse.csgraph import floyd_warshall
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    CARBON_PROPERTY_VALUES,
+    CARBON_ELEMENT_PROPERTIES,
     ELEMENT_PROPERTY_TABLES,
     AtomicProperties,
 )
@@ -93,16 +93,14 @@ def _bond_weights_and_diagonals(
     A bond weighs the inverse of the properties of the atoms it joins and of its own
     order, normalized by the value a carbon-carbon bond of that kind would have.
     """
-    carbon_values = np.array(list(CARBON_PROPERTY_VALUES.values()))
-    prop_vals = np.stack([props.get(name) for name in ELEMENT_PROPERTY_TABLES]).astype(
-        np.float32
-    )
+    carbon_values = CARBON_ELEMENT_PROPERTIES[:, np.newaxis]
+    prop_vals = props.element_properties.astype(np.float32)
 
     begins, ends = props.bond_begin_idxs, props.bond_end_idxs
-    weights = (carbon_values**2)[:, np.newaxis] / (
+    weights = carbon_values**2 / (
         prop_vals[:, begins] * prop_vals[:, ends] * props.bond_orders
     )
-    diagonals = 1.0 - carbon_values.astype(np.float32)[:, np.newaxis] / prop_vals
+    diagonals = 1.0 - carbon_values.astype(np.float32) / prop_vals
     return weights, diagonals
 
 
