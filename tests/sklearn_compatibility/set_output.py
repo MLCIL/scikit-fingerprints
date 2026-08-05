@@ -1,3 +1,5 @@
+# fingerprint classes are obtained dynamically via inspect, so mypy sees only "object"
+# mypy: disable-error-code="call-arg,attr-defined"
 import inspect
 
 import pandas as pd
