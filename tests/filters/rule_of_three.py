@@ -92,7 +92,6 @@ def test_mols_passing_with_violation_basic_rule_of_three(
     smiles_filtered = mol_filter.transform(
         smiles_passing_one_violation_basic_rule_of_three
     )
-    print(smiles_filtered)
     assert_equal(len(smiles_filtered), 0)
 
 
