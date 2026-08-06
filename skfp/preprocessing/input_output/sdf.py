@@ -24,7 +24,7 @@ class MolFromSDFTransformer(BasePreprocessor):
     from disk, or takes a string input in that format.
 
     Molecules are returned as ``PropertyMol`` objects to properly serialize their
-    properties. In particular, if conformations are available, the ``conf_id` integer
+    properties. In particular, if conformations are available, the ``conf_id`` integer
     property is set to the ID of the 0th conformer.
 
     For details see RDKit documentation [1]_.
