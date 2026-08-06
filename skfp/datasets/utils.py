@@ -112,7 +112,7 @@ def get_mol_strings_and_labels(
     column. Another option is ``"aminoseq"``, which works similarly, but for aminoacid
     sequences.
 
-    All other columns are taken as labels, except for ``non_target_columns` if provided.
+    All other columns are taken as labels, except for ``non_target_columns`` if provided.
 
     If there is only a single task, labels are returned as a vector.
     """
