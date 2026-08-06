@@ -21,11 +21,11 @@ class MolFromSDFTransformer(BasePreprocessor):
 
     SDF (structure-data format) is processed for whole files, rather than individual
     molecules. For this reason ``.transform()`` either reads the SDF file directly
-    from disk or takes a string input in that format.
+    from disk, or takes a string input in that format.
 
-    Molecules with a conformation are returned as ``PropertyMol`` objects with
-    ``conf_id`` integer property set to the ID of their 0th conformer, the same
-    convention as :class:`~skfp.preprocessing.ConformerGenerator`.
+    Molecules are returned as ``PropertyMol`` objects to properly serialize their
+    properties. In particular, if conformations are available, the ``conf_id` integer
+    property is set to the ID of the 0th conformer.
 
     For details see RDKit documentation [1]_.
 
@@ -58,8 +58,8 @@ class MolFromSDFTransformer(BasePreprocessor):
     MolFromSDFTransformer()
 
     >>> mol_from_sdf.transform(sdf_file_path)  # doctest: +SKIP
-        [<rdkit.Chem.rdchem.Mol>,
-         <rdkit.Chem.rdchem.Mol>]
+        [<rdkit.Chem.PropertyMol.PropertyMol>,
+         <rdkit.Chem.PropertyMol.PropertyMol>]
     """
 
     _parameter_constraints: dict = {
@@ -78,9 +78,9 @@ class MolFromSDFTransformer(BasePreprocessor):
         self.sanitize = sanitize
         self.remove_hydrogens = remove_hydrogens
 
-    def transform(self, X: str | Path, copy: bool = False) -> list[Mol]:  # type: ignore[override]    # noqa: ARG002
+    def transform(self, X: str | Path, copy: bool = False) -> list[PropertyMol]:  # type: ignore[override]    # noqa: ARG002
         """
-        Create RDKit ``Mol`` objects from SDF file.
+        Create RDKit ``PropertyMol`` objects from SDF file.
 
         Parameters
         ----------
@@ -93,7 +93,7 @@ class MolFromSDFTransformer(BasePreprocessor):
         Returns
         -------
         X : list of shape (n_samples,)
-            List with RDKit ``Mol`` objects.
+            List with RDKit ``PropertyMol`` objects.
         """
         self._validate_params()
 
@@ -111,15 +111,17 @@ class MolFromSDFTransformer(BasePreprocessor):
         if not mols:
             warnings.warn("No molecules detected in provided SDF file")
 
-        return [self._set_conf_id(mol) for mol in mols]
+        return [self._make_property_mol(mol) for mol in mols]
 
     @staticmethod
-    def _set_conf_id(mol: Mol | None) -> Mol | None:
-        if mol is None or not mol.GetNumConformers():
+    def _make_property_mol(mol: Mol | None) -> PropertyMol | None:
+        if mol is None:
             return mol
 
         mol = PropertyMol(mol)
-        mol.SetIntProp("conf_id", mol.GetConformer().GetId())
+        if mol.GetNumConformers():
+            mol.SetIntProp("conf_id", mol.GetConformer().GetId())
+
         return mol
 
     def _transform_batch(self, X):
@@ -267,7 +269,7 @@ class MolToSDFTransformer(BasePreprocessor):
             writer.SetForceV3000(self.force_V3000)
 
             for mol in X:
-                if isinstance(mol, PropertyMol) and mol.HasProp("conf_id"):
+                if mol.HasProp("conf_id"):
                     writer.write(mol, confId=mol.GetIntProp("conf_id"))
                 else:
                     writer.write(mol)

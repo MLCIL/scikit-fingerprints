@@ -37,8 +37,8 @@ class ConformerGenerator(BasePreprocessor):
     torsional angle preferences [2]_. Generated conformations are optionally optimized
     with a force field approach.
 
-    Resulting conformation is saved in ``conf_id`` integer property of a molecule, and
-    can be retrieved with ``GetIntProp("conf_id")`` method.
+    The resulting conformation is saved in the ``conf_id`` integer property of a molecule,
+    and can be retrieved with ``GetIntProp("conf_id")`` method.
 
     If multiple conformations are generated, one per molecule is returned. By default,
     the most stable conformer (with the lowest energy) is selected.
@@ -72,7 +72,9 @@ class ConformerGenerator(BasePreprocessor):
     optimize_force_field : {"UFF", "MMFF94", "MMFF94s", None}, default=None
         Force field optimization algorithm used on generated conformers. It is also
         used for calculation of conformer energy when selecting one of multiple
-        conformations with ``multiple_confs_select="min_energy"``.
+        conformations with ``multiple_confs_select="min_energy"``. Note that force
+        fields do not support all elements, e.g. MMFF94 does not cover selenium, and
+        such molecules are handled as controlled by the ``errors`` parameter.
 
     multiple_confs_select : {"min_energy", "first"}, default="min_energy"
         How to select final conformer for each molecule when multiple conformers are
@@ -89,6 +91,12 @@ class ConformerGenerator(BasePreprocessor):
         suppresses errors and removes such conformers, resulting in potentially less
         output molecules than inputs. The latter two options can potentially cause
         problems downstream, and should be used with caution.
+
+        This also controls molecules unsupported by the force field selected with
+        ``optimize_force_field``. Since their conformers are generated successfully,
+        only optimization is impossible, they are never filtered out. Instead,
+        ``"raise"`` raises an error, and other options return the unoptimized
+        conformer, selecting the first one if multiple were generated.
 
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform_x_y` and
@@ -291,8 +299,10 @@ class ConformerGenerator(BasePreprocessor):
         mols_and_conf_ids = [self._embed_molecule(mol) for mol in mols]
 
         if self.num_conformers > 1:
+            # molecules for which embedding failed have no conformers to select from
             mols_and_conf_ids = [
-                (mol, self._select_conformer(mol)) for mol, conf_id in mols_and_conf_ids
+                (mol, self._select_conformer(mol) if mol.GetNumConformers() else -1)
+                for mol, _ in mols_and_conf_ids
             ]
 
         mols = []
@@ -338,9 +348,9 @@ class ConformerGenerator(BasePreprocessor):
                 raise ValueError(
                     f"Could not generate conformer for {smiles}:\n{fail_reason}"
                 )
-            elif self.verbose:
+            if self.verbose:
                 print(f"Could not generate conformer for {smiles}:\n{fail_reason}")
-                return mol, -1
+            return mol, -1
 
         if self.optimize_force_field:
             self._optimize_conformers(mol)
@@ -362,19 +372,44 @@ class ConformerGenerator(BasePreprocessor):
     def _optimize_conformers(self, mol: Mol) -> None:
         for conf in mol.GetConformers():
             ff = self._get_force_field(mol, conf_id=conf.GetId())
+            if ff is None:
+                # force field does not support this molecule, keep it unoptimized
+                self._handle_force_field_failure(mol)
+                return
             ff.Minimize()
 
     def _select_conformer(self, mol: Mol) -> int:
-        if self.multiple_confs_select == "first":
-            return next(mol.GetConformers())
-        else:  # min_energy
-            energies = np.empty((mol.GetNumConformers(),))
-            for i, conf in enumerate(mol.GetConformers()):
-                ff = self._get_force_field(mol, conf_id=conf.GetId())
-                energies[i] = ff.CalcEnergy()
-            return int(np.argmin(energies))
+        conformers = list(mol.GetConformers())
 
-    def _get_force_field(self, mol: Mol, conf_id: int) -> ForceField:
+        if self.multiple_confs_select == "first":
+            return conformers[0].GetId()
+
+        # min_energy
+        energies = np.empty(len(conformers))
+        for idx, conf in enumerate(conformers):
+            ff = self._get_force_field(mol, conf_id=conf.GetId())
+            if ff is None:
+                # energies are not available, fall back to the first conformer
+                self._handle_force_field_failure(mol)
+                return conformers[0].GetId()
+            energies[idx] = ff.CalcEnergy()
+
+        return conformers[int(np.argmin(energies))].GetId()
+
+    def _handle_force_field_failure(self, mol: Mol) -> None:
+        smiles = MolToSmiles(RemoveHs(mol))
+        message = (
+            f"Could not use {self.optimize_force_field} for {smiles}, "
+            "since it has unsupported atoms or bonds"
+        )
+        if self.errors == "raise":
+            raise ValueError(message)
+        if self.verbose:
+            print(message)
+
+    def _get_force_field(self, mol: Mol, conf_id: int) -> ForceField | None:
+        # force fields do not support all elements, and RDKit returns None in
+        # such cases, rather than raising an error
         if self.optimize_force_field == "UFF":
             return UFFGetMoleculeForceField(mol, confId=conf_id)
         else:
@@ -383,6 +418,8 @@ class ConformerGenerator(BasePreprocessor):
             mmff_props = MMFFGetMoleculeProperties(
                 mol, mmffVariant=self.optimize_force_field
             )
+            if mmff_props is None:
+                return None
             return MMFFGetMoleculeForceField(mol, mmff_props, confId=conf_id)
 
     def _set_common_embed_params(self, embed_params: EmbedParameters) -> None:

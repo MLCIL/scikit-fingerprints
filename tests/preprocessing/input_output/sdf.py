@@ -1,8 +1,10 @@
 import os
+import pickle
 
 import pytest
 from numpy.testing import assert_equal
-from rdkit.Chem import Mol
+from rdkit.Chem import Mol, MolFromSmiles
+from rdkit.Chem.PropertyMol import PropertyMol
 
 from skfp.preprocessing import MolFromSDFTransformer, MolToSDFTransformer
 from skfp.preprocessing.input_output import sdf as sdf_module
@@ -26,6 +28,44 @@ def test_mol_from_sdf(sdf_in_file_path):
 
     assert_equal(len(mols), 1)
     assert all(isinstance(x, Mol) for x in mols)
+
+
+def test_mol_from_sdf_creates_property_mols(sdf_in_file_path):
+    mol_from_sdf = MolFromSDFTransformer()
+    mols = mol_from_sdf.transform(sdf_in_file_path)
+
+    assert all(isinstance(mol, PropertyMol) for mol in mols)
+
+
+def test_mol_from_sdf_creates_property_mols_without_conformers():
+    mol = MolFromSmiles("CCO")
+    mol.SetProp("activity", "1")
+
+    mol = MolFromSDFTransformer._make_property_mol(mol)
+
+    assert isinstance(mol, PropertyMol)
+    assert not mol.HasProp("conf_id")
+    assert_equal(mol.GetProp("activity"), "1")
+
+
+def test_mol_from_sdf_preserves_properties_when_pickling(mols_list, tmp_path):
+    mols = []
+    for idx, mol in enumerate(mols_list[:5]):
+        mol_copy = Mol(mol)
+        mol_copy.SetProp("_Name", f"mol_{idx}")
+        mol_copy.SetProp("activity", str(idx))
+        mols.append(mol_copy)
+
+    sdf_file_path = tmp_path / "mols_with_props.sdf"
+    MolToSDFTransformer(str(sdf_file_path)).transform(mols)
+
+    mols = MolFromSDFTransformer().transform(str(sdf_file_path))
+    mols = [pickle.loads(pickle.dumps(mol)) for mol in mols]
+
+    for idx, mol in enumerate(mols):
+        assert_equal(mol.GetProp("_Name"), f"mol_{idx}")
+        assert_equal(mol.GetProp("activity"), str(idx))
+        assert_equal(mol.GetIntProp("conf_id"), mol.GetConformer(0).GetId())
 
 
 def test_mol_from_sdf_accepts_path_object(sdf_in_file_path):
