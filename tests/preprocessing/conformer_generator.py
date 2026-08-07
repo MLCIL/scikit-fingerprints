@@ -63,6 +63,68 @@ def test_conformer_generator_multiple_conformers(smallest_mols_list):
     assert all(mol.HasProp("conf_id") for mol in mols_with_confs)
 
 
+def test_conformer_generator_multiple_conformers_select_first(smallest_mols_list):
+    conf_gen = ConformerGenerator(
+        num_conformers=3, multiple_confs_select="first", n_jobs=-1
+    )
+    mols_with_confs = conf_gen.transform(smallest_mols_list)
+
+    assert_equal(len(mols_with_confs), len(smallest_mols_list))
+    for mol in mols_with_confs:
+        conf_ids = [conf.GetId() for conf in mol.GetConformers()]
+        assert_equal(mol.GetIntProp("conf_id"), conf_ids[0])
+
+
+def test_conformer_generator_multiple_conformers_conf_id_is_valid(smallest_mols_list):
+    conf_gen = ConformerGenerator(
+        num_conformers=3,
+        optimize_force_field="UFF",
+        multiple_confs_select="min_energy",
+        n_jobs=-1,
+    )
+    mols_with_confs = conf_gen.transform(smallest_mols_list)
+
+    for mol in mols_with_confs:
+        conf_ids = [conf.GetId() for conf in mol.GetConformers()]
+        assert mol.GetIntProp("conf_id") in conf_ids
+
+
+@pytest.mark.parametrize("num_conformers", [1, 3])
+def test_conformer_generator_unsupported_force_field_raises(num_conformers):
+    # MMFF94 does not support selenium
+    mols = MolFromSmilesTransformer().transform(["CCO", "C[Se]C"])
+
+    conf_gen = ConformerGenerator(
+        num_conformers=num_conformers,
+        optimize_force_field="MMFF94",
+        errors="raise",
+    )
+    with pytest.raises(ValueError) as exc_info:
+        conf_gen.transform(mols)
+
+    assert "Could not use MMFF94 for" in str(exc_info)
+
+
+@pytest.mark.parametrize("num_conformers", [1, 3])
+@pytest.mark.parametrize("errors", ["ignore", "filter"])
+def test_conformer_generator_unsupported_force_field_ignored(num_conformers, errors):
+    # MMFF94 does not support selenium
+    mols = MolFromSmilesTransformer().transform(["CCO", "C[Se]C"])
+
+    conf_gen = ConformerGenerator(
+        num_conformers=num_conformers,
+        optimize_force_field="MMFF94",
+        errors=errors,
+    )
+    mols_with_confs = conf_gen.transform(mols)
+
+    # unoptimized conformers are kept, molecules are not filtered out
+    assert_equal(len(mols_with_confs), len(mols))
+    for mol in mols_with_confs:
+        conf_ids = [conf.GetId() for conf in mol.GetConformers()]
+        assert mol.GetIntProp("conf_id") in conf_ids
+
+
 def test_conformer_generator_error_handling(smallest_mols_list):
     y = np.zeros(len(smallest_mols_list))
 

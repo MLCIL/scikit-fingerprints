@@ -17,9 +17,12 @@ def smiles_passing_tice_insecticides() -> list[str]:
 @pytest.fixture
 def smiles_failing_tice_insecticides() -> list[str]:
     return [
-        "CNc1nc(N)c([N+](=O)[O-])c(NCCO)n1",
-        "CCC(C)n1c(O)c(C(c2ccccn2)c2c(O)n(C(C)CC)c(=S)[nH]c2=O)c(=O)[nH]c1=S",
-        "Cn1c(=O)c2c(nc(CN3CCOCC3)n2CCN2CCOCC2)n(C)c1=O",
+        # Lapatinib
+        "CS(=O)(=O)CCNCc1ccc(o1)c2ccc3c(c2)c(ncn3)Nc4ccc(c(c4)Cl)OCc5cccc(c5)F",
+        # Aliskiren
+        "O=C(N)C(C)(C)CNC(=O)[C@H](C(C)C)C[C@H](O)[C@@H](N)C[C@@H](C(C)C)Cc1cc(OCCCOC)c(OC)cc1",
+        # Ergotamine
+        "C=12CCC=3C=C(C=C(C3[C@H](C1N=CC(=C2)Br)C4CCN(CC4)C(=O)CC5CCN(CC5)C(N)=O)Br)Cl",
     ]
 
 

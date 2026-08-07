@@ -60,6 +60,8 @@ ignore = [
     "SIM105",   # try-except-pass for optional imports readability
     "SIM108",   # if/else instead of ternary if when we need
     "TRY003",   # long error messages
+    "CPY001",   # we don't put license header in every file
+    "PLR0917",  # many arguments are normal in ML
 ]
 
 [lint.per-file-ignores]
