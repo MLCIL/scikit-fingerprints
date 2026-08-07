@@ -15,6 +15,7 @@ from .laggner import LaggnerFingerprint
 from .layered import LayeredFingerprint
 from .lingo import LingoFingerprint
 from .maccs import MACCSFingerprint
+from .magpie import MAGPIEFingerprint
 from .map import MAPFingerprint
 from .mhfp import MHFPFingerprint
 from .mordred_fp import MordredFingerprint
