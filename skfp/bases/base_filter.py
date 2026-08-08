@@ -11,6 +11,7 @@ from sklearn.utils._param_validation import InvalidParameterError, StrOptions
 from tqdm import tqdm
 
 from skfp.utils import ensure_mols, run_in_parallel
+from skfp.utils.parallel import get_tqdm_settings
 
 
 class BaseFilter(ABC, BaseEstimator, TransformerMixin):
@@ -47,7 +48,7 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
         - ``"mol"`` - return a list of molecules remaining in the dataset after filtering
         - ``"indicators"`` - return a binary vector with indicators which molecules pass
           the filter (1) and which would be removed (0)
-        - ``"condition_indicators"`` - return a Pandas DataFrame with molecules in rows,
+        - ``"condition_indicators"`` - return a NumPy array with molecules in rows,
           filter conditions in columns, and 0/1 indicators whether a given condition was
           fulfilled by a given molecule
 
@@ -230,9 +231,12 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
 
         n_jobs = effective_n_jobs(self.n_jobs)
         if n_jobs == 1:
-            if self.verbose:
+            tqdm_settings = get_tqdm_settings(self.verbose, total=len(mols))
+            if not tqdm_settings["disable"]:
+                # one molecule at a time, so that the progress bar can advance
                 filter_indicators = [
-                    self._filter_mols_batch([mol]) for mol in tqdm(mols)
+                    self._filter_mols_batch([mol])
+                    for mol in tqdm(mols, **tqdm_settings)
                 ]
                 # each batch holds a single molecule, so stacking gives back the
                 # per-molecule rows; ravelling would destroy the condition columns

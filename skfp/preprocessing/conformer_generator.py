@@ -308,6 +308,14 @@ class ConformerGenerator(BasePreprocessor):
         mols = []
         for mol, conf_id in mols_and_conf_ids:
             mol.SetIntProp("conf_id", conf_id)
+
+            # RDKit pickles conformer coordinates as float32, so we cast
+            # to get exactly matching sequential and parallel results
+            for conf in mol.GetConformers():
+                conf.SetPositions(
+                    conf.GetPositions().astype(np.float32).astype(np.float64)
+                )
+
             mols.append(mol)
 
         return mols

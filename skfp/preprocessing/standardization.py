@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from contextlib import nullcontext
-from numbers import Integral
 
 from rdkit.Chem import Mol, SanitizeMol
 from rdkit.Chem.MolStandardize.rdMolStandardize import (
@@ -44,9 +43,10 @@ class MolStandardizer(BasePreprocessor):
         context. ``-1`` means using all processors. See scikit-learn documentation on
         ``n_jobs`` for more details.
 
-    verbose : int, default=0
-        Controls the verbosity when standardizing molecules. By default, all warnings are
-        turned off.
+    verbose : int or dict, default=0
+        Controls the verbosity when standardizing molecules. By default, all warnings
+        are turned off. If a dictionary is passed, it is treated as kwargs for ``tqdm()``,
+        and can be used to control the progress bar.
 
     References
     ----------
@@ -85,16 +85,15 @@ class MolStandardizer(BasePreprocessor):
     """
 
     _parameter_constraints: dict = {
+        **BasePreprocessor._parameter_constraints,
         "largest_fragment_only": ["boolean"],
-        "n_jobs": [Integral, None],
-        "verbose": ["verbose"],
     }
 
     def __init__(
         self,
         largest_fragment_only: bool = False,
         n_jobs: int | None = None,
-        verbose: int = 0,
+        verbose: int | dict = 0,
     ):
         super().__init__()
         self.largest_fragment_only = largest_fragment_only

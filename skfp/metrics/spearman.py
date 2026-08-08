@@ -21,7 +21,6 @@ def spearman_correlation(
     *,
     alternative: str = "two-sided",
     return_p_value: bool = False,
-    equal_values_result: float = 1.0,
 ) -> float:
     """
     Spearman correlation.
@@ -30,11 +29,10 @@ def spearman_correlation(
     measure of rank correlation. High value means that values of two variables change
     with a monotonic relationship.
 
-    For constant inputs, i.e. exactly the same ``y_true`` and ``y_pred``, 1.0 is returned.
-    This differs from SciPy behavior, which returns NaN in that situation. This can be
-    controlled with ``equal_values_result`` parameter.
+    For identical inputs, i.e. exactly the same ``y_true`` and ``y_pred``, and when
+    either vector is constant, NaN is returned, following Scipy behavior.
 
-    Mainly intended for use as quality metric, where higher correlation between model
+    Mainly intended for use as a quality metric, where a higher correlation between model
     prediction and ground truth is better. Can also be used for general correlation
     testing, by using ``alternative`` and ``return_p_value`` parameters.
 
@@ -85,7 +83,7 @@ def spearman_correlation(
         )
 
     if np.all(np.isclose(y_true, y_pred)):
-        return equal_values_result
+        return np.nan
 
     result = spearmanr(y_true, y_pred, alternative=alternative)
     return result.pvalue if return_p_value else result.statistic

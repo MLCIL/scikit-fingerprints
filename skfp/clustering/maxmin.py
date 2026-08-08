@@ -8,7 +8,11 @@ from scipy import sparse
 from sklearn.base import BaseEstimator, ClusterMixin
 from sklearn.utils import check_random_state
 from sklearn.utils._param_validation import Interval, RealNotInt
-from sklearn.utils.validation import check_is_fitted, validate_data
+from sklearn.utils.validation import (
+    _check_n_features,
+    check_is_fitted,
+    validate_data,
+)
 
 
 class MaxMinClustering(BaseEstimator, ClusterMixin):
@@ -109,7 +113,10 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             Fitted estimator.
         """
         super()._validate_params()
+
+        # ensure_2d=False is necessary to accept ExplicitBitVect
         X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
+        _check_n_features(self, X, reset=True)
 
         # centroid selection (MaxMin)
         picker = MaxMinPicker()
@@ -161,7 +168,10 @@ class MaxMinClustering(BaseEstimator, ClusterMixin):
             Cluster labels for the input samples.
         """
         check_is_fitted(self)
-        X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False)
+
+        # ensure_2d=False is necessary to accept ExplicitBitVect
+        X = validate_data(self, X, accept_sparse=["csr"], ensure_2d=False, reset=False)
+        _check_n_features(self, X, reset=False)
 
         bitvecs = self._array_to_bitvectors(X)
         return self._assign_labels(bitvecs)

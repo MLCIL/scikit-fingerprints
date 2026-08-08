@@ -11,6 +11,7 @@ from sklearn.utils._param_validation import InvalidParameterError
 from tqdm import tqdm
 
 from skfp.utils import run_in_parallel
+from skfp.utils.parallel import get_tqdm_settings
 
 
 class BasePreprocessor(ABC, BaseEstimator, TransformerMixin):
@@ -140,8 +141,12 @@ class BasePreprocessor(ABC, BaseEstimator, TransformerMixin):
 
         n_jobs = effective_n_jobs(self.n_jobs)
         if n_jobs == 1:
-            if self.verbose:
-                results = [self._transform_batch([mol]) for mol in tqdm(X)]
+            tqdm_settings = get_tqdm_settings(self.verbose, total=len(X))
+            if not tqdm_settings["disable"]:
+                # one molecule at a time, so that the progress bar can advance
+                results = [
+                    self._transform_batch([mol]) for mol in tqdm(X, **tqdm_settings)
+                ]
                 results = list(itertools.chain.from_iterable(results))
             else:
                 results = self._transform_batch(X)

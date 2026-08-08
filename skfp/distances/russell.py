@@ -2,6 +2,8 @@ import numpy as np
 from scipy.sparse import csr_array
 from sklearn.utils._param_validation import validate_params
 
+from skfp.distances.utils import array_to_binary_csr
+
 
 @validate_params(
     {
@@ -204,14 +206,12 @@ def bulk_russell_binary_similarity(
         Array with pairwise Russell similarity values. Shape is :math:`m \times n` if two
         arrays are passed, or :math:`m \times m` otherwise.
     """
-    if not isinstance(X, csr_array):
-        X = csr_array(X)
+    X = array_to_binary_csr(X)
 
     if Y is None:
         return _bulk_russell_binary_similarity_single(X)
     else:
-        if not isinstance(Y, csr_array):
-            Y = csr_array(Y)
+        Y = array_to_binary_csr(Y)
         return _bulk_russell_binary_similarity_two(X, Y)
 
 

@@ -38,7 +38,7 @@ class LipinskiFilter(BaseFilter):
         - ``"mol"`` - return a list of molecules remaining in the dataset after filtering
         - ``"indicators"`` - return a binary vector with indicators which molecules pass
           the filter (1) and which would be removed (0)
-        - ``"condition_indicators"`` - return a Pandas DataFrame with molecules in rows,
+        - ``"condition_indicators"`` - return a NumPy array with molecules in rows,
           filter conditions in columns, and 0/1 indicators whether a given condition was
           fulfilled by a given molecule
 

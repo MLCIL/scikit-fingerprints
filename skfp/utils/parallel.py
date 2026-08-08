@@ -32,6 +32,39 @@ class ProgressParallel(Parallel):
         self._pbar.refresh()
 
 
+def get_tqdm_settings(verbose: bool | int | dict, total: int) -> dict:
+    """
+    Parse ``verbose`` parameter options into kwargs for tqdm.
+
+    Boolean or integer is interpreted as a true/false switch for the progress bar.
+    Dictionary is passed to ``tqdm()`` as kwargs.
+
+    Parameters
+    ----------
+    verbose : bool, int, or dict
+        Verbosity setting to normalize.
+
+    total : int
+        Number of steps the progress bar tracks.
+
+    Returns
+    -------
+    tqdm_settings : dict
+        Keyword arguments for ``tqdm()``.
+    """
+    if isinstance(verbose, (bool, int)):
+        return {"total": total, "disable": not verbose}
+    elif isinstance(verbose, dict):
+        tqdm_settings = verbose.copy()
+        tqdm_settings["total"] = total
+        tqdm_settings["disable"] = verbose.get("disable", False)
+        return tqdm_settings
+    else:
+        raise TypeError(
+            f"The verbose argument must be bool, int, or dict, got {type(verbose)}"
+        )
+
+
 def run_in_parallel(
     func: Callable,
     data: Sequence,
@@ -123,21 +156,9 @@ def run_in_parallel(
         data_batch_gen = (
             data[i : i + batch_size] for i in range(0, len(data), batch_size)
         )
-        num_batches = np.ceil(len(data) / batch_size)
+        num_batches = int(np.ceil(len(data) / batch_size))
 
-    if isinstance(verbose, int):
-        tqdm_settings = {
-            "total": num_batches,
-            "disable": verbose == 0,
-        }
-    elif isinstance(verbose, dict):
-        tqdm_settings = verbose.copy()
-        tqdm_settings["total"] = num_batches
-        tqdm_settings["disable"] = verbose.get("disable", False)
-    else:
-        raise TypeError(
-            f"The verbose argument must be int or dict, got {type(verbose)}"
-        )
+    tqdm_settings = get_tqdm_settings(verbose, total=num_batches)
 
     if tqdm_settings["disable"]:
         parallel = Parallel(n_jobs=n_jobs)

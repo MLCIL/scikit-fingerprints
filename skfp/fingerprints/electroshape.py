@@ -43,8 +43,8 @@ class ElectroShapeFingerprint(BaseFingerprintTransformer):
     partial_charge_model : {"Gasteiger", "MMFF94", "formal", "precomputed"}, default="formal"
         Which model to use to compute atomic partial charges. Default ``"formal"``
         computes formal charges, and is the simplest and most error-resistant one.
-        ``"precomputed"`` assumes that the inputs are RDKit ``PropertyMol`` objects
-        with "charge" float property set.
+        ``"precomputed"`` assumes that every atom of the input molecules has a
+        "charge" float property set, e.g. with ``atom.SetDoubleProp("charge", value)``.
 
     charge_scaling_factor : float, default=25.0
         Partial charges are multiplied by this factor to bring them to a value
