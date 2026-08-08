@@ -1,6 +1,7 @@
 import itertools
 from collections.abc import Callable, Sequence
 
+import numpy as np
 from joblib import effective_n_jobs
 from sklearn.utils.parallel import Parallel, delayed
 from tqdm.auto import tqdm
@@ -122,7 +123,7 @@ def run_in_parallel(
         data_batch_gen = (
             data[i : i + batch_size] for i in range(0, len(data), batch_size)
         )
-        num_batches = len(data) // batch_size
+        num_batches = np.ceil(len(data) / batch_size)
 
     if isinstance(verbose, int):
         tqdm_settings = {

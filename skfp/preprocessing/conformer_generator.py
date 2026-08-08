@@ -45,11 +45,11 @@ class ConformerGenerator(BasePreprocessor):
 
     Note that conformer generation can fail, either due to not enough iterations, or
     it can be just impossible for a given molecule [3]_. This by default results in an
-    error, but can be controlled with ``error_on_gen_fail`` parameter. For multiple
+    error, but can be controlled with the ``errors`` parameter. For multiple
     conformers, error is thrown only when no conformations can be generated, not if
     any one fails.
 
-    If ``error_on_gen_fail`` is False and no conformers could be generated, the number
+    If ``errors`` is ``"filter"`` and no conformers could be generated, the number
     of returned molecules will be smaller than input length. For supervised learning,
     use ``transform_x_y()`` instead of ``transform`` method to properly return labels
     for those molecules.
@@ -224,9 +224,9 @@ class ConformerGenerator(BasePreprocessor):
         y : np.ndarray of shape (n_samples,)
             Array with labels for molecules.
 
-        copy : bool, default=True
-            Copy the input X or not. In contrast to most classes, input molecules
-            are copied by default, since RDKit modifies them with conformers in place.
+        copy : bool, default=False
+            Copy the labels ``y`` or not. Input molecules are never modified in
+            place, since conformers are generated on hydrogen-added copies.
 
         Returns
         -------
@@ -253,9 +253,9 @@ class ConformerGenerator(BasePreprocessor):
         X : {sequence, array-like} of shape (n_samples,)
             Sequence containing RDKit ``Mol`` objects.
 
-        copy : bool, default=True
-            Copy the input X or not. In contrast to most classes, input molecules
-            are copied by default, since RDKit modifies them with conformers in place.
+        copy : bool, default=False
+            Copy the labels ``y`` or not. Input molecules are never modified in
+            place, since conformers are generated on hydrogen-added copies.
 
         Returns
         -------

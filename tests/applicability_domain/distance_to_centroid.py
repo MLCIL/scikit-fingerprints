@@ -13,7 +13,11 @@ from skfp.distances import (
 from skfp.distances import (
     _METRICS as SKFP_METRICS,
 )
-from tests.applicability_domain.utils import get_data_inside_ad, get_data_outside_ad
+from tests.applicability_domain.utils import (
+    get_data_inside_ad,
+    get_data_outside_ad,
+    get_metric_data_type,
+)
 
 
 def test_inside_distance_to_centroid_ad():
@@ -62,7 +66,7 @@ def test_distance_to_centroid_lower_distance():
     ad_checker.fit(X_train)
     passed_dist_10 = ad_checker.predict(X_test).sum()
 
-    # larger distance = larger AD = more pased points
+    # larger distance = larger AD = more passed points
     assert passed_dist_100 > passed_dist_10
 
 
@@ -74,7 +78,7 @@ def test_distance_to_centroid_lower_distance():
     + list(SKFP_METRICS.values()),
 )
 def test_distance_to_centroid_different_metrics(metric):
-    X_train, X_test = get_data_inside_ad()
+    X_train, X_test = get_data_inside_ad(data_type=get_metric_data_type(metric))
 
     # smoke test, should not throw errors
     ad_checker = DistanceToCentroidADChecker(metric=metric)

@@ -2,7 +2,7 @@ from numbers import Real
 
 import numpy as np
 from sklearn.utils._param_validation import Interval
-from sklearn.utils.validation import validate_data
+from sklearn.utils.validation import check_is_fitted, validate_data
 
 from skfp.bases.base_ad_checker import BaseADChecker
 
@@ -92,21 +92,21 @@ class TOPKATADChecker(BaseADChecker):
         self.X_min_ = X.min(axis=0)
         self.X_max_ = X.max(axis=0)
         self.range_ = self.X_max_ - self.X_min_
-        self.num_points = X.shape[0]
-        self.num_dims = X.shape[1]
+        self.num_points_ = X.shape[0]
+        self.num_dims_ = X.shape[1]
 
-        # TOPKAT S-space: feature-wise scaling of X to [-1, 1].
-        # Avoid division by zero: where range==0, denom=1 => scaled value will be 0.
+        # TOPKAT S-space: feature-wise scaling of X to [-1, 1]
+        # avoid division by zero: where range==0, denom=1 => scaled value will be 0
         self.denom_ = np.where((self.range_) != 0, (self.range_), 1.0)
         S = (2 * X - self.X_max_ - self.X_min_) / self.denom_
 
-        # Augment with bias (1) so the subsequent rotation (PCA) includes the intercept term.
+        # augment with bias (1) so the subsequent rotation (PCA) includes the intercept
         S_bias = np.c_[np.ones(S.shape[0]), S]
 
         cov_matrix = S_bias.T @ S_bias
         eigvals, eigvecs = np.linalg.eigh(cov_matrix)
-        self.eigen_val = np.real(eigvals)
-        self.eigen_vec = np.real(eigvecs)
+        self.eigen_val_ = np.real(eigvals)
+        self.eigen_vec_ = np.real(eigvecs)
 
         return self
 
@@ -115,7 +115,7 @@ class TOPKATADChecker(BaseADChecker):
 
         threshold = self.threshold
         if threshold is None:
-            threshold = (5 * self.num_dims) / (2 * self.num_points)
+            threshold = (5 * self.num_dims_) / (2 * self.num_points_)
 
         return dOPS < threshold
 
@@ -139,22 +139,23 @@ class TOPKATADChecker(BaseADChecker):
         return self._compute_dops(X)
 
     def _compute_dops(self, X: np.ndarray) -> np.ndarray:
+        check_is_fitted(self)
         X = validate_data(self, X=X, reset=False)
 
-        # Apply the same S-space transform as in fit().
+        # apply the same S-space transform as in fit().
         Ssample = (2 * X - self.X_max_ - self.X_min_) / self.denom_
 
-        # Add bias term to match the augmented space used to compute eigenvectors.
+        # add bias term to match the augmented space used to compute eigenvectors.
         Ssample_bias = np.c_[np.ones(Ssample.shape[0]), Ssample]
 
-        # Project to OPS space
-        OPS_sample = Ssample_bias @ self.eigen_vec
+        # project to OPS space
+        OPS_sample = Ssample_bias @ self.eigen_vec_
 
         inv_eigval = np.divide(
             1.0,
-            self.eigen_val,
-            out=np.zeros_like(self.eigen_val),
-            where=self.eigen_val != 0,
+            self.eigen_val_,
+            out=np.zeros_like(self.eigen_val_),
+            where=self.eigen_val_ != 0,
         )
         dOPS = np.sum((OPS_sample**2) * inv_eigval, axis=1)
         return dOPS

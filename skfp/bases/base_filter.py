@@ -234,7 +234,9 @@ class BaseFilter(ABC, BaseEstimator, TransformerMixin):
                 filter_indicators = [
                     self._filter_mols_batch([mol]) for mol in tqdm(mols)
                 ]
-                filter_indicators = np.array(filter_indicators).ravel()
+                # each batch holds a single molecule, so stacking gives back the
+                # per-molecule rows; ravelling would destroy the condition columns
+                filter_indicators = np.concatenate(filter_indicators)
             else:
                 filter_indicators = self._filter_mols_batch(mols)
         else:

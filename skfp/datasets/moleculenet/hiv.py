@@ -35,7 +35,7 @@ def load_hiv(
     Recommended metric            AUROC
     ==================   ==============
 
-    **Warning:** in newer RDKit vesions, 7 molecules from the original dataset are
+    **Warning:** in newer RDKit versions, 7 molecules from the original dataset are
     not read correctly due to disallowed hypervalent states of some atoms
     (see [release notes](https://github.com/rdkit/rdkit/releases/tag/Release_2024_09_1)).
     This version of the HIV dataset contains manual fixes for those molecules, made

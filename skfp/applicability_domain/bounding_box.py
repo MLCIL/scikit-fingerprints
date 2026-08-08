@@ -145,8 +145,8 @@ class BoundingBoxADChecker(BaseADChecker):
         """
         Calculate the applicability domain score of samples. It is the number
         of feature ranges fulfilled by samples. It ranges between 0 and
-        ``num_features``, where 0 means all descriptors inside training data
-        ranges.
+        ``num_features``, where ``num_features`` means all descriptors are
+        inside training data ranges.
 
         Parameters
         ----------

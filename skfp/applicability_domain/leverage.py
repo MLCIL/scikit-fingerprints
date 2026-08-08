@@ -22,8 +22,9 @@ class LeverageADChecker(BaseADChecker):
 
     This way, the new molecule is projected orthogonally into the space spanned
     by the training data, taking into consideration feature correlations via
-    Gram matrix :math:`X^T X`. Distance from the average leverage of the
-    training data is used as an outlier score. Typical threshold is :math:`3(d+1)/n`,
+    Gram matrix :math:`X^T X`. The leverage itself is used as an outlier score,
+    with larger values meaning points further from the training data. Typical
+    threshold is :math:`3(d+1)/n`,
     where `d` is the number of features and `n` is the number of training molecules.
 
     Typically, physicochemical properties (continuous features) are used as inputs.
@@ -108,7 +109,8 @@ class LeverageADChecker(BaseADChecker):
     ):
         X = validate_data(self, X=X)
 
-        self.inv_gram_ = np.linalg.inv(X.T @ X)
+        # pseudoinverse, Gram matrix is singular for collinear features and when N < D
+        self.inv_gram_ = np.linalg.pinv(X.T @ X)
 
         if self.threshold == "auto":
             n, d = X.shape
@@ -141,7 +143,8 @@ class LeverageADChecker(BaseADChecker):
         check_is_fitted(self)
         X = validate_data(self, X=X, reset=False)
 
-        # hat matrix, its diagonal elements are leverage values
-        leverages = np.diag(X @ self.inv_gram_ @ X.T)
+        # leverages are the diagonal of the hat matrix X @ inv_gram_ @ X.T, but we
+        # compute them row-wise to avoid materializing the n x n matrix
+        leverages = np.sum((X @ self.inv_gram_) * X, axis=1)
 
         return leverages

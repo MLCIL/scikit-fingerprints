@@ -296,7 +296,9 @@ def _bulk_harris_lahey_binary_similarity_single_sparse(
     first_denom = a + bc_sum
     second_denom = bc_sum + d
 
-    sims = np.empty_like(a, dtype=float)
+    # all-zeros / all-ones vectors, must be saved before the denominators below
+    # are replaced by ones to avoid division by zero
+    degenerate = (first_denom == 0) | (second_denom == 0)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         first_num = a * (2 * d + bc_sum)
@@ -309,11 +311,11 @@ def _bulk_harris_lahey_binary_similarity_single_sparse(
 
         sims = part_1 + part_2
 
-    # handle all-zeros / all-ones vectors
-    sims[(first_denom == 0) | (second_denom == 0)] = 1
-
     if normalized:
         sims /= length
+
+    # all-zero / all-ones pairs are similar by convention
+    sims[degenerate] = 1
 
     return sims
 
@@ -331,7 +333,9 @@ def _bulk_harris_lahey_binary_similarity_two_sparse(
     first_denom = a + bc_sum
     second_denom = bc_sum + d
 
-    sims = np.empty_like(a, dtype=float)
+    # all-zeros / all-ones vectors, must be saved before the denominators below
+    # are replaced by ones to avoid division by zero
+    degenerate = (first_denom == 0) | (second_denom == 0)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         first_num = a * (2 * d + bc_sum)
@@ -344,10 +348,12 @@ def _bulk_harris_lahey_binary_similarity_two_sparse(
 
         sims = part_1 + part_2
 
-    sims[(first_denom == 0) | (second_denom == 0)] = 1
-
     if normalized:
         sims /= length
+
+    # as in harris_lahey_binary_similarity(), degenerate pairs get similarity 1,
+    # which is not scaled by the ``normalized`` option
+    sims[degenerate] = 1
 
     return sims
 

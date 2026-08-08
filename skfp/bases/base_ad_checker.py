@@ -41,10 +41,11 @@ class BaseADChecker(ABC, BaseEstimator, OutlierMixin):
     Parameters
     ----------
     n_jobs : int, default=None
-        The number of jobs to run in parallel. :meth:`transform_x_y` and
-        :meth:`transform` are parallelized over the input molecules. ``None`` means 1
-        unless in a :obj:`joblib.parallel_backend` context. ``-1`` means using all
-        processors. See scikit-learn documentation on ``n_jobs`` for more details.
+        The number of jobs to run in parallel. :meth:`fit`, :meth:`predict` and
+        :meth:`score_samples` are parallelized over the input samples, if the
+        underlying method supports it. ``None`` means 1 unless in a
+        :obj:`joblib.parallel_backend` context. ``-1`` means using all processors.
+        See scikit-learn documentation on ``n_jobs`` for more details.
 
     verbose : int or dict, default=0
         Controls the verbosity when computing applicability domain statistics.
@@ -52,7 +53,7 @@ class BaseADChecker(ABC, BaseEstimator, OutlierMixin):
         and can be used to control the progress bar.
     """
 
-    # parameters common for all filters
+    # parameters common for all applicability domain checkers
     _parameter_constraints: dict = {
         "n_jobs": [Integral, None],
         "verbose": ["verbose", dict],

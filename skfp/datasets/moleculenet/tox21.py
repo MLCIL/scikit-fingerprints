@@ -39,7 +39,7 @@ def load_tox21(
     Recommended metric                      AUROC
     ==================   ========================
 
-    **Warning:** in newer RDKit vesions, 8 molecules from the original dataset
+    **Warning:** in newer RDKit versions, 8 molecules from the original dataset
     are not read correctly due to disallowed hypervalent states of their aluminium
     atoms (see [release notes](https://github.com/rdkit/rdkit/releases/tag/Release_2024_09_1)).
     This version of the Tox21 dataset contains manual fixes for those molecules,

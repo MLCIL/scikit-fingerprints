@@ -227,7 +227,8 @@ def _bulk_braun_blanquet_binary_similarity_single(X: csr_array) -> np.ndarray:
     row_sums = np.asarray(X.sum(axis=1)).ravel()
     max_denoms = np.maximum.outer(row_sums, row_sums)
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, max_denoms, out=sims, where=max_denoms != 0)
     np.fill_diagonal(sims, 1)
 
@@ -242,7 +243,8 @@ def _bulk_braun_blanquet_binary_similarity_two(
     row_sums_Y = np.asarray(Y.sum(axis=1)).ravel()
     max_denoms = np.maximum.outer(row_sums_X, row_sums_Y)
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, max_denoms, out=sims, where=max_denoms != 0)
 
     return sims
