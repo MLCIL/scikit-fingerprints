@@ -189,7 +189,6 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
             Instance of fitted estimator.
         """
         self.cv_results_: list[dict] = []
-        warned_collisions = False
         self.best_fp_: BaseFingerprintTransformer = None  # type: ignore
         self.best_fp_params_: dict = None  # type: ignore
         self.best_fp_array_: np.ndarray = None  # type: ignore
@@ -200,6 +199,8 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
         param_grid_size = len(param_grid)
         if self.verbose:
             print(f"Fitting {param_grid_size} candidate hyperparameter sets.")
+
+        warned_collisions = False
 
         for idx, fp_params in enumerate(param_grid):
             if self._print_messages():
@@ -221,8 +222,7 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
             estimator_params = curr_cv.best_params_
 
             # fingerprint and estimator parameter names share a flat namespace in
-            # cv_results_, so a name used by both would silently keep only the
-            # estimator value; warn instead of quietly dropping the fingerprint one
+            # cv_results_; this can theoretically collide, so we raise a warning in this case
             collisions = sorted(set(fp_params) & set(estimator_params))
             if collisions and not warned_collisions:
                 warnings.warn(
