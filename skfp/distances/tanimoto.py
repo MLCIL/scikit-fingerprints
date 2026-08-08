@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import csr_array
 from sklearn.utils._param_validation import validate_params
 
-from skfp.distances.utils import array_to_binary_csr, array_to_count_csr
+from skfp.distances.utils import array_to_csr
 
 
 @validate_params(
@@ -349,12 +349,12 @@ def bulk_tanimoto_binary_similarity(
     array([[1.        , 0.33333333],
            [0.5       , 0.5       ]])
     """
-    X = array_to_binary_csr(X)
+    X = array_to_csr(X)
 
     if Y is None:
         return _bulk_tanimoto_binary_similarity_single(X)
     else:
-        Y = array_to_binary_csr(Y)
+        Y = array_to_csr(Y)
         return _bulk_tanimoto_binary_similarity_two(X, Y)
 
 
@@ -498,12 +498,12 @@ def bulk_tanimoto_count_similarity(
     array([[1.        , 0.33333333],
            [0.5       , 0.5       ]])
     """
-    X = array_to_count_csr(X)
+    X = array_to_csr(X)
 
     if Y is None:
         return _bulk_tanimoto_count_similarity_single(X)
     else:
-        Y = array_to_count_csr(Y)
+        Y = array_to_csr(Y)
         return _bulk_tanimoto_count_similarity_two(X, Y)
 
 
