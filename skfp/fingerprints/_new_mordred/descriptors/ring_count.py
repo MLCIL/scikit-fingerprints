@@ -13,6 +13,8 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+
 
 @dataclass(frozen=True, slots=True)
 class RingCountFeature:
@@ -33,6 +35,41 @@ class RingProperties:
     @property
     def size(self) -> int:
         return len(self.atoms)
+
+
+class RingSets:
+    """
+    SSSR rings of a molecule and their per-ring properties.
+
+    Shared by the ring count and van der Waals volume descriptors, which would
+    otherwise each re-run ``GetSymmSSSR`` and re-inspect every ring atom.
+    """
+
+    def __init__(self, mol: Mol, props: AtomicProperties):
+        self.mol = mol
+        self._props = props
+
+        self.simple_ring_atom_sets = [set(ring) for ring in Chem.GetSymmSSSR(mol)]
+        self.num_rings = len(self.simple_ring_atom_sets)
+        self.simple_rings = self._ring_properties(self.simple_ring_atom_sets)
+        self.fused_rings = self._ring_properties(
+            _fused_ring_atom_sets(self.simple_ring_atom_sets)
+        )
+
+    def _ring_properties(self, ring_atom_sets: list[set[int]]) -> list[RingProperties]:
+        """
+        Cache ring size, aromaticity, and heteroatom presence once per ring.
+        """
+        is_aromatic = self._props.is_aromatic
+        is_hetero = self._props.atomic_nums != 6
+        return [
+            RingProperties(
+                ring,
+                bool(is_aromatic[list(ring)].all()),
+                bool(is_hetero[list(ring)].any()),
+            )
+            for ring in ring_atom_sets
+        ]
 
 
 _GENERAL_RING_FEATURES = [
@@ -130,36 +167,85 @@ def _ring_count_features() -> list[RingCountFeature]:
 RING_COUNT_FEATURES = _ring_count_features()
 FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
 
+# rings buckets: size (max_size+2), aromaticity yes/no (2), heteroatom presence (2)
+# last bucket gathers everything above the largest size
+_MAX_RING_SIZE = 12
+_HISTOGRAM_SHAPE = (_MAX_RING_SIZE + 2, 2, 2)
 
-def calc(mol_regular: Mol) -> np.ndarray:
+
+def _histogram(rings: list[RingProperties]) -> np.ndarray:
+    """
+    Count rings per (size, is aromatic, has heteroatom) bucket.
+    """
+    histogram = np.zeros(_HISTOGRAM_SHAPE)
+    for ring in rings:
+        # int(), because NumPy reads a bool index as a mask rather than as 0 or 1
+        histogram[
+            min(ring.size, _MAX_RING_SIZE + 1),
+            int(ring.is_aromatic),
+            int(ring.has_hetero),
+        ] += 1
+    return histogram
+
+
+def _selector(feature: RingCountFeature) -> np.ndarray:
+    """
+    Create a binary mask to select histogram buckets used
+    by a particular descriptor.
+    """
+    sizes = np.zeros(_HISTOGRAM_SHAPE[0], dtype=bool)
+    if feature.size is None:
+        sizes[:] = True
+    elif feature.match_size_or_larger:
+        sizes[feature.size :] = True
+    else:
+        sizes[feature.size] = True
+
+    # a required flag selects one of the two buckets, no requirement selects both
+    def flag_selector(required: bool | None) -> np.ndarray:
+        if required is None:
+            return np.ones(2, dtype=bool)
+        return np.arange(2) == required
+
+    return (
+        sizes[:, None, None]
+        & flag_selector(feature.required_aromatic)[None, :, None]
+        & flag_selector(feature.required_hetero)[None, None, :]
+    )
+
+
+def _selector_matrix(use_fused_rings: bool) -> np.ndarray:
+    """
+    Bucket masks of every descriptor reading a given ring set, stacked into a
+    matrix. Descriptors reading the other ring set contribute an all-zero row.
+    """
+    return np.array(
+        [
+            _selector(feature).ravel()
+            if feature.use_fused_rings == use_fused_rings
+            else np.zeros(np.prod(_HISTOGRAM_SHAPE), dtype=bool)
+            for feature in RING_COUNT_FEATURES
+        ],
+        dtype=np.float64,
+    )
+
+
+_SIMPLE_RING_SELECTORS = _selector_matrix(use_fused_rings=False)
+_FUSED_RING_SELECTORS = _selector_matrix(use_fused_rings=True)
+
+
+def calc(rings: RingSets) -> np.ndarray:
     """
     Count simple and fused rings across size, aromaticity, and heteroatom filters.
+
+    Every descriptor is the number of rings falling into some set of
+    (size, aromaticity, heteroatom) buckets. Thus, we can read them all from
+    a single histogram per ring set.
     """
-    simple_ring_atom_sets = _ring_atom_sets(mol_regular)
-    fused_ring_atom_sets = _fused_ring_atom_sets(simple_ring_atom_sets)
-    simple_rings = _ring_properties(mol_regular, simple_ring_atom_sets)
-    fused_rings = _ring_properties(mol_regular, fused_ring_atom_sets)
-    ring_sets = {False: simple_rings, True: fused_rings}
+    values = _SIMPLE_RING_SELECTORS @ _histogram(rings.simple_rings).ravel()
+    values += _FUSED_RING_SELECTORS @ _histogram(rings.fused_rings).ravel()
 
-    values = [
-        sum(
-            1
-            for ring in ring_sets[feature.use_fused_rings]
-            if _matches_size(ring, feature)
-            and _matches_aromaticity(ring, feature.required_aromatic)
-            and _matches_hetero(ring, feature.required_hetero)
-        )
-        for feature in RING_COUNT_FEATURES
-    ]
-
-    return np.asarray(values, dtype=np.float32)
-
-
-def _ring_atom_sets(mol: Mol) -> list[set[int]]:
-    """
-    Return RDKit SSSR rings as atom-index sets.
-    """
-    return [set(ring) for ring in Chem.GetSymmSSSR(mol)]
+    return values.astype(np.float32)
 
 
 def _fused_ring_atom_sets(rings: list[set[int]]) -> list[set[int]]:
@@ -197,46 +283,3 @@ def _fused_ring_atom_sets(rings: list[set[int]]) -> list[set[int]]:
         components.setdefault(root, set()).update(ring)
 
     return list(components.values())
-
-
-def _ring_properties(mol: Mol, ring_atom_sets: list[set[int]]) -> list[RingProperties]:
-    """
-    Cache ring size, aromaticity, and heteroatom presence once per ring.
-    """
-    return [
-        RingProperties(
-            ring,
-            all(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring),
-            any(mol.GetAtomWithIdx(idx).GetAtomicNum() != 6 for idx in ring),
-        )
-        for ring in ring_atom_sets
-    ]
-
-
-def _matches_size(ring: RingProperties, feature: RingCountFeature) -> bool:
-    """
-    Check whether a ring has any size, an exact size, or a minimum size.
-    """
-    if feature.size is None:
-        return True
-    if feature.match_size_or_larger:
-        return ring.size >= feature.size
-    return ring.size == feature.size
-
-
-def _matches_aromaticity(ring: RingProperties, required: bool | None) -> bool:
-    """
-    Check aromaticity only when the feature requires aromatic or aliphatic rings.
-    """
-    if required is None:
-        return True
-    return ring.is_aromatic if required else not ring.is_aromatic
-
-
-def _matches_hetero(ring: RingProperties, required: bool | None) -> bool:
-    """
-    Check heteroatom content only when the feature requires hetero or carbocyclic rings.
-    """
-    if required is None:
-        return True
-    return ring.has_hetero if required else not ring.has_hetero
