@@ -1,7 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import get_polarizability
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -13,17 +12,13 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["apol", "bpol"]
 
 
-def calc(mol_hydrogens: Mol) -> np.ndarray:
-    atom_polarizability = sum(
-        get_polarizability(atom) for atom in mol_hydrogens.GetAtoms()
-    )
-    bond_polarizability = sum(
-        abs(
-            get_polarizability(bond.GetBeginAtom())
-            - get_polarizability(bond.GetEndAtom())
-        )
-        for bond in mol_hydrogens.GetBonds()
-    )
+def calc(atomic_props_hydrogens: AtomicProperties) -> np.ndarray:
+    polarizabilities = atomic_props_hydrogens.get("polarizability")
+    atom_polarizability = polarizabilities.sum()
+    bond_polarizability = np.abs(
+        polarizabilities[atomic_props_hydrogens.bond_begin_idxs]
+        - polarizabilities[atomic_props_hydrogens.bond_end_idxs]
+    ).sum()
 
     values = np.array(
         [atom_polarizability, bond_polarizability],

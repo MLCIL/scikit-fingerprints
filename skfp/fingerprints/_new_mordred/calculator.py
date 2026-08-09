@@ -39,7 +39,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     wiener_index,
     zagreb_index,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -157,10 +157,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     distance_matrix_regular = DistanceMatrix(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
+    # per-atom property arrays, read from the molecule once and shared
+    props_regular = AtomicProperties.from_mol(mol_regular)
+
     # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    props_hydrogens = AtomicProperties.from_mol(mol_hydrogens)
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
-    gasteiger_charges_hydrogens = gasteiger_charges(mol_hydrogens)
+    gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
 
     # cpsa_3d reuses cpsa_2d values
     cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
@@ -198,7 +202,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         carbon_types: carbon_types.calc(mol_kekulized),
         constitutional: constitutional.calc(mol_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
-        vertex_adjacency_info: vertex_adjacency_info.calc(mol_regular),
+        vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
         ring_count: ring_count.calc(mol_regular),
         vdw_volume_abc: vdw_volume_abc.calc(mol_regular, mol_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
@@ -210,14 +214,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, n_frags),
-        aromatic: aromatic.calc(mol_regular),
+        aromatic: aromatic.calc(props_regular),
         topological_charge: topological_charge.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),
         cpsa: cpsa_2d,
-        polarizability: polarizability.calc(mol_hydrogens),
+        polarizability: polarizability.calc(props_hydrogens),
         chi: chi.calc(mol_regular),
-        fragment_complexity: fragment_complexity.calc(mol_regular),
+        fragment_complexity: fragment_complexity.calc(props_regular),
         eccentric_connectivity_index: eccentric_connectivity_index.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),

@@ -1,5 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
+
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -11,16 +12,12 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["nAromAtom", "nAromBond"]
 
 
-def calc(mol: Mol) -> np.ndarray:
+def calc(props: AtomicProperties) -> np.ndarray:
     """
     Compute the Mordred aromatic count descriptors.
 
     `nAromAtom` is the number of aromatic atoms and `nAromBond` is the number of
     aromatic bonds, both taken directly from RDKit's perceived aromaticity flags.
     """
-    values = [
-        sum(atom.GetIsAromatic() for atom in mol.GetAtoms()),
-        sum(bond.GetIsAromatic() for bond in mol.GetBonds()),
-    ]
-
+    values = [props.is_aromatic.sum(), props.bond_is_aromatic.sum()]
     return np.asarray(values, dtype=np.float32)
