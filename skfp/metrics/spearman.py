@@ -12,6 +12,7 @@ from skfp.utils.functions import _get_sklearn_version
         "y_pred": ["array-like"],
         "alternative": [StrOptions({"two-sided", "less", "greater"})],
         "return_p_value": ["boolean"],
+        "equal_values_result": ["numeric"],
     },
     prefer_skip_nested_validation=True,
 )
@@ -21,6 +22,7 @@ def spearman_correlation(
     *,
     alternative: str = "two-sided",
     return_p_value: bool = False,
+    equal_values_result: float = np.nan,
 ) -> float:
     """
     Spearman correlation.
@@ -83,7 +85,7 @@ def spearman_correlation(
         )
 
     if np.all(np.isclose(y_true, y_pred)):
-        return np.nan
+        return equal_values_result
 
     result = spearmanr(y_true, y_pred, alternative=alternative)
     return result.pvalue if return_p_value else result.statistic

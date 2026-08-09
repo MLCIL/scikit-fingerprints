@@ -92,8 +92,11 @@ class TOPKATADChecker(BaseADChecker):
         self.X_min_ = X.min(axis=0)
         self.X_max_ = X.max(axis=0)
         self.range_ = self.X_max_ - self.X_min_
-        self.num_points_ = X.shape[0]
-        self.num_dims_ = X.shape[1]
+
+        if self.threshold:
+            self.threshold_ = self.threshold
+        else:
+            self.threshold_ = (5 * X.shape[1]) / (2 * X.shape[0])
 
         # TOPKAT S-space: feature-wise scaling of X to [-1, 1]
         # avoid division by zero: where range==0, denom=1 => scaled value will be 0
@@ -112,12 +115,7 @@ class TOPKATADChecker(BaseADChecker):
 
     def predict(self, X: np.ndarray) -> np.ndarray:  # noqa: D102
         dOPS = self._compute_dops(X)
-
-        threshold = self.threshold
-        if threshold is None:
-            threshold = (5 * self.num_dims_) / (2 * self.num_points_)
-
-        return dOPS < threshold
+        return dOPS < self.threshold_
 
     def score_samples(self, X: np.ndarray) -> np.ndarray:
         """

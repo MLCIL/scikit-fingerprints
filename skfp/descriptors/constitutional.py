@@ -108,8 +108,7 @@ def element_atom_count(mol: Mol, atom_id: int | str) -> int:
     6
     """
     if atom_id in (1, "H"):
-        # includeNeighbors also counts hydrogens present as explicit atoms in the
-        # graph, e.g. after AddHs(), which GetTotalNumHs() alone would miss
+        # includeNeighbors also counts hydrogens present as explicit atoms
         return sum(
             atom.GetTotalNumHs(includeNeighbors=True)
             for atom in mol.GetAtoms()

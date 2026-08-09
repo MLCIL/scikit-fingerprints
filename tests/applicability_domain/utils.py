@@ -3,6 +3,8 @@ from collections.abc import Callable
 import numpy as np
 from sklearn.datasets import make_blobs
 
+ALLOWED_METRIC_DATA_TYPES = ("binary", "counts", "continuous")
+
 
 def get_metric_data_type(metric: str | Callable) -> str:
     """
@@ -24,6 +26,7 @@ def get_data_inside_ad(
     Training data as a wide blob, test data as a tight blob at its center, i.e.
     firmly inside the applicability domain.
     """
+    assert data_type in ALLOWED_METRIC_DATA_TYPES
     n_features = 2 if data_type == "continuous" else 256
 
     X_train = _make_blobs(
@@ -41,6 +44,7 @@ def get_data_outside_ad(
     Training data as a wide blob, test data far away from it, i.e. firmly outside
     the applicability domain.
     """
+    assert data_type in ALLOWED_METRIC_DATA_TYPES
     n_features = 2 if data_type == "continuous" else 256
 
     X_train = _make_blobs(
