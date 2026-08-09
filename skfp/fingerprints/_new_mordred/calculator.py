@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import GetMolFrags, GetSymmSSSR, Mol
+from rdkit.Chem import AddHs, GetMolFrags, GetSymmSSSR, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -154,16 +154,22 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # classic, RDKit-standardized molecule
     mol_regular = preprocess_mol(mol)
-    distance_matrix_regular = DistanceMatrix(mol_regular)
+    distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
 
     # per-atom property arrays, read from the molecule once and shared
     props_regular = AtomicProperties.from_mol(mol_regular)
 
     # hydrogen-explicit molecule
-    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
-    props_hydrogens = AtomicProperties.from_mol(mol_hydrogens)
-    distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
+    # added hydrogens have no coordinates, so for 3D we build this separately
+    # note that atom numberings are different for those molecules
+    mol_hydrogens = AddHs(mol_regular)
+    props_hydrogens = AtomicProperties.with_hydrogens_added(
+        mol_hydrogens, props_regular
+    )
+    distance_matrix_hydrogens = DistanceMatrix.with_hydrogens_added(
+        distance_matrix_regular, props_hydrogens
+    )
     gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
 
     # cpsa_3d reuses cpsa_2d values
@@ -171,7 +177,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
-    distance_matrix_kekulized = DistanceMatrix(mol_kekulized)
+    distance_matrix_kekulized = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
