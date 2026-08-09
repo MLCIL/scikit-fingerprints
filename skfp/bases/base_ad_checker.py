@@ -22,11 +22,11 @@ class BaseADChecker(ABC, BaseEstimator, OutlierMixin):
     This class is not meant to be used directly. If you want to create custom
     applicability domain checkers, inherit from this class and override methods:
 
-    - ``.fit()` - learns the chemical space bounds, e.g. calculates statistics
+    - ``.fit()`` - learns the chemical space bounds, e.g. calculates statistics
       saved as object attributes
-    - ``.predict()` - checks if molecules are in AD or not, and outputs a vector
+    - ``.predict()`` - checks if molecules are in AD or not, and outputs a vector
       of booleans (True - in AD)
-    - ``.score_samples()` - applicability domain score of molecules
+    - ``.score_samples()`` - applicability domain score of molecules
 
     Note that score nature depends on the particular method. In some cases it is
     straight AD score (larger = better), which measures how firmly a molecule lies
