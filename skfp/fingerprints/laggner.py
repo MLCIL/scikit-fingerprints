@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,50 @@ from scipy.sparse import csr_array
 
 from skfp.bases import BaseSubstructureFingerprint
 from skfp.utils import ensure_mols
+
+
+@lru_cache(maxsize=1)
+def _load_patterns() -> tuple[np.ndarray, list[str]]:
+    # since Laggner file is licensed under LGPL, we keep it separately
+    feature_names = []
+    patterns = []
+
+    filepath = Path(__file__).parent / "data" / "SMARTS_InteLigand.txt"
+    with open(filepath) as file:
+        for line in file:
+            if line.startswith("#") or line.isspace():
+                continue
+            elif line.startswith("Urea:"):  # this line has no space after colon
+                name = "Urea"
+                smarts = line.removeprefix("Urea:")
+            else:
+                name, smarts = line.split()
+                name = name.removesuffix(":")
+
+            feature_names.append(name.strip())
+            patterns.append(smarts.strip())
+
+    # RDKit does not support multi-component SMARTS (with a dot), so we can't match
+    # the salts pattern "([-1,-2,-3,-4,-5,-6,-7]).([+1,+2,+3,+4,+5,+6,+7])"
+    # (index 298); we compute it manually in .transform(), and here temporarily
+    # replace it with an empty pattern
+    patterns[298] = ""
+
+    # there are a few duplicate names not matching patterns in the file, so we fix this
+    feature_names[16] = "Dialkylthioether (aliphatic O)"
+    feature_names[36] = "Dialkylthioether (aliphatic S)"
+
+    feature_names[19] = "Alkylarylthioether (aliphatic S)"
+    feature_names[37] = "Alkylarylthioether (aliphatic O)"
+
+    feature_names[108] = "Amidine (basic, not part of aromatic ring)"
+    feature_names[119] = (
+        "Amidine (not substituted by carbonyl or thiocarbonyl, not part of a ring)"
+    )
+
+    feature_names = np.asarray(feature_names, dtype=object)
+
+    return feature_names, patterns
 
 
 class LaggnerFingerprint(BaseSubstructureFingerprint):
@@ -85,8 +130,7 @@ class LaggnerFingerprint(BaseSubstructureFingerprint):
         batch_size: int | None = None,
         verbose: int | dict = 0,
     ):
-        feature_names, patterns = self._load_patterns()
-        self._feature_names = self._fix_feature_names(feature_names)
+        self._feature_names, patterns = _load_patterns()
         super().__init__(
             patterns=patterns,
             count=count,
@@ -95,22 +139,6 @@ class LaggnerFingerprint(BaseSubstructureFingerprint):
             batch_size=batch_size,
             verbose=verbose,
         )
-
-    def _fix_feature_names(self, feature_names: list[str]) -> np.ndarray:
-        # we modify a few names to make them all unique, since there are duplicates
-        # in originals
-        feature_names[16] = "Dialkylthioether (aliphatic O)"
-        feature_names[36] = "Dialkylthioether (aliphatic S)"
-
-        feature_names[19] = "Alkylarylthioether (aliphatic S)"
-        feature_names[37] = "Alkylarylthioether (aliphatic O)"
-
-        feature_names[108] = "Amidine (basic, not part of aromatic ring)"
-        feature_names[119] = (
-            "Amidine (not substituted by carbonyl or thiocarbonyl, not part of a ring)"
-        )
-
-        return np.asarray(feature_names, dtype=object)
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002
         """
@@ -158,7 +186,7 @@ class LaggnerFingerprint(BaseSubstructureFingerprint):
         fps = super()._calculate_fingerprint(X)
 
         # temporarily convert to dictionary-of-keys (DOK) format to set bits
-        # for set  cation and salt features (setting bits on CSR array is slow)
+        # for cation and salt features (setting bits on CSR array is slow)
         if self.sparse:
             fps = fps.todok()
 
@@ -172,31 +200,3 @@ class LaggnerFingerprint(BaseSubstructureFingerprint):
             fps[idx, 298] = salt
 
         return csr_array(fps) if self.sparse else fps
-
-    def _load_patterns(self) -> tuple[list[str], list[str]]:
-        # since Laggner file is licensed under LGPL, we keep it separately
-        feature_names = []
-        patterns = []
-
-        filepath = Path(__file__).parent / "data" / "SMARTS_InteLigand.txt"
-        with open(filepath) as file:
-            for line in file:
-                if line.startswith("#") or line.isspace():
-                    continue
-                elif line.startswith("Urea:"):  # this line has no space after colon
-                    name = "Urea"
-                    smarts = line.removeprefix("Urea:")
-                else:
-                    name, smarts = line.split()
-                    name = name.removesuffix(":")
-
-                feature_names.append(name.strip())
-                patterns.append(smarts.strip())
-
-        # RDKit does not support multi-component SMARTS (with a dot), so we can't match
-        # the salts pattern "([-1,-2,-3,-4,-5,-6,-7]).([+1,+2,+3,+4,+5,+6,+7])"
-        # (index 298); we compute it manually in .transform(), and here temporarily
-        # replace it with an empty pattern
-        patterns[298] = ""
-
-        return feature_names, patterns

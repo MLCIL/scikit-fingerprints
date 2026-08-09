@@ -1,5 +1,5 @@
-import functools
 from collections.abc import Sequence
+from functools import lru_cache
 
 import numpy as np
 import torch
@@ -54,8 +54,8 @@ class CLAMPCompoundEncoder(nn.Module):
         return self.net(x)
 
 
-# Module-level so lru_cache is keyed only by path, not by instance (avoids memory leaks).
-@functools.lru_cache(maxsize=1)
+# module-level so lru_cache is keyed only by path, not by instance (avoids memory leaks)
+@lru_cache(maxsize=1)
 def _load_clamp_model(checkpoint_path: str) -> CLAMPCompoundEncoder:
     """Load pretrained CLAMP compound encoder from a checkpoint file."""
     model = CLAMPCompoundEncoder()

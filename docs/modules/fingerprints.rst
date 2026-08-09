@@ -31,6 +31,7 @@ Classes for computing molecular fingerprints.
     LayeredFingerprint
     LingoFingerprint
     MACCSFingerprint
+    MAGPIEFingerprint
     MAPFingerprint
     MHFPFingerprint
     MordredFingerprint
