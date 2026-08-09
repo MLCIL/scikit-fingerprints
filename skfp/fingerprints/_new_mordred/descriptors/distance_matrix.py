@@ -1,6 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
@@ -28,7 +28,9 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_regular: Mol, n_frags: int, distance_matrix_regular: DistanceMatrix
+    atomic_props_regular: AtomicProperties,
+    n_frags: int,
+    distance_matrix_regular: DistanceMatrix,
 ) -> np.ndarray:
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
@@ -37,7 +39,7 @@ def calc(
     dist_matrix = distance_matrix_regular.matrix
     attrs = MatrixAttributes(
         dist_matrix,
-        mol_regular,
+        atomic_props_regular,
         hermitian=distance_matrix_regular.hermitian,
         n_frags=n_frags,
     )
