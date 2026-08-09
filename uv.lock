@@ -3562,7 +3562,7 @@ requires-dist = [
     { name = "mordredcommunity", specifier = ">=2.0.0,<3" },
     { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "pandas", specifier = ">=1.5.3,<4" },
-    { name = "rdkit", specifier = ">=2023.9.6,<=2025.9.3" },
+    { name = "rdkit", specifier = ">=2023.9.6,<=2026.3.5" },
     { name = "scikit-learn", specifier = ">=1.6.0,<2" },
     { name = "scipy", specifier = ">=1.12.0,<2" },
     { name = "torch", marker = "extra == 'neural'", specifier = ">=2.0.0" },

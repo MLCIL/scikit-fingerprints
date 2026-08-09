@@ -28,7 +28,7 @@ def smiles_passing_one_violation_basic_rule_of_three() -> list[str]:
     return [
         "c1ccc(CCNc2ccc3nncn3n2)cc1",
         "c1ccc(CCNc2ncnc3nc[nH]c23)cc1",
-        "c1ccc(Cn2nnc3cnccc32)cc1",
+        "CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2",
     ]
 
 
