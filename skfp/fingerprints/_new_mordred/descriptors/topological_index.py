@@ -13,7 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-def calc(graph_radius: float, graph_diameter: float) -> tuple[np.ndarray, list[str]]:
+def calc(graph_radius: float, graph_diameter: float) -> np.ndarray:
     r"""
     Compute the Mordred topological index descriptors.
 
@@ -37,4 +37,4 @@ def calc(graph_radius: float, graph_diameter: float) -> tuple[np.ndarray, list[s
         [graph_diameter, graph_radius, topo_shape_index, petitjean_index],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

@@ -44,7 +44,7 @@ _FEATURE_TO_COUNTS = {
 }
 
 
-def calc(mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_kekulized: Mol) -> np.ndarray:
     """
     Count carbon atoms by carbon-neighbor degree and hybridization.
     """
@@ -77,4 +77,4 @@ def calc(mol_kekulized: Mol) -> tuple[np.ndarray, list[str]]:
     )
     values.append(0.0 if num_carbons == 0 else num_sp3 / num_carbons)
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

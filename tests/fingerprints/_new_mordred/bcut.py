@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.bcut import calc
+from skfp.fingerprints._new_mordred.descriptors.bcut import FEATURE_NAMES, calc
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -34,8 +34,8 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_test_mols):
     mol = mordred_test_mols[name]
 
-    values, feature_names = calc(mol)
-    values = dict(zip(feature_names, values, strict=True))
+    values = calc(mol)
+    values = dict(zip(FEATURE_NAMES, values, strict=True))
     actual_smallest = values["BCUT_mass_smallest_eigval"]
     actual_largest = values["BCUT_mass_largest_eigval"]
 
@@ -46,5 +46,5 @@ def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_tes
 
 def test_disconnected_mol_all_nan():
     mol = MolFromSmiles("[Na].[Cl]")
-    values, feature_names = calc(mol)
+    values = calc(mol)
     assert_allclose(values, np.nan)

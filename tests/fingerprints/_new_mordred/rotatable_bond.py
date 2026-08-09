@@ -23,7 +23,5 @@ def test_rotatable_bond_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
     mol_regular = preprocess_mol(mol)
 
-    values, feature_names = rotatable_bond.calc(mol_regular)
-
-    assert feature_names == FEATURE_NAMES
+    values = rotatable_bond.calc(mol_regular)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

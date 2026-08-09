@@ -40,10 +40,7 @@ def test_2d_calculator_passes_regular_molecule_to_rdkit_descriptors(monkeypatch)
 
     def calc_rdkit_2d_without_explicit_hydrogens(mol_regular, distance_matrix):
         assert all(atom.GetAtomicNum() != 1 for atom in mol_regular.GetAtoms())
-        return (
-            np.zeros(len(rdkit_descriptors.FEATURE_NAMES_2D), dtype=np.float32),
-            rdkit_descriptors.FEATURE_NAMES_2D,
-        )
+        return np.zeros(len(rdkit_descriptors.FEATURE_NAMES_2D), dtype=np.float32)
 
     monkeypatch.setattr(
         calculator.rdkit_descriptors,

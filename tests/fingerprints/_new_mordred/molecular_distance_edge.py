@@ -40,11 +40,10 @@ def computed_values(mordred_test_mols):
     computed = {}
     for name in _REFERENCE:
         mol_regular = preprocess_mol(mordred_test_mols[name])
-        values, feature_names = calc(
+        values = calc(
             mol_regular, AdjacencyMatrix(mol_regular), DistanceMatrix(mol_regular)
         )
-        assert feature_names == FEATURE_NAMES
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 
@@ -61,24 +60,23 @@ def test_molecular_distance_edge_reference_values(
 
 def test_molecular_distance_edge_output_shape(mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols["Caffeine"])
-    values, feature_names = calc(
+    values = calc(
         mol_regular, AdjacencyMatrix(mol_regular), DistanceMatrix(mol_regular)
     )
 
     assert isinstance(values, np.ndarray)
     assert values.dtype == np.float32
     assert values.shape == (len(FEATURE_NAMES),)
-    assert feature_names == FEATURE_NAMES
 
 
 def test_molecular_distance_edge_no_matching_atoms(mordred_test_mols):
     # Hexane has only carbons, so every nitrogen/oxygen bucket must be empty (NaN)
     # while carbon buckets that occur are finite
     mol_regular = preprocess_mol(mordred_test_mols["Hexane"])
-    values, feature_names = calc(
+    values = calc(
         mol_regular, AdjacencyMatrix(mol_regular), DistanceMatrix(mol_regular)
     )
-    result = dict(zip(feature_names, values, strict=True))
+    result = dict(zip(FEATURE_NAMES, values, strict=True))
 
     assert all(
         np.isnan(result[name])

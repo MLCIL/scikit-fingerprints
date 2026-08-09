@@ -6,7 +6,10 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import AddHs, MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.autocorrelation import calc
+from skfp.fingerprints._new_mordred.descriptors.autocorrelation import (
+    FEATURE_NAMES,
+    calc,
+)
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 """
@@ -31,8 +34,8 @@ def computed_values():
     for name, smiles in _REFERENCE["SMILES"].items():
         # Mordred uses explicit-hydrogen molecules
         mol = AddHs(MolFromSmiles(smiles))
-        values, feature_names = calc(mol, DistanceMatrix(mol))
-        computed[name] = dict(zip(feature_names, values, strict=False))
+        values = calc(mol, DistanceMatrix(mol))
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=False))
     return computed
 
 

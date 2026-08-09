@@ -62,14 +62,14 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> np.ndarray:
     """
     BCUT descriptors.
     """
     burden_matrix = _get_burden_matrix(mol)
 
     if len(GetMolFrags(mol)) > 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     values = []
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
@@ -86,7 +86,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
 
         values.extend([smallest, largest])
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 def _get_burden_matrix(mol: Mol) -> np.ndarray:

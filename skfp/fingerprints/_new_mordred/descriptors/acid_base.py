@@ -34,7 +34,7 @@ _BASE_PATTERN = Chem.MolFromSmarts(
 )
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> np.ndarray:
     """
     Acidic/basic group count descriptors.
 
@@ -47,4 +47,4 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         len(mol.GetSubstructMatches(_BASE_PATTERN)),
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

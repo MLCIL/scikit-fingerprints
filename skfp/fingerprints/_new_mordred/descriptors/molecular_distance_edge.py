@@ -56,7 +56,7 @@ def calc(
     mol_regular: Mol,
     adjacency_matrix_regular: AdjacencyMatrix,
     distance_matrix_regular: DistanceMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     num_atoms = mol_regular.GetNumAtoms()
     adj = adjacency_matrix_regular.matrix
     dists = distance_matrix_regular.matrix
@@ -86,4 +86,4 @@ def calc(
 
     values = counts * np.exp(-sum_log / counts)
 
-    return values.astype(np.float32), FEATURE_NAMES
+    return values.astype(np.float32)

@@ -131,7 +131,7 @@ RING_COUNT_FEATURES = _ring_count_features()
 FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
 
 
-def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol) -> np.ndarray:
     """
     Count simple and fused rings across size, aromaticity, and heteroatom filters.
     """
@@ -152,7 +152,7 @@ def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
         for feature in RING_COUNT_FEATURES
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 def _ring_atom_sets(mol: Mol) -> list[set[int]]:
