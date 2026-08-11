@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
-from functools import lru_cache
 
 import numpy as np
 import torch
-from huggingface_hub import hf_hub_download
 from rdkit.Chem import Mol
 from torch import nn
 
-from skfp.bases import BaseFingerprintTransformer
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
+from skfp.fingerprints.neural.base_neural_fp_transformer import (
+    BaseNeuralFingerprintTransformer,
+)
 from skfp.utils import ensure_mols
 
 
@@ -54,18 +56,7 @@ class CLAMPCompoundEncoder(nn.Module):
         return self.net(x)
 
 
-# module-level so lru_cache is keyed only by path, not by instance (avoids memory leaks)
-@lru_cache(maxsize=1)
-def _load_clamp_model(checkpoint_path: str) -> CLAMPCompoundEncoder:
-    """Load pretrained CLAMP compound encoder from a checkpoint file."""
-    model = CLAMPCompoundEncoder()
-    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.eval()
-    return model
-
-
-class CLAMPFingerprint(BaseFingerprintTransformer):
+class CLAMPFingerprint(BaseNeuralFingerprintTransformer):
     """
     CLAMP fingerprint.
 
@@ -86,13 +77,22 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
 
     n_jobs : int, default=None
         The number of jobs to run in parallel. :meth:`transform` is parallelized
-        over the input molecules. ``None`` means 1 unless in a
+        over the input molecules when the device is CPU. ``None`` means 1 unless in a
         :obj:`joblib.parallel_backend` context. ``-1`` means using all processors.
+        If the device is not CPU, the model runs all processing sequentially,
+        regardless of this value.
         See scikit-learn documentation on ``n_jobs`` for more details.
 
     batch_size : int, default=None
-        Number of inputs processed in each batch. ``None`` divides input data into
-        equal-sized parts, as many as ``n_jobs``.
+        Number of inputs processed in each forward pass through the model.
+        ``None`` means all inputs are processed in a single pass when running
+        sequentially. When running with multiple CPU jobs, ``None`` instead
+        divides the input into as many equal-sized parts as ``n_jobs``.
+
+    device : str or torch.device, default="cpu"
+        Device to use for the model inference. If the device is not CPU,
+        the model runs all processing sequentially, regardless of ``n_jobs``.
+        Use ``batch_size`` to bound memory usage on such devices.
 
     verbose : int or dict, default=0
         Controls the verbosity when computing fingerprints.
@@ -125,30 +125,25 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
     array([...], shape=(4, 768), dtype=float32)
     """
 
-    _CLAMP_HF_REPO = "scikit-fingerprints/clamp"
-    _CLAMP_HF_FILENAME = "compound_encoder.pt"
-
-    _parameter_constraints: dict = {
-        **BaseFingerprintTransformer._parameter_constraints,
-        "weights_path": [str, None],
-    }
+    _HF_REPO = "scikit-fingerprints/clamp"
+    _HF_FILENAME = "compound_encoder.pt"
 
     def __init__(
         self,
         weights_path: str | None = None,
         n_jobs: int | None = None,
         batch_size: int | None = None,
+        device: str | torch.device = "cpu",
         verbose: int | dict = 0,
     ):
         super().__init__(
             n_features_out=768,
-            count=False,
-            sparse=False,
             n_jobs=n_jobs,
             batch_size=batch_size,
             verbose=verbose,
+            device=device,
+            weights_path=weights_path,
         )
-        self.weights_path = weights_path
 
     def transform(self, X: Sequence[str | Mol], copy: bool = False) -> np.ndarray:
         """
@@ -178,29 +173,16 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         encoder : CLAMPCompoundEncoder
             Pretrained ``nn.Module`` in eval mode.
         """
-        path = self.weights_path or hf_hub_download(
-            repo_id=self._CLAMP_HF_REPO, filename=self._CLAMP_HF_FILENAME
-        )
-        return _load_clamp_model(path)
+        return super().get_model()
 
-    def get_input_features(self, X: Sequence[str | Mol]) -> np.ndarray:
-        """
-        Compute CLAMP encoder input features.
+    @classmethod
+    def _load_model(cls, path: str) -> CLAMPCompoundEncoder:
+        model = CLAMPCompoundEncoder()
+        checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        return model
 
-        Returns the intermediate 8192-dimensional representation used as input
-        to the pretrained encoder in :meth:`transform`: a log-scaled sum of
-        ECFP count and RDKit count fingerprints.
-
-        Parameters
-        ----------
-        X : {sequence of str or Mol}
-            Sequence containing SMILES strings or RDKit ``Mol`` objects.
-
-        Returns
-        -------
-        X : ndarray of shape (n_samples, 8192)
-            Array with encoder input features as float32.
-        """
+    def _prepare_input(self, X: Sequence[str | Mol]):
         X = ensure_mols(X)
         ecfp = ECFPFingerprint(
             fp_size=8192,
@@ -219,15 +201,7 @@ class CLAMPFingerprint(BaseFingerprintTransformer):
         rdkc = np.asarray(rdkit_fp.transform(X))
         return np.log(1.0 + ecfpc + rdkc).astype(np.float32)
 
-    def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray:
-        # "Mc+RDKc" preprocessing — see:
-        # https://github.com/ml-jku/mhn-react/blob/main/mhnreact/molutils.py#L161-L190
-        features = self.get_input_features(X)
-
+    def _forward_nn(self, X: torch.Tensor) -> torch.Tensor:
         model = self.get_model()
         with torch.inference_mode():
-            # np.asarray() ensures ndarray even under a global pandas
-            # transform_output config (torch.from_numpy() requires ndarray).
-            embeddings = model(torch.from_numpy(np.asarray(features))).numpy()
-
-        return embeddings
+            return model(X)
