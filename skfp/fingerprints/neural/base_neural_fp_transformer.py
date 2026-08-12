@@ -119,9 +119,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
         return self._get_cached_model(path, self.device)
 
     @classmethod
-    def _get_cached_model(
-        cls, path: str, device: str | torch.device
-    ) -> torch.nn.Module:
+    def _get_cached_model(cls, path: str, device: str | torch.device):
         """
         Get the cached model.
 
@@ -141,7 +139,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
 
     @classmethod
     @abstractmethod
-    def _load_model(cls, path: str) -> torch.nn.Module:
+    def _load_model(cls, path: str):
         """
         Construct the model and load its weights from a local checkpoint file.
 
