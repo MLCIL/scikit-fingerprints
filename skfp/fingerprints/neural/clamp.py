@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Sequence
 
 import numpy as np
@@ -10,6 +8,7 @@ from torch import nn
 from skfp.fingerprints import ECFPFingerprint, RDKitFingerprint
 from skfp.fingerprints.neural.base_neural_fp_transformer import (
     BaseNeuralFingerprintTransformer,
+    DeviceLike,
 )
 from skfp.utils import ensure_mols
 
@@ -133,7 +132,7 @@ class CLAMPFingerprint(BaseNeuralFingerprintTransformer):
         weights_path: str | None = None,
         n_jobs: int | None = None,
         batch_size: int | None = None,
-        device: str | torch.device = "cpu",
+        device: DeviceLike = "cpu",
         verbose: int | dict = 0,
     ):
         super().__init__(
