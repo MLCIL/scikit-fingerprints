@@ -162,6 +162,12 @@ class KNNADChecker(BaseADChecker):
         # single nearest neighbor matters, regardless of k
         self._k_used = 1 if self.agg == "min" else self.k
 
+        if self.agg == "min" and self.k > 1:
+            raise UserWarning(
+                f"k should be must be 1 when agg='min', because only "
+                f"the single nearest neighbor matters, got {self.k}"
+            )
+
         if callable(self.metric):
             metric_func = self.metric
         elif isinstance(self.metric, str) and self.metric in METRIC_FUNCTIONS:
