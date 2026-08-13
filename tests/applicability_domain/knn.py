@@ -24,7 +24,8 @@ def test_inside_knn_ad(metric, agg):
         n_train=100, n_test=10, data_type=get_metric_data_type(metric)
     )
 
-    ad_checker = KNNADChecker(k=3, metric=metric, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train)
 
     scores = ad_checker.score_samples(X_test)
@@ -45,7 +46,8 @@ def test_outside_knn_ad(metric, agg):
         n_train=100, n_test=10, data_type=get_metric_data_type(metric)
     )
 
-    ad_checker = KNNADChecker(k=3, metric=metric, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train)
 
     scores = ad_checker.score_samples(X_test)
@@ -89,7 +91,8 @@ def test_knn_pass_y_train(metric, agg):
     )
 
     y_train = np.zeros(len(X_train))
-    ad_checker = KNNADChecker(k=3, metric=metric, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train, y_train)
 
 
@@ -105,6 +108,14 @@ def test_knn_invalid_k(metric, agg):
         match=r"k \(\d+\) must be smaller than or equal to the number of training samples \(\d+\)",
     ):
         ad_checker = KNNADChecker(k=len(X_train) + 1, metric=metric, agg=agg)
+        ad_checker.fit(X_train)
+
+
+def test_knn_min_agg_with_k_above_1_warns():
+    X_train, _ = get_data_inside_ad(n_train=100)
+
+    ad_checker = KNNADChecker(k=3, agg="min")
+    with pytest.warns(UserWarning, match=r"k should be 1 when agg='min'"):
         ad_checker.fit(X_train)
 
 

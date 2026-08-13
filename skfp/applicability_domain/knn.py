@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 from numbers import Integral, Real
 
@@ -163,8 +164,8 @@ class KNNADChecker(BaseADChecker):
         self._k_used = 1 if self.agg == "min" else self.k
 
         if self.agg == "min" and self.k > 1:
-            raise UserWarning(
-                f"k should be must be 1 when agg='min', because only "
+            warnings.warn(
+                f"k should be 1 when agg='min', because only "
                 f"the single nearest neighbor matters, got {self.k}"
             )
 
