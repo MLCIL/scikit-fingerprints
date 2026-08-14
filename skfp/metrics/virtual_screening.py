@@ -1,4 +1,5 @@
 from numbers import Real
+from operator import itemgetter
 
 import numpy as np
 from rdkit.ML.Scoring.Scoring import CalcBEDROC, CalcEnrichment, CalcRIE
@@ -86,7 +87,10 @@ def enrichment_factor(
     y_score = check_array(y_score, ensure_2d=False)
     check_consistent_length(y_true, y_score)
 
-    scores = sorted(zip(y_score, y_true, strict=False), reverse=True)
+    # sort by score only, so that ties keep the original input order; sorting the
+    # (score, label) tuples would rank actives above inactives on equal scores,
+    # optimistically inflating the metric
+    scores = sorted(zip(y_score, y_true, strict=True), key=itemgetter(0), reverse=True)
 
     # RDKit returns a list, we have to extract the actual float
     # it can sometimes return an empty list, so we catch that and return 0.0 then, see:
@@ -184,7 +188,8 @@ def rie_score(
     y_score = check_array(y_score, ensure_2d=False)
     check_consistent_length(y_true, y_score)
 
-    scores = sorted(zip(y_score, y_true, strict=False), reverse=True)
+    # sort by score only to keep original order for ties
+    scores = sorted(zip(y_score, y_true, strict=True), key=itemgetter(0), reverse=True)
     return CalcRIE(scores, col=1, alpha=alpha)
 
 
@@ -261,5 +266,8 @@ def bedroc_score(
     y_score = check_array(y_score, ensure_2d=False)
     check_consistent_length(y_true, y_score)
 
-    scores = sorted(zip(y_score, y_true, strict=False), reverse=True)
+    # sort by score only, so that ties keep the original input order; sorting the
+    # (score, label) tuples would rank actives above inactives on equal scores,
+    # optimistically inflating the metric
+    scores = sorted(zip(y_score, y_true, strict=True), key=itemgetter(0), reverse=True)
     return CalcBEDROC(scores, col=1, alpha=alpha)

@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 from numbers import Integral, Real
 
@@ -108,7 +109,7 @@ class KNNADChecker(BaseADChecker):
     KNNADChecker(k=2)
 
     >>> knn_ad_checker_binary.predict(X_test_binary)
-    array([False, False, False])
+    array([False, False,  True])
 
     """
 
@@ -158,11 +159,15 @@ class KNNADChecker(BaseADChecker):
 
         self.X_train_ = X
 
-        # k+1, since we need to exclude each point from being its own neighbor
-        if self.agg == "min":
-            self._k_used = min(len(X), 2)
-        else:
-            self._k_used = min(len(X), self.k + 1)
+        # number of neighbors aggregated when scoring a sample; for "min" only the
+        # single nearest neighbor matters, regardless of k
+        self._k_used = 1 if self.agg == "min" else self.k
+
+        if self.agg == "min" and self.k > 1:
+            warnings.warn(
+                f"k should be 1 when agg='min', because only "
+                f"the single nearest neighbor matters, got {self.k}"
+            )
 
         if callable(self.metric):
             metric_func = self.metric
@@ -177,9 +182,13 @@ class KNNADChecker(BaseADChecker):
             n_neighbors=self._k_used, metric=metric_func, n_jobs=self.n_jobs
         )
         self.knn_.fit(X)
-        k_nearest, _ = self.knn_.kneighbors(X)
 
-        # exclude the point itself from the neighbors
+        # each training point is its own nearest neighbor, so we ask for one neighbor
+        # more and drop it, to calibrate the threshold on the same number of
+        # neighbors that .score_samples() aggregates for new molecules
+        k_nearest, _ = self.knn_.kneighbors(
+            X, n_neighbors=min(len(X), self._k_used + 1)
+        )
         k_nearest = k_nearest[:, 1:]
 
         agg_dists = self._get_agg_dists(k_nearest)
@@ -192,8 +201,9 @@ class KNNADChecker(BaseADChecker):
 
     def score_samples(self, X: np.ndarray) -> np.ndarray:
         """
-        Calculate the applicability domain score of samples. It is simply a 0/1
-        decision equal to ``.predict()``.
+        Calculate the applicability domain score of samples. It is the distance to
+        the ``k`` nearest training molecules, aggregated as specified by ``agg``.
+        Note that here lower score indicates sample more firmly inside AD.
 
         Parameters
         ----------

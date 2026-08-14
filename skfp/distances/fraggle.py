@@ -34,7 +34,7 @@ def fraggle_similarity(
     and Tanimoto similarity comparison using RDKit fingerprints.
 
     Query molecule is fragmented into "interesting" substructures by acyclic and
-    ring cuts, leaving only "large" parts of a molecule (>60%). Fragements are then
+    ring cuts, leaving only "large" parts of a molecule (>60%). Fragments are then
     compared with the reference molecule using Tversky similarity [3]_ (alpha=0.95,
     beta=0.05), keeping those with at least ``tversky_threshold`` similarity. Lastly,
     the Tanimoto similarity of RDKit fingerprints with path length 5 is computed for

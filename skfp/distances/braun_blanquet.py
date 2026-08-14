@@ -2,6 +2,8 @@ import numpy as np
 from scipy.sparse import csr_array
 from sklearn.utils._param_validation import validate_params
 
+from skfp.distances.utils import array_to_csr
+
 
 @validate_params(
     {
@@ -211,14 +213,12 @@ def bulk_braun_blanquet_binary_similarity(
     array([[1. , 0.5],
            [0.5, 0.5]])
     """
-    if not isinstance(X, csr_array):
-        X = csr_array(X)
+    X = array_to_csr(X)
 
     if Y is None:
         return _bulk_braun_blanquet_binary_similarity_single(X)
     else:
-        if not isinstance(Y, csr_array):
-            Y = csr_array(Y)
+        Y = array_to_csr(Y)
         return _bulk_braun_blanquet_binary_similarity_two(X, Y)
 
 
@@ -227,7 +227,8 @@ def _bulk_braun_blanquet_binary_similarity_single(X: csr_array) -> np.ndarray:
     row_sums = np.asarray(X.sum(axis=1)).ravel()
     max_denoms = np.maximum.outer(row_sums, row_sums)
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, max_denoms, out=sims, where=max_denoms != 0)
     np.fill_diagonal(sims, 1)
 
@@ -242,7 +243,8 @@ def _bulk_braun_blanquet_binary_similarity_two(
     row_sums_Y = np.asarray(Y.sum(axis=1)).ravel()
     max_denoms = np.maximum.outer(row_sums_X, row_sums_Y)
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, max_denoms, out=sims, where=max_denoms != 0)
 
     return sims

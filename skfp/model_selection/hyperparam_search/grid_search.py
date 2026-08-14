@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from time import time
 
@@ -160,7 +161,7 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
     def _validate_params(self):
         super()._validate_params()
         if not self.fp_param_grid:
-            raise InvalidParameterError("fp_param_grid cannot not be empty")
+            raise InvalidParameterError("fp_param_grid cannot be empty")
 
     @_fit_context(prefer_skip_nested_validation=False)
     def fit(self, X: Sequence[str | Mol], y=None, **params):
@@ -199,6 +200,8 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
         if self.verbose:
             print(f"Fitting {param_grid_size} candidate hyperparameter sets.")
 
+        warned_collisions = False
+
         for idx, fp_params in enumerate(param_grid):
             if self._print_messages():
                 self._print_start_msg(
@@ -217,6 +220,18 @@ class FingerprintEstimatorGridSearch(BaseEstimator):
             curr_cv.fit(X_fp, y, **params)
             curr_score = curr_cv.best_score_
             estimator_params = curr_cv.best_params_
+
+            # fingerprint and estimator parameter names share a flat namespace in
+            # cv_results_; this can theoretically collide, so we raise a warning in this case
+            collisions = sorted(set(fp_params) & set(estimator_params))
+            if collisions and not warned_collisions:
+                warnings.warn(
+                    f"Fingerprint and estimator share hyperparameter names "
+                    f"{collisions}, so cv_results_ reports only the estimator values "
+                    f"for them. Use best_fp_params_ for the fingerprint values.",
+                    stacklevel=2,
+                )
+                warned_collisions = True
 
             result = {**fp_params, **estimator_params, "score": curr_score}
             self.cv_results_.append(result)

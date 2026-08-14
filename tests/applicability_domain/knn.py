@@ -3,7 +3,11 @@ import pytest
 from numpy.testing import assert_equal
 
 from skfp.applicability_domain import KNNADChecker
-from tests.applicability_domain.utils import get_data_inside_ad, get_data_outside_ad
+from tests.applicability_domain.utils import (
+    get_data_inside_ad,
+    get_data_outside_ad,
+    get_metric_data_type,
+)
 
 ALLOWED_METRICS = [
     "tanimoto_binary_distance",
@@ -16,12 +20,12 @@ ALLOWED_AGGREGATIONS = ["mean", "max", "min"]
 @pytest.mark.parametrize("metric", ALLOWED_METRICS)
 @pytest.mark.parametrize("agg", ALLOWED_AGGREGATIONS)
 def test_inside_knn_ad(metric, agg):
-    if "binary" in metric:
-        X_train, X_test = get_data_inside_ad(n_train=100, n_test=10, binarize=True)
-    else:
-        X_train, X_test = get_data_inside_ad(n_train=100, n_test=10)
+    X_train, X_test = get_data_inside_ad(
+        n_train=100, n_test=10, data_type=get_metric_data_type(metric)
+    )
 
-    ad_checker = KNNADChecker(k=3, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train)
 
     scores = ad_checker.score_samples(X_test)
@@ -38,12 +42,12 @@ def test_inside_knn_ad(metric, agg):
 @pytest.mark.parametrize("metric", ALLOWED_METRICS)
 @pytest.mark.parametrize("agg", ALLOWED_AGGREGATIONS)
 def test_outside_knn_ad(metric, agg):
-    if "binary" in metric:
-        X_train, X_test = get_data_outside_ad(n_train=100, n_test=10, binarize=True)
-    else:
-        X_train, X_test = get_data_outside_ad(n_train=100, n_test=10)
+    X_train, X_test = get_data_outside_ad(
+        n_train=100, n_test=10, data_type=get_metric_data_type(metric)
+    )
 
-    ad_checker = KNNADChecker(k=3, metric=metric, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train)
 
     scores = ad_checker.score_samples(X_test)
@@ -59,10 +63,9 @@ def test_outside_knn_ad(metric, agg):
 @pytest.mark.parametrize("metric", ALLOWED_METRICS)
 @pytest.mark.parametrize("agg", ALLOWED_AGGREGATIONS)
 def test_knn_different_k_values(metric, agg):
-    if "binary" in metric:
-        X_train, X_test = get_data_inside_ad(n_train=100, n_test=10, binarize=True)
-    else:
-        X_train, X_test = get_data_inside_ad(n_train=100, n_test=10)
+    X_train, X_test = get_data_inside_ad(
+        n_train=100, n_test=10, data_type=get_metric_data_type(metric)
+    )
 
     # smaller k, stricter check
     ad_checker_k1 = KNNADChecker(k=1, metric=metric, agg=agg)
@@ -83,29 +86,36 @@ def test_knn_different_k_values(metric, agg):
 @pytest.mark.parametrize("agg", ALLOWED_AGGREGATIONS)
 def test_knn_pass_y_train(metric, agg):
     # smoke test, should not throw errors
-    if "binary" in metric:
-        X_train, _ = get_data_inside_ad(n_train=100, n_test=10, binarize=True)
-    else:
-        X_train, _ = get_data_inside_ad(n_train=100, n_test=10)
+    X_train, _ = get_data_inside_ad(
+        n_train=100, n_test=10, data_type=get_metric_data_type(metric)
+    )
 
     y_train = np.zeros(len(X_train))
-    ad_checker = KNNADChecker(k=3, metric=metric, agg=agg)
+    k = 1 if agg == "min" else 3
+    ad_checker = KNNADChecker(k=k, metric=metric, agg=agg)
     ad_checker.fit(X_train, y_train)
 
 
 @pytest.mark.parametrize("metric", ALLOWED_METRICS)
 @pytest.mark.parametrize("agg", ALLOWED_AGGREGATIONS)
 def test_knn_invalid_k(metric, agg):
-    if "binary" in metric:
-        X_train, _ = get_data_inside_ad(n_train=100, n_test=10, binarize=True)
-    else:
-        X_train, _ = get_data_inside_ad(n_train=100, n_test=10)
+    X_train, _ = get_data_inside_ad(
+        n_train=100, n_test=10, data_type=get_metric_data_type(metric)
+    )
 
     with pytest.raises(
         ValueError,
         match=r"k \(\d+\) must be smaller than or equal to the number of training samples \(\d+\)",
     ):
         ad_checker = KNNADChecker(k=len(X_train) + 1, metric=metric, agg=agg)
+        ad_checker.fit(X_train)
+
+
+def test_knn_min_agg_with_k_above_1_warns():
+    X_train, _ = get_data_inside_ad(n_train=100)
+
+    ad_checker = KNNADChecker(k=3, agg="min")
+    with pytest.warns(UserWarning, match=r"k should be 1 when agg='min'"):
         ad_checker.fit(X_train)
 
 

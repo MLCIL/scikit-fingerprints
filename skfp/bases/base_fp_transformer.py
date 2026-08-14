@@ -25,6 +25,7 @@ from sklearn.utils._param_validation import InvalidParameterError
 from tqdm import tqdm
 
 from skfp.utils import run_in_parallel
+from skfp.utils.parallel import get_tqdm_settings
 
 """
 If you get MaybeEncodingError, first check any worker functions for exceptions!
@@ -207,8 +208,13 @@ class BaseFingerprintTransformer(
 
         n_jobs = effective_n_jobs(self.n_jobs)
         if n_jobs == 1:
-            if self.verbose:
-                results = [self._calculate_fingerprint([mol]) for mol in tqdm(X)]
+            tqdm_settings = get_tqdm_settings(self.verbose, total=len(X))
+            if not tqdm_settings["disable"]:
+                # one molecule at a time, so that the progress bar can advance
+                results = [
+                    self._calculate_fingerprint([mol])
+                    for mol in tqdm(X, **tqdm_settings)
+                ]
             else:
                 results = self._calculate_fingerprint(X)
         else:

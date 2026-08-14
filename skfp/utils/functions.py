@@ -17,15 +17,13 @@ def get_data_from_indices(data: Sequence, indices: Sequence[int]) -> list:
         return [data[idx] for idx in indices]
 
 
-def _get_sklearn_version():
-    sklearn_ver = version("scikit-learn")  # e.g. 1.6.0
-    sklearn_ver = ".".join(sklearn_ver.split(".")[:2])  # e.g. 1.6
-    return float(sklearn_ver)
+def _get_sklearn_version() -> tuple[int, int]:
+    sklearn_ver = version("scikit-learn")  # e.g. "1.6.0"
+    major, minor = sklearn_ver.split(".")[:2]
+    return int(major), int(minor)
 
 
 def _get_rdkit_version() -> tuple[int, int, int]:
-    # Unlike scikit-learn which uses float (broken for minor >= 10, e.g. 2025.1 == 2025.10),
-    # we return a tuple for correct ordering.
     rdkit_ver = rdBase.rdkitVersion  # e.g. "2025.09.3"
     parts = rdkit_ver.split(".")
     if len(parts) < 3:

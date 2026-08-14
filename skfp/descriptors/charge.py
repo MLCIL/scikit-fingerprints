@@ -23,8 +23,8 @@ def atomic_partial_charges(
     partial_charge_model : {"Gasteiger", "MMFF94", "formal", "precomputed"}, default="formal"
         Which model to use to compute atomic partial charges. Default ``"formal"``
         computes formal charges, and is the simplest and most error-resistant one.
-        ``"precomputed"`` assumes that the inputs are RDKit ``PropertyMol`` objects
-        with "charge" float property set.
+        ``"precomputed"`` assumes that every atom of the input molecule has a
+        "charge" float property set, e.g. with ``atom.SetDoubleProp("charge", value)``.
 
     charge_errors : {"raise", "ignore", "zero"}, default="raise"
         How to handle errors during calculation of atomic partial charges. ``"raise"``
@@ -54,6 +54,14 @@ def atomic_partial_charges(
     elif partial_charge_model == "formal":
         charges = [atom.GetFormalCharge() for atom in atoms]
     elif partial_charge_model == "precomputed":
+        # RDKit raises a bare KeyError if the property is missing, which gives no
+        # hint about what the caller was supposed to set
+        if not all(atom.HasProp("charge") for atom in atoms):
+            raise ValueError(
+                'partial_charge_model="precomputed" requires every atom to have a '
+                '"charge" float property set, e.g. with '
+                'atom.SetDoubleProp("charge", value)'
+            )
         charges = [atom.GetDoubleProp("charge") for atom in atoms]
     else:
         raise ValueError(

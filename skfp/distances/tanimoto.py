@@ -2,6 +2,8 @@ import numpy as np
 from scipy.sparse import csr_array
 from sklearn.utils._param_validation import validate_params
 
+from skfp.distances.utils import array_to_csr
+
 
 @validate_params(
     {
@@ -347,15 +349,12 @@ def bulk_tanimoto_binary_similarity(
     array([[1.        , 0.33333333],
            [0.5       , 0.5       ]])
     """
-    if not isinstance(X, csr_array):
-        X = csr_array(X)
+    X = array_to_csr(X)
 
     if Y is None:
         return _bulk_tanimoto_binary_similarity_single(X)
     else:
-        if not isinstance(Y, csr_array):
-            Y = csr_array(Y, dtype=float)
-
+        Y = array_to_csr(Y)
         return _bulk_tanimoto_binary_similarity_two(X, Y)
 
 
@@ -366,7 +365,8 @@ def _bulk_tanimoto_binary_similarity_single(X: csr_array) -> np.ndarray:
     row_sums = np.asarray(X.sum(axis=1)).ravel()
     unions = np.add.outer(row_sums, row_sums) - intersection
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, unions, out=sims, where=unions != 0)
 
     return sims
@@ -382,7 +382,8 @@ def _bulk_tanimoto_binary_similarity_two(X: csr_array, Y: csr_array) -> np.ndarr
 
     unions = np.add.outer(row_sums_X, row_sums_Y) - intersection
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs are similar by convention, so we initialize with ones
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, unions, out=sims, where=unions != 0)
 
     return sims
@@ -497,15 +498,12 @@ def bulk_tanimoto_count_similarity(
     array([[1.        , 0.33333333],
            [0.5       , 0.5       ]])
     """
-    if not isinstance(X, csr_array):
-        X = csr_array(X)
+    X = array_to_csr(X)
 
     if Y is None:
         return _bulk_tanimoto_count_similarity_single(X)
     else:
-        if not isinstance(Y, csr_array):
-            Y = csr_array(Y, dtype=float)
-
+        Y = array_to_csr(Y)
         return _bulk_tanimoto_count_similarity_two(X, Y)
 
 
@@ -515,7 +513,9 @@ def _bulk_tanimoto_count_similarity_single(X: csr_array) -> np.ndarray:
     row_norms = np.asarray(X.multiply(X).sum(axis=1)).ravel()
     unions = np.add.outer(row_norms, row_norms) - intersection
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs have an empty union and are similar by convention, see
+    # tanimoto_count_similarity(); initializing with ones leaves them at 1
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, unions, out=sims, where=unions >= 1e-8)
 
     np.fill_diagonal(sims, 1)
@@ -531,7 +531,9 @@ def _bulk_tanimoto_count_similarity_two(X: csr_array, Y: csr_array) -> np.ndarra
 
     unions = np.add.outer(row_norms_X, row_norms_Y) - intersection
 
-    sims = np.empty_like(intersection, dtype=float)
+    # all-zero pairs have an empty union and are similar by convention, see
+    # tanimoto_count_similarity(); initializing with ones leaves them at 1
+    sims = np.ones_like(intersection, dtype=float)
     np.divide(intersection, unions, out=sims, where=unions >= 1e-8)
 
     return sims

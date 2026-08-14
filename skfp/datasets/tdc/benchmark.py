@@ -156,7 +156,7 @@ def load_tdc_benchmark(
     TDC [1]_ datasets are varied molecular property prediction tasks. Scaffold split is
     recommended for all of them. The tasks are split into 3 different groups:
 
-    - ADME - absorbtion, distribution, metabolism, excertion
+    - ADME - absorption, distribution, metabolism, excretion
     - HTS - high-throughput screening
     - Toxicity - toxicity
 

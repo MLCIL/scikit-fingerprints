@@ -195,17 +195,17 @@ def load_lrgb_mol_dataset(
     >>> from skfp.datasets.lrgb import load_lrgb_mol_dataset
     >>> dataset = load_lrgb_mol_dataset("Peptides-func")
     >>> dataset  # doctest: +SKIP
-    (['[Cl].CC(C)NCC(O)COc1cccc2ccccc12', ..., '[N+](=NCC(=O)N[C@@H]([C@H](O)C1=CC=C([N+]([O-])=O)C=C1)CO)=[N-]'], \
-array([1, 1, 1, ..., 1, 1, 1]))
+    (['CC(C)C[C@H](NC(=O)[C@H](CCCC[NH3+])NC(=O)[C@@H](N)C(C)C)...', ...], \
+array([[0, 0, 0, ..., 0, 0, 1], ..., [0, 1, 0, ..., 0, 0, 0]]))
 
     >>> dataset = load_lrgb_mol_dataset("Peptides-func", as_frame=True)
-    >>> dataset.head() # doctest: +NORMALIZE_WHITESPACE
-                                                  SMILES  label
-    0                   [Cl].CC(C)NCC(O)COc1cccc2ccccc12      1
-    1           C(=O)(OC(C)(C)C)CCCc1ccc(cc1)N(CCCl)CCCl      1
-    2  c12c3c(N4CCN(C)CC4)c(F)cc1c(c(C(O)=O)cn2C(C)CO...      1
-    3                   C1CCN(CC1)Cc1cccc(c1)OCCCNC(=O)C      1
-    4  Cc1onc(c2ccccc2Cl)c1C(=O)N[C@H]3[C@H]4SC(C)(C)...      1
+    >>> dataset.shape
+    (15535, 12)
+
+    >>> list(dataset.columns)  # doctest: +NORMALIZE_WHITESPACE
+    ['SMILES', 'aminoseq', 'antifungal', 'cell_cell_communication', 'anticancer',
+     'drug_delivery_vehicle', 'antimicrobial', 'antiviral', 'antihypertensive',
+     'antibacterial', 'antiparasitic', 'toxic']
     """
     if dataset_name == "Peptides-func":
         return load_peptides_func(data_dir, mol_type, as_frame, verbose, force_update)

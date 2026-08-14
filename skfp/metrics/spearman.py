@@ -12,6 +12,7 @@ from skfp.utils.functions import _get_sklearn_version
         "y_pred": ["array-like"],
         "alternative": [StrOptions({"two-sided", "less", "greater"})],
         "return_p_value": ["boolean"],
+        "equal_values_result": [float],
     },
     prefer_skip_nested_validation=True,
 )
@@ -75,7 +76,7 @@ def spearman_correlation(
     >>> spearman_correlation(y_true, y_pred)  # doctest: +SKIP
     -1.0
     """
-    if _get_sklearn_version() < 1.7:
+    if _get_sklearn_version() < (1, 7):
         y_data_type, y_true, y_pred, multioutput = _check_reg_targets(
             y_true, y_pred, multioutput=None
         )

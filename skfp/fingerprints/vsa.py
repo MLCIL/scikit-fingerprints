@@ -15,7 +15,7 @@ class VSAFingerprint(BaseFingerprintTransformer):
 
     The implementation uses RDKit. This is a descriptor-based fingerprint, which
     calculates the atomic contributions to the approximate van der Waals surface
-    area (VSA / ASA), based on given atomc properties [1]_.
+    area (VSA / ASA), based on given atomic properties [1]_.
 
     To calculate VSA, one gets the contribution of each atom in the molecule to
     a molecular property (e.g. SLogP) along with the contribution of each atom to
@@ -27,7 +27,7 @@ class VSAFingerprint(BaseFingerprintTransformer):
 
     - SlogP, calculated water-octanol partition coefficient, measures lipophilicity [2]_
     - SMR, molar refractivity, measures polarizability [2]_
-    - PEOE, Gasteiger partal charges, measure direct electrostatic interactions [3]_
+    - PEOE, Gasteiger partial charges, measure direct electrostatic interactions [3]_
     - EState, electrotopological states, encode information about both the topological
       environment of that atom and the electronic interactions [4]_
 

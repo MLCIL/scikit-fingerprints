@@ -21,6 +21,10 @@ class MordredFingerprint(BaseFingerprintTransformer):
     computed properties (e.g. ClogP, polarizability), and more. For a full list, see
     Supplementary File 3 in the original publication [1]_.
 
+    Many descriptors are often undefined for a given molecule and result in NaN, e.g.
+    ring descriptors for acyclic structures. Feature selection and/or imputation must
+    often be used before passing the result to downstream estimators.
+
     Parameters
     ----------
     use_3D : bool, default=False

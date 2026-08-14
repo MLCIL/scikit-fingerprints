@@ -108,7 +108,12 @@ def element_atom_count(mol: Mol, atom_id: int | str) -> int:
     6
     """
     if atom_id in (1, "H"):
-        return sum(atom.GetTotalNumHs() for atom in mol.GetAtoms())
+        # includeNeighbors also counts hydrogens present as explicit atoms
+        return sum(
+            atom.GetTotalNumHs(includeNeighbors=True)
+            for atom in mol.GetAtoms()
+            if atom.GetAtomicNum() != 1
+        )
     else:
         return sum(
             1

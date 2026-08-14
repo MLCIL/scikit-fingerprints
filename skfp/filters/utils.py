@@ -20,8 +20,8 @@ def get_num_heavy_metals(mol: Mol) -> int:
     # non-metals and non-heavy metals
     # fmt: off
     not_heavy_metals = {
-        "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Si", "P", "S",
-        "Cl", "Ar", "K", "Ca", "As", "Se", "Br", "Kr", "Te", "I", "Xe", "At", "Rn"
+        "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Si", "P",
+        "S", "Cl", "Ar", "K", "Ca", "As", "Se", "Br", "Kr", "Te", "I", "Xe", "At", "Rn"
     }
     # fmt: on
 
