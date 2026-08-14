@@ -1,9 +1,3 @@
-"""
-Base class for neural fingerprints. Stored in ``skfp.fingerprints.neural``
-instead of ``skfp.bases`` to avoid optional dependencies outside
-of the ``skfp.fingerprints.neural`` module.
-"""
-
 from abc import abstractmethod
 from collections.abc import Sequence
 from copy import deepcopy
@@ -21,6 +15,10 @@ from tqdm import tqdm
 from skfp.bases.base_fp_transformer import BaseFingerprintTransformer
 from skfp.utils import run_in_parallel
 
+# Base class for neural fingerprints. Stored in ``skfp.fingerprints.neural``
+# instead of ``skfp.bases`` to avoid optional dependencies outside
+# of the ``skfp.fingerprints.neural`` module.
+
 _MODEL_CACHE: dict[tuple[type, str, str], object] = {}
 
 # NOTE: Sphinx builds docs with `autodoc_mock_imports = ["torch"]` (see
@@ -33,7 +31,7 @@ _MODEL_CACHE: dict[tuple[type, str, str], object] = {}
 # Fix by deferring evaluation: either `from __future__ import annotations`
 # at the top of the file, or `typing.Union[...]` with the torch side quoted
 # as a forward reference, as done below. Quoting only PART of a live `|`
-# expression (e.g. `str | "torch.device"`) does NOT work — the operator has
+# expression (e.g. `str | "torch.device"`) does NOT work - the operator has
 # no special handling of string literals either, so that raises the same
 # error.
 DeviceLike = Union[str, "torch.device"]
@@ -226,7 +224,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
         Construct the model and load its weights from a local checkpoint file.
 
         The base class moves the returned model to the requested device, sets
-        it to evaluation mode, and caches it — this hook only needs to build
+        it to evaluation mode, and caches it - this hook only needs to build
         the model and load the checkpoint.
         """
         raise NotImplementedError
