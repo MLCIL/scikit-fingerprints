@@ -27,13 +27,11 @@ _MODEL_CACHE: dict[tuple[type, str, str], object] = {}
 # eagerly at class-definition time and has no special handling for mock
 # objects, so combining one via `|` (e.g. `str | torch.device`) raises a
 # `TypeError` under the mock. A bare, non-union annotation is fine either way.
-#
-# Fix by deferring evaluation: either `from __future__ import annotations`
-# at the top of the file, or `typing.Union[...]` with the torch side quoted
-# as a forward reference, as done below. Quoting only PART of a live `|`
-# expression (e.g. `str | "torch.device"`) does NOT work - the operator has
-# no special handling of string literals either, so that raises the same
-# error.
+
+# This is fixed either by deferring evaluation to runtime by using
+# `from __future__ import annotations` at the top of the file,
+# or by utilizing ``typing.Union`` lazy evaluation with str mock
+# ``torch.device`` as done in this case.
 DeviceLike = Union[str, "torch.device"]
 TensorLike = Union["torch.Tensor", np.ndarray]
 
