@@ -164,7 +164,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # hydrogen-explicit molecule
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
-    props_hydrogens = AtomicProperties.from_mol(mol_hydrogens)
+    props_hydrogens = AtomicProperties.with_hydrogens_added(
+        mol_hydrogens, props_regular
+    )
     distance_matrix_hydrogens = DistanceMatrix(mol_hydrogens)
     gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
 
