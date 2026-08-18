@@ -1,11 +1,12 @@
-"""Code has been adapted from the BSD-licensed mordred-community library.
+"""
+Code has been adapted from the BSD-licensed mordred-community library.
 
 https://github.com/JacksonBurns/mordred-community
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-# 2D descriptors, in the order mordred lists them
+# 2D descriptors
 FEATURE_NAMES_2D = [
     "ABC",
     "ABCGG",
@@ -648,30 +649,30 @@ FEATURE_NAMES_2D = [
     "Geary_autocorr_ionization_potential_lag_6",
     "Geary_autocorr_ionization_potential_lag_7",
     "Geary_autocorr_ionization_potential_lag_8",
-    "BCUT_gasteiger_charge_largest_eigval",
-    "BCUT_gasteiger_charge_smallest_eigval",
-    "BCUT_valence_electrons_largest_eigval",
-    "BCUT_valence_electrons_smallest_eigval",
-    "BCUT_sigma_electrons_largest_eigval",
-    "BCUT_sigma_electrons_smallest_eigval",
-    "BCUT_intrinsic_state_largest_eigval",
-    "BCUT_intrinsic_state_smallest_eigval",
-    "BCUT_atomic_number_largest_eigval",
     "BCUT_atomic_number_smallest_eigval",
-    "BCUT_mass_largest_eigval",
+    "BCUT_atomic_number_largest_eigval",
     "BCUT_mass_smallest_eigval",
-    "BCUT_van_der_Waals_volume_largest_eigval",
+    "BCUT_mass_largest_eigval",
     "BCUT_van_der_Waals_volume_smallest_eigval",
-    "BCUT_Sanderson_electronegativity_largest_eigval",
+    "BCUT_van_der_Waals_volume_largest_eigval",
     "BCUT_Sanderson_electronegativity_smallest_eigval",
-    "BCUT_Pauling_electronegativity_largest_eigval",
+    "BCUT_Sanderson_electronegativity_largest_eigval",
     "BCUT_Pauling_electronegativity_smallest_eigval",
-    "BCUT_Allred_Rochow_electronegativity_largest_eigval",
+    "BCUT_Pauling_electronegativity_largest_eigval",
     "BCUT_Allred_Rochow_electronegativity_smallest_eigval",
-    "BCUT_polarizability_largest_eigval",
+    "BCUT_Allred_Rochow_electronegativity_largest_eigval",
     "BCUT_polarizability_smallest_eigval",
-    "BCUT_ionization_potential_largest_eigval",
+    "BCUT_polarizability_largest_eigval",
     "BCUT_ionization_potential_smallest_eigval",
+    "BCUT_ionization_potential_largest_eigval",
+    "BCUT_valence_electrons_smallest_eigval",
+    "BCUT_valence_electrons_largest_eigval",
+    "BCUT_sigma_electrons_smallest_eigval",
+    "BCUT_sigma_electrons_largest_eigval",
+    "BCUT_intrinsic_state_smallest_eigval",
+    "BCUT_intrinsic_state_largest_eigval",
+    "BCUT_gasteiger_charge_smallest_eigval",
+    "BCUT_gasteiger_charge_largest_eigval",
     "BalabanJ",
     "SpAbs_Dzatomic_number",
     "SpMax_Dzatomic_number",
@@ -1622,7 +1623,7 @@ FEATURE_NAMES_2D = [
     "mZagreb2",
 ]
 
-# descriptors that need a conformer, in the order mordred lists them
+# 3D, conformer-based descriptors
 FEATURE_NAMES_3D = [
     "PNSA1",
     "PNSA2",
@@ -1839,6 +1840,4 @@ FEATURE_NAMES_3D = [
     "PBF",
 ]
 
-# the 3D output appends the conformer descriptors to the 2D ones, so a 2D feature
-# sits at the same position whether or not the 3D ones are computed
 ALL_FEATURE_NAMES = FEATURE_NAMES_2D + FEATURE_NAMES_3D
