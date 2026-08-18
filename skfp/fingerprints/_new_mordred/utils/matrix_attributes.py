@@ -165,8 +165,10 @@ def _log_estrada_index(eigvals: np.ndarray, leading: np.ndarray) -> np.ndarray:
     ``log(1 + sum(exp(lambda_i)))`` instead of the documented formula.
     See https://github.com/JacksonBurns/mordred-community/issues/24.
     """
-    shift = np.maximum(leading, 0)[:, np.newaxis]
-    return (shift + np.log(np.exp(eigvals - shift).sum(axis=1, keepdims=True))).ravel()
+    shift = np.maximum(leading, 0)
+    shifted_eigvals = eigvals - shift[:, np.newaxis]
+    log_sum_exp = np.log(np.sum(np.exp(shifted_eigvals), axis=1))
+    return shift + log_sum_exp
 
 
 @np.errstate(divide="ignore", invalid="ignore")
