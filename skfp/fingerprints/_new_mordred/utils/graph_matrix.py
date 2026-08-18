@@ -56,6 +56,10 @@ class DistanceMatrix:
         is the shortest path to the atom it hangs off plus that one bond, and the
         one between two hydrogens has such a bond at both ends. All-pairs shortest
         paths with RDKit is more expensive than such filling.
+
+        Atoms of different fragments are not connected by any path, and RDKit reports
+        a fixed placeholder distance for such a pair, which those added bonds must
+        not grow.
         """
         heavy_distances = distances.matrix
         num_heavy = len(heavy_distances)
@@ -68,6 +72,10 @@ class DistanceMatrix:
         matrix[:num_heavy, num_heavy:] = to_hydrogens
         matrix[num_heavy:, :num_heavy] = to_hydrogens.T
         matrix[num_heavy:, num_heavy:] = heavy_distances[parents][:, parents] + 2.0
+
+        # RDKit uses a placeholder distance between atoms of from different fragments
+        _rdkit_disconnected_distance = 1e8
+        np.minimum(matrix, _rdkit_disconnected_distance, out=matrix)
         np.fill_diagonal(matrix, 0.0)
         return cls(matrix)
 
@@ -106,8 +114,9 @@ class AdjacencyMatrix:
         self.matrix = GetAdjacencyMatrix(
             mol, useBO=use_bond_orders, prefix=_cache_prefix(use_bond_orders)
         )
-        # number of edges incident to each atom; with use_bond_orders that counts
-        # bond orders instead, otherwise it is the number of bonds the atom forms
+        # By default ``use_bond_orders=False``, so bond orders are ignored, and each
+        # bond counts as one edge. In that case, atom degree equals the atom
+        # valence, i.e. the number of bonds each atom forms.
         self.degree = self.matrix.sum(axis=0, dtype=float)
         self._powers = [self.matrix]
 
