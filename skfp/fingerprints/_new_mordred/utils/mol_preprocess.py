@@ -3,7 +3,7 @@ from collections.abc import Callable
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Atom
+from rdkit.Chem.rdchem import Atom, Bond
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -19,8 +19,29 @@ def atoms_apply_func(
     """
     Apply a function to each atom of a molecule and return the results as a
     NumPy array of shape ``(N,)``, where ``N`` is the number of atoms.
+
+    Atoms are fetched by index rather than by iterating ``mol.GetAtoms()``, whose
+    Python-level sequence wrapper costs more than the atom lookup itself.
     """
-    return np.fromiter((f(a) for a in mol.GetAtoms()), dtype, mol.GetNumAtoms())
+    num_atoms = mol.GetNumAtoms()
+    return np.fromiter(
+        (f(mol.GetAtomWithIdx(idx)) for idx in range(num_atoms)), dtype, num_atoms
+    )
+
+
+def bonds_apply_func(
+    f: Callable[[Bond], float], mol: Mol, dtype: str | np.dtype | type = "float"
+) -> np.ndarray:
+    """
+    Apply a function to each bond of a molecule and return the results as a
+    NumPy array of shape ``(B,)``, where ``B`` is the number of bonds.
+
+    Bonds are fetched by index, for the same reason as in :func:`atoms_apply_func`.
+    """
+    num_bonds = mol.GetNumBonds()
+    return np.fromiter(
+        (f(mol.GetBondWithIdx(idx)) for idx in range(num_bonds)), dtype, num_bonds
+    )
 
 
 def preprocess_mol(

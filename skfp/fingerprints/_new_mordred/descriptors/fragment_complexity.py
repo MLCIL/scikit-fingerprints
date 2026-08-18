@@ -1,5 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
+
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -11,12 +12,12 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["fragCpx"]
 
 
-def calc(mol: Mol) -> np.ndarray:
+def calc(props: AtomicProperties) -> np.ndarray:
     """
     Compute the Mordred fragment complexity descriptor.
     """
-    n_atoms = mol.GetNumAtoms()
-    n_bonds = mol.GetNumBonds()
-    n_hetero = sum(1 for atom in mol.GetAtoms() if atom.GetAtomicNum() != 6)
+    n_atoms = props.num_atoms
+    n_bonds = props.num_bonds
+    n_hetero = int(np.count_nonzero(props.atomic_nums != 6))
     value = abs(n_bonds**2 - n_atoms**2 + n_atoms) + n_hetero / 100
     return np.asarray([value], dtype=np.float32)

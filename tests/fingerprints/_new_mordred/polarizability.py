@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 from skfp.fingerprints._new_mordred.descriptors.polarizability import (
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -35,5 +36,5 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_polarizability_values(name, expected, mordred_test_mols):
     mol_hydrogens = preprocess_mol(mordred_test_mols[name], explicit_hydrogens=True)
 
-    values = calc(mol_hydrogens)
+    values = calc(AtomicProperties.from_mol(mol_hydrogens))
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-5)
