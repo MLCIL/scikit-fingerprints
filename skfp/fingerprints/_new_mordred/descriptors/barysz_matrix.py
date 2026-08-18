@@ -32,7 +32,7 @@ _ATTR_NAMES = [
 FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in PROPERTY_FUNCS for attr in _ATTR_NAMES]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
     """
     Barysz matrix spectral descriptors.
 
@@ -48,7 +48,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
             len(PROPERTY_FUNCS) * len(_ATTR_NAMES), np.nan, dtype=np.float32
         )
 
-        return values_nan, FEATURE_NAMES
+        return values_nan
 
     values: list = []
     for prop_func in PROPERTY_FUNCS.values():
@@ -58,7 +58,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
         else:
             values.extend(_barysz_matrix_attribute_values(mol_regular, n_frags, matrix))
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 @np.errstate(divide="ignore", invalid="ignore")

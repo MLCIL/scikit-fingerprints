@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.wiener_index import (
-    FEATURE_NAMES,
     calc,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
@@ -39,7 +38,5 @@ def test_wiener_index_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
     distance_matrix_regular = DistanceMatrix(mol_regular)
 
-    values, feature_names = calc(mol_regular, distance_matrix_regular)
-
-    assert feature_names == FEATURE_NAMES
+    values = calc(mol_regular, distance_matrix_regular)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

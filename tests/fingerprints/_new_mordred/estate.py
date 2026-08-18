@@ -2,7 +2,7 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.estate import calc
+from skfp.fingerprints._new_mordred.descriptors.estate import FEATURE_NAMES, calc
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,8 +16,8 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def histidine_estate_features() -> dict[str, float]:
     # histidine tests in Mordred use a different tautomer from regular SDF file one
     mol = MolFromSmiles("NC(Cc1c[nH]cn1)C(=O)O")
-    values, feature_names = calc(mol)
-    return dict(zip(feature_names, values, strict=True))
+    values = calc(mol)
+    return dict(zip(FEATURE_NAMES, values, strict=True))
 
 
 @pytest.mark.parametrize(

@@ -48,9 +48,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(
-    mol_hydrogens: Mol, distance_matrix_hydrogens: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_hydrogens: Mol, distance_matrix_hydrogens: DistanceMatrix) -> np.ndarray:
     """
     Autocorrelation descriptors.
 
@@ -84,7 +82,7 @@ def calc(
     gats = _calc_gats(atomic_props, dist_stack, pair_counts)
 
     values = np.concatenate([ats, aats, atsc, aatsc, mats, gats], dtype=np.float32)
-    return values, FEATURE_NAMES
+    return values
 
 
 @np.errstate(divide="ignore", invalid="ignore")

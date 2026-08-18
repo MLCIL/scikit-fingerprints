@@ -40,7 +40,5 @@ FEATURE_NAMES = [
 def test_atom_count_values(smiles, expected):
     mol = MolFromSmiles(smiles)
 
-    values, feature_names = atom_count.calc(mol)
-
-    assert feature_names == FEATURE_NAMES
+    values = atom_count.calc(mol)
     assert_allclose(values, np.asarray(expected, dtype=np.float32))

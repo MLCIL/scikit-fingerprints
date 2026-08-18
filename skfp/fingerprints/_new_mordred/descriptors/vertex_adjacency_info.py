@@ -13,7 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["VAdjMat"]
 
 
-def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol) -> np.ndarray:
     r"""
     Compute the Mordred vertex adjacency information descriptor.
 
@@ -29,4 +29,4 @@ def calc(mol_regular: Mol) -> tuple[np.ndarray, list[str]]:
 
     vadj_mat = np.nan if m == 0 else 1 + np.log2(m)
 
-    return np.asarray([vadj_mat], dtype=np.float32), FEATURE_NAMES
+    return np.asarray([vadj_mat], dtype=np.float32)

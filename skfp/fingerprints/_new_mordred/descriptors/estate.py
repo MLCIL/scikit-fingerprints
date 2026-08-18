@@ -106,7 +106,7 @@ FEATURE_NAMES = list(
 )
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> np.ndarray:
     """
     EState descriptors.
 
@@ -136,4 +136,4 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
 
         values.extend([count, total, maximum, minimum])
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

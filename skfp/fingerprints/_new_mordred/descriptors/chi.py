@@ -84,7 +84,7 @@ _CHI_PREFIX_TO_TYPE = {
 }
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> np.ndarray:
     """
     Compute Mordred Chi descriptors without adding explicit hydrogens.
     """
@@ -109,7 +109,7 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
             node_sets = subgraphs_by_order[order][chi_type]
         values.append(_chi_value(node_sets, properties[prop], averaged))
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)
 
 
 def _chi_subgraphs(mol: Mol, order: int) -> dict[str, list[list[int]]]:
