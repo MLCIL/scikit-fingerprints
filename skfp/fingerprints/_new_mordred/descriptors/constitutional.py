@@ -56,7 +56,7 @@ def _get_normalized_property_table() -> np.ndarray:
 _CARBON_NORMALIZED_PROPERTIES = _get_normalized_property_table()
 
 
-def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_hydrogens: Mol) -> np.ndarray:
     """
     Compute the Mordred constitutional descriptors.
 
@@ -71,4 +71,4 @@ def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
     )
     sums = _CARBON_NORMALIZED_PROPERTIES[:, atomic_numbers].sum(axis=1)
     means = sums / atomic_numbers.size
-    return np.concatenate((sums, means)).astype(np.float32), FEATURE_NAMES
+    return np.concatenate((sums, means)).astype(np.float32)

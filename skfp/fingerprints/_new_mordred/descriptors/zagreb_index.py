@@ -14,9 +14,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["Zagreb1", "Zagreb2", "mZagreb1", "mZagreb2"]
 
 
-def calc(
-    mol_regular: Mol, adjacency_matrix_regular: AdjacencyMatrix
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol, adjacency_matrix_regular: AdjacencyMatrix) -> np.ndarray:
     values = np.array(
         [
             zagreb_index_m1(mol_regular, degree_vector=adjacency_matrix_regular.degree),
@@ -34,4 +32,4 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

@@ -73,7 +73,7 @@ def _average_exact_mol_wt(mol: Mol) -> float:
 def calc_rdkit_2d(
     mol_regular: Mol,
     distance_matrix_regular: DistanceMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     Compute 2D descriptors that map directly to RDKit descriptor functions.
     """
@@ -100,10 +100,10 @@ def calc_rdkit_2d(
         safe_value(_average_exact_mol_wt, mol_regular),
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES_2D
+    return np.asarray(values, dtype=np.float32)
 
 
-def calc_rdkit_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
+def calc_rdkit_3d(mol_with_3d_conformer: Mol) -> np.ndarray:
     """
     Compute 3D descriptors that map directly to RDKit descriptor functions.
     """
@@ -114,4 +114,4 @@ def calc_rdkit_3d(mol_with_3d_conformer: Mol) -> tuple[np.ndarray, list[str]]:
         safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES_3D
+    return np.asarray(values, dtype=np.float32)

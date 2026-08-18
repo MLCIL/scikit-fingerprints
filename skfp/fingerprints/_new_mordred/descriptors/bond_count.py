@@ -22,9 +22,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(
-    mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> np.ndarray:
     """
     Bond count descriptors.
 
@@ -80,4 +78,4 @@ def calc(
             n_bonds_kd,
         ],
         dtype=np.float32,
-    ), FEATURE_NAMES
+    )

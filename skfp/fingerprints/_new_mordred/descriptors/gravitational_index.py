@@ -23,7 +23,7 @@ def calc(
     distance_matrix_3d_hydrogens: DistanceMatrix3D,
     adjacency_matrix_regular: AdjacencyMatrix,
     adjacency_matrix_hydrogens: AdjacencyMatrix,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     """
     Compute Mordred gravitational index descriptors.
 
@@ -53,7 +53,7 @@ def calc(
     )
 
     values = np.asarray([grav, grav_h, grav_pair, grav_h_pair], dtype=np.float32)
-    return values, FEATURE_NAMES
+    return values
 
 
 def _variant_values(

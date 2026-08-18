@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_allclose
 
 from skfp.fingerprints._new_mordred.descriptors.path_count import (
-    FEATURE_NAMES,
     calc,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
@@ -336,7 +335,5 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_path_count_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
-    values, feature_names = calc(mol_regular)
-
-    assert feature_names == FEATURE_NAMES
+    values = calc(mol_regular)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-5)

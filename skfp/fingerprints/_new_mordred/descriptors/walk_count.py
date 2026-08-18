@@ -39,7 +39,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> np.ndarray:
     power = adjacency_matrix.order()
     molecular_walk_counts: list[float] = []
     self_returning_walk_counts: list[float] = []
@@ -61,4 +61,4 @@ def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> tuple[np.ndarray, list[
         mol.GetNumAtoms() + sum(self_returning_walk_counts),
     ]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

@@ -21,9 +21,7 @@ FEATURE_NAMES = ["Diameter", "Radius", "TopoShapeIndex", "PetitjeanIndex"]
     ],
 )
 def test_topological_index_values(graph_radius, graph_diameter, expected):
-    values, feature_names = topological_index.calc(graph_radius, graph_diameter)
-
-    assert feature_names == FEATURE_NAMES
+    values = topological_index.calc(graph_radius, graph_diameter)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)
 
 
@@ -50,9 +48,7 @@ def test_topological_index_reference_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
     distance_matrix_regular = DistanceMatrix(mol_regular)
 
-    values, feature_names = topological_index.calc(
+    values = topological_index.calc(
         distance_matrix_regular.radius, distance_matrix_regular.diameter
     )
-
-    assert feature_names == FEATURE_NAMES
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

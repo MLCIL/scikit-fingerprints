@@ -32,8 +32,8 @@ def computed_values(mordred_test_mols):
     computed = {}
     for name in _MOLECULES:
         mol = preprocess_mol(mordred_test_mols[name], explicit_hydrogens=True)
-        values, feature_names = calc(mol)
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        values = calc(mol)
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 

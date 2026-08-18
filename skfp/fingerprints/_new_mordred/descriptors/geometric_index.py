@@ -18,7 +18,7 @@ FEATURE_NAMES = [
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def calc(distance_matrix_3d: DistanceMatrix3D) -> tuple[np.ndarray, list[str]]:
+def calc(distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
     """
     Compute Mordred geometrical index descriptors from 3D coordinates.
     """
@@ -30,4 +30,4 @@ def calc(distance_matrix_3d: DistanceMatrix3D) -> tuple[np.ndarray, list[str]]:
     values = np.asarray(
         [diameter, radius, shape_index, petitjean_index], dtype=np.float32
     )
-    return values, FEATURE_NAMES
+    return values

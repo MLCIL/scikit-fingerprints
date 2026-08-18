@@ -18,7 +18,7 @@ def _calc(smiles: str) -> np.ndarray:
     mol = AddHs(MolFromSmiles(smiles))
     mol_kek = RWMol(AddHs(MolFromSmiles(smiles)))
     Kekulize(mol_kek)
-    values, _ = calc(mol, mol_kek)
+    values = calc(mol, mol_kek)
     return values
 
 

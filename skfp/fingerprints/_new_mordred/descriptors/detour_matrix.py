@@ -29,7 +29,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
     """
     Detour matrix descriptor.
 
@@ -39,7 +39,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
     """
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     detour_matrix = _get_detour_matrix(mol_regular)
     attrs = MatrixAttributes(
@@ -71,7 +71,7 @@ def calc(mol_regular: Mol, n_frags: int) -> tuple[np.ndarray, list[str]]:
         dtype=np.float32,
     )
 
-    return values, FEATURE_NAMES
+    return values
 
 
 def _get_detour_matrix(mol: Mol) -> np.ndarray:

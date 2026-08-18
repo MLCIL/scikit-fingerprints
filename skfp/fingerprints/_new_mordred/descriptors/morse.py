@@ -34,9 +34,7 @@ FEATURE_NAMES = [
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def calc(
-    mol_3d: Mol, distance_matrix_3d: DistanceMatrix3D
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_3d: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -48,7 +46,7 @@ def calc(
     num_atoms = len(atoms)
 
     if num_atoms < 2:
-        return np.full(160, np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(160, np.nan, dtype=np.float32)
 
     dist_kernels = []
     for distance in _DISTANCES:
@@ -77,4 +75,4 @@ def calc(
 
     values = [0.5 * (props @ n @ props) for props in prop_vectors for n in dist_kernels]
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

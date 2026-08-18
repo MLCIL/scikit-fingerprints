@@ -17,7 +17,7 @@ FEATURE_NAMES = ["ECIndex"]
 
 def calc(
     adjacency_matrix_regular: AdjacencyMatrix, distance_matrix_regular: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     r"""
     Compute the Mordred eccentric connectivity index descriptor.
 
@@ -30,4 +30,4 @@ def calc(
 
     value = (E * D).sum()
 
-    return np.array([value], dtype=np.float32), FEATURE_NAMES
+    return np.array([value], dtype=np.float32)

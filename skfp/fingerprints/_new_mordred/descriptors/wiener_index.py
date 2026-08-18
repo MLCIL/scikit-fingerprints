@@ -14,9 +14,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["WPath", "WPol"]
 
 
-def calc(
-    mol_regular: Mol, distance_matrix_regular: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarray:
     values = np.array(
         [
             wiener_index(mol_regular, distance_matrix_regular.matrix),
@@ -24,4 +22,4 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

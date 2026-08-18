@@ -48,7 +48,7 @@ _ELEMENT_ATOMIC_NUMBERS = [
 ]
 
 
-def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol: Mol) -> np.ndarray:
     """
     Count atoms by common element and structural category.
     """
@@ -74,4 +74,4 @@ def calc(mol: Mol) -> tuple[np.ndarray, list[str]]:
         )
     )
 
-    return np.asarray(values, dtype=np.float32), FEATURE_NAMES
+    return np.asarray(values, dtype=np.float32)

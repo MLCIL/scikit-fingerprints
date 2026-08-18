@@ -13,7 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["apol", "bpol"]
 
 
-def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
+def calc(mol_hydrogens: Mol) -> np.ndarray:
     atom_polarizability = sum(
         get_polarizability(atom) for atom in mol_hydrogens.GetAtoms()
     )
@@ -29,4 +29,4 @@ def calc(mol_hydrogens: Mol) -> tuple[np.ndarray, list[str]]:
         [atom_polarizability, bond_polarizability],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

@@ -29,8 +29,8 @@ def test_geometric_index_reference_values(
     mol = mordred_test_mols_hydrogens_3d[name]
     dists = DistanceMatrix3D(mol)
 
-    values, feature_names = calc(dists)
-    values = dict(zip(feature_names, values, strict=True))
+    values = calc(dists)
+    values = dict(zip(FEATURE_NAMES, values, strict=True))
     values = [values[name] for name in FEATURE_NAMES]
 
     assert_allclose(values, expected_values, atol=1e-3)

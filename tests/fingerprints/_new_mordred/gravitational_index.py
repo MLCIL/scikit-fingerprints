@@ -43,7 +43,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         # heavy-atom molecule; RemoveHs preserves the heavy-atom coordinates
         mol_regular = preprocess_mol(mol_hydrogens)
 
-        values, feature_names = calc(
+        values = calc(
             mol_regular,
             mol_hydrogens,
             DistanceMatrix3D(mol_regular, conf_id),
@@ -51,7 +51,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
             AdjacencyMatrix(mol_regular),
             AdjacencyMatrix(mol_hydrogens),
         )
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 

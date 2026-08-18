@@ -36,7 +36,5 @@ def test_carbon_type_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
     mol_kekulized = preprocess_mol(mol, explicit_hydrogens=False, kekulize=True)
 
-    values, feature_names = carbon_types.calc(mol_kekulized)
-
-    assert feature_names == FEATURE_NAMES
+    values = carbon_types.calc(mol_kekulized)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

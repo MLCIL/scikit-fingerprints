@@ -52,9 +52,7 @@ def _calc_abcgg_index(mol: Mol, distance_matrix_regular: DistanceMatrix) -> floa
     return total
 
 
-def calc(
-    mol_regular: Mol, distance_matrix_regular: DistanceMatrix
-) -> tuple[np.ndarray, list[str]]:
+def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarray:
     """
     ABC index descriptor, combining the classical ABC index and its
     Graovac-Ghorbani analog.
@@ -71,4 +69,4 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values

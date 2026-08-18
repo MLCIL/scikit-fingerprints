@@ -25,7 +25,5 @@ def test_vdw_volume_abc_values(smiles, expected):
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
     mol_regular = preprocess_mol(mol)
 
-    values, feature_names = vdw_volume_abc.calc(mol_regular, mol_hydrogens)
-
-    assert feature_names == FEATURE_NAMES
+    values = vdw_volume_abc.calc(mol_regular, mol_hydrogens)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

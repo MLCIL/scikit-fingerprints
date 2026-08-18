@@ -54,8 +54,8 @@ def computed_values():
     computed = {}
     for name, smiles in _SMILES.items():
         mol = preprocess_mol(MolFromSmiles(smiles))
-        values, feature_names = calc(mol)
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        values = calc(mol)
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 

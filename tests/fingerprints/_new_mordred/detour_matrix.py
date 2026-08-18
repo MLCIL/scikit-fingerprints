@@ -5,7 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import GetMolFrags
 
-from skfp.fingerprints._new_mordred.descriptors.detour_matrix import calc
+from skfp.fingerprints._new_mordred.descriptors.detour_matrix import FEATURE_NAMES, calc
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -55,8 +55,8 @@ def computed_values(mordred_test_mols):
         mol = mordred_test_mols[name]
         n_frags = len(GetMolFrags(mol))
         mol_regular = preprocess_mol(mol)
-        values, feature_names = calc(mol_regular, n_frags)
-        computed[name] = dict(zip(feature_names, values, strict=True))
+        values = calc(mol_regular, n_frags)
+        computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
 

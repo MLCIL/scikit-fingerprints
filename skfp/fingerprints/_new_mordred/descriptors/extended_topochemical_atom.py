@@ -70,10 +70,10 @@ def calc(
     mol_kekulized_hydrogens: Mol,
     ring_count: int,
     n_frags: int,
-) -> tuple[np.ndarray, list[str]]:
+) -> np.ndarray:
     # ETA descriptors require a connected molecule
     if n_frags != 1:
-        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32), FEATURE_NAMES
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     num_atoms = mol_kekulized.GetNumAtoms()
 
@@ -180,7 +180,7 @@ def calc(
         ],
         dtype=np.float32,
     )
-    return values, FEATURE_NAMES
+    return values
 
 
 def _atom_properties(mol: Mol) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
