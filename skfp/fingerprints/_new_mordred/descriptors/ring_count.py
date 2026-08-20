@@ -61,7 +61,7 @@ class RingSets:
         Cache ring size, aromaticity, and heteroatom presence once per ring.
         """
         is_aromatic = self._props.is_aromatic
-        is_hetero = self._props.atomic_nums != 6
+        is_hetero = self._props.is_hetero
         return [
             RingProperties(
                 ring,
