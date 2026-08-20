@@ -72,7 +72,7 @@ def calc(rings_regular: RingSets, props_hydrogens: AtomicProperties) -> np.ndarr
     # reuse ring detection from the ring count descriptor: simple (non-fused)
     # aromatic and non-aromatic rings
     rings = rings_regular.simple_rings
-    n_aromatic_rings = sum(1 for ring in rings if ring.is_aromatic)
+    n_aromatic_rings = sum(ring.is_aromatic for ring in rings)
     n_aliphatic_rings = len(rings) - n_aromatic_rings
 
     vabc = (

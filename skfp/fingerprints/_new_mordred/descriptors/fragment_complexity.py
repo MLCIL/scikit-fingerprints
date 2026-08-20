@@ -18,6 +18,6 @@ def calc(props: AtomicProperties) -> np.ndarray:
     """
     n_atoms = props.num_atoms
     n_bonds = props.num_bonds
-    n_hetero = int(np.count_nonzero(props.atomic_nums != 6))
+    n_hetero = int(np.count_nonzero(props.is_hetero))
     value = abs(n_bonds**2 - n_atoms**2 + n_atoms) + n_hetero / 100
     return np.asarray([value], dtype=np.float32)
