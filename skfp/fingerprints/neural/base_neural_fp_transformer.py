@@ -207,7 +207,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
             If ``sparse`` is True, a sparse SciPy CSR array is returned.
             Otherwise, a dense NumPy array is returned.
         """
-        with torch.no_grad():
+        with torch.inference_mode():
             X_input = self._prepare_input(X)
             X_input = self._to_device(X_input)
             X_output = self._forward_nn(X_input)
