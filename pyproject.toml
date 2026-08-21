@@ -47,7 +47,10 @@ documentation = "https://scikit-fingerprints.readthedocs.io/latest"
 "Bug Tracker" = "https://github.com/scikit-fingerprints/scikit-fingerprints/issues"
 
 [project.optional-dependencies]
-neural = ["torch>=2.0.0"]
+neural = [
+    "torch>=2.0.0",
+    "chemprop>=1.7.1",
+]
 
 [dependency-groups]
 dev = [

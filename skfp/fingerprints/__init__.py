@@ -36,6 +36,6 @@ from .vsa import VSAFingerprint
 from .whim import WHIMFingerprint
 
 try:
-    from .neural import CLAMPFingerprint
+    from .neural import ChemeleonFingerprint, CLAMPFingerprint
 except ImportError:
     pass
