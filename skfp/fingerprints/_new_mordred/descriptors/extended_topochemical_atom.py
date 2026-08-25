@@ -128,7 +128,7 @@ def calc(
     else:
         z_a, core_a, eps_a = _atom_properties(mol_alkane)
         gamma_alkane, *_ = _beta_and_gamma(mol_alkane, z_a, core_a, eps_a)
-        distance_matrix_alkane = DistanceMatrix(mol_alkane).matrix
+        distance_matrix_alkane = DistanceMatrix.from_mol(mol_alkane).matrix
 
     eta_composite = _composite_and_functionality(
         gamma,

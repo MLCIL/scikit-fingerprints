@@ -33,7 +33,7 @@ with open(Path(__file__).parent / "references" / "topological_charge.json") as f
 def test_topological_charge_reference_values(molecule, mordred_test_mols):
     mol = mordred_test_mols[molecule]
 
-    values = calc(AdjacencyMatrix(mol), DistanceMatrix(mol))
+    values = calc(AdjacencyMatrix(mol), DistanceMatrix.from_mol(mol))
 
     expected = _REFERENCE["expected"][molecule]
     vals_mordred = np.array([expected[f] for f in FEATURE_NAMES], dtype=float)
@@ -52,7 +52,7 @@ def test_feature_names():
 def test_global_is_sum_of_mean():
     # JGT10 is defined as the sum of the mean charges (JGI1..JGI10)
     mol = MolFromSmiles("CCN(CC)CCOC(=O)c1ccc(N)cc1")
-    values = calc(AdjacencyMatrix(mol), DistanceMatrix(mol))
+    values = calc(AdjacencyMatrix(mol), DistanceMatrix.from_mol(mol))
 
     jgi = values[10:20]
     jgt10 = values[20]
@@ -62,5 +62,5 @@ def test_global_is_sum_of_mean():
 def test_symmetric_molecule_all_zero():
     # a molecule with symmetric charge distribution has vanishing charge terms
     mol = MolFromSmiles("c1ccccc1")
-    values = calc(AdjacencyMatrix(mol), DistanceMatrix(mol))
+    values = calc(AdjacencyMatrix(mol), DistanceMatrix.from_mol(mol))
     assert_allclose(values, 0.0, atol=1e-7)

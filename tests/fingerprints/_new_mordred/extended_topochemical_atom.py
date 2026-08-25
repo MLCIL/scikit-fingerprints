@@ -29,7 +29,7 @@ with open(Path(__file__).parent / "references" / "eta.json") as file:
 
 def _compute(mol):
     mol_kekulized = preprocess_mol(mol, kekulize=True)
-    distance_matrix = DistanceMatrix(mol_kekulized)
+    distance_matrix = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )

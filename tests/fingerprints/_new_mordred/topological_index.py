@@ -46,7 +46,7 @@ def test_topological_index_values(graph_radius, graph_diameter, expected):
 )
 def test_topological_index_reference_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
-    distance_matrix_regular = DistanceMatrix(mol_regular)
+    distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
 
     values = topological_index.calc(
         distance_matrix_regular.radius, distance_matrix_regular.diameter
