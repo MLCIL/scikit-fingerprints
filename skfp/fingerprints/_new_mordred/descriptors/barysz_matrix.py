@@ -3,7 +3,10 @@ from rdkit.Chem import Mol
 from rdkit.Chem.rdchem import Atom
 from scipy.sparse.csgraph import floyd_warshall
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import PROPERTY_FUNCS
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    PROPERTY_FUNCS,
+    AtomicProperties,
+)
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
 """
@@ -32,7 +35,7 @@ _ATTR_NAMES = [
 FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in PROPERTY_FUNCS for attr in _ATTR_NAMES]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
+def calc(mol_regular: Mol, props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     Barysz matrix spectral descriptors.
 
@@ -56,7 +59,9 @@ def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
         if matrix is None:
             values.extend([np.nan] * len(_ATTR_NAMES))
         else:
-            values.extend(_barysz_matrix_attribute_values(mol_regular, n_frags, matrix))
+            values.extend(
+                _barysz_matrix_attribute_values(props_regular, n_frags, matrix)
+            )
 
     return np.asarray(values, dtype=np.float32)
 
@@ -98,9 +103,9 @@ def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
 
 
 def _barysz_matrix_attribute_values(
-    mol: Mol, n_frags: int, matrix: np.ndarray
+    props: AtomicProperties, n_frags: int, matrix: np.ndarray
 ) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, mol, hermitian=True, n_frags=n_frags)
+    attrs = MatrixAttributes(matrix, props, hermitian=True, n_frags=n_frags)
     return [
         attrs.graph_energy,
         attrs.leading_eigenvalue,

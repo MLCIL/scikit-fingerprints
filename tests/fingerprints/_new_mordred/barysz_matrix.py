@@ -9,6 +9,7 @@ from skfp.fingerprints._new_mordred.descriptors.barysz_matrix import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -57,7 +58,7 @@ def computed_values():
     computed = {}
     for name, smiles in _SMILES.items():
         mol = preprocess_mol(MolFromSmiles(smiles))
-        values = calc(mol, n_frags=1)
+        values = calc(mol, AtomicProperties.from_mol(mol), n_frags=1)
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
