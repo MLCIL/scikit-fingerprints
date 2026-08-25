@@ -2,6 +2,7 @@ import networkx as nx
 import numpy as np
 from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
 """
@@ -29,7 +30,7 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
+def calc(mol_regular: Mol, props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     Detour matrix descriptor.
 
@@ -44,7 +45,7 @@ def calc(mol_regular: Mol, n_frags: int) -> np.ndarray:
     detour_matrix = _get_detour_matrix(mol_regular)
     attrs = MatrixAttributes(
         detour_matrix,
-        mol_regular,
+        props_regular,
         hermitian=True,  # as in Mordred's reference implementation
         n_frags=n_frags,
     )

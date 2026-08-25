@@ -158,6 +158,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
+    # shared by the adjacency matrix descriptors and, through them, by nothing else
+    # yet; the walk counts join later
+    adjacency_eigendecomposition = np.linalg.eigh(adjacency_matrix_regular.matrix)
+
+    # per-atom property arrays, read from the molecule once and shared
+    props_regular = AtomicProperties.from_mol(mol_regular)
 
     # per-atom property arrays, read from the molecule once and shared
     props_regular = AtomicProperties.from_mol(mol_regular)
@@ -195,7 +201,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         walk_count: walk_count.calc(mol_regular, adjacency_matrix_regular),
         path_count: path_count.calc(mol_regular),
         adjacency_matrix: adjacency_matrix.calc(
-            mol_regular, n_frags, adjacency_matrix_regular
+            props_regular,
+            n_frags,
+            adjacency_matrix_regular,
+            adjacency_eigendecomposition,
         ),
         wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index: zagreb_index.calc(mol_regular, adjacency_matrix_regular),
@@ -221,7 +230,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             num_rings,
             n_frags,
         ),
-        barysz_matrix: barysz_matrix.calc(mol_regular, n_frags),
+        barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
         bcut: bcut.calc(mol_regular),
         aromatic: aromatic.calc(props_regular),
         topological_charge: topological_charge.calc(
@@ -235,9 +244,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             adjacency_matrix_regular, distance_matrix_regular
         ),
         distance_matrix: distance_matrix.calc(
-            mol_regular, n_frags, distance_matrix_regular
+            props_regular, n_frags, distance_matrix_regular
         ),
-        detour_matrix: detour_matrix.calc(mol_regular, n_frags),
+        detour_matrix: detour_matrix.calc(mol_regular, props_regular, n_frags),
         molecular_distance_edge: molecular_distance_edge.calc(
             mol_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
