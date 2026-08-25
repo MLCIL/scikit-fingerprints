@@ -363,7 +363,9 @@ class AtomicProperties:
         return self.weighting_properties[row]
 
     def _count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
-        """For every atom, the number of its neighbors satisfying the mask."""
+        """
+        For every atom, the number of its neighbors satisfying the mask.
+        """
         begins, ends = self.bond_begin_idxs, self.bond_end_idxs
         counts = np.bincount(begins, weights=atom_mask[ends], minlength=self.num_atoms)
         counts += np.bincount(ends, weights=atom_mask[begins], minlength=self.num_atoms)

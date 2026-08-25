@@ -159,12 +159,16 @@ def test_intrinsic_state(label, expected_value, explicit_hs):
 
 # properties that the derived constructors below are expected to fill in
 _DERIVED_PROPERTY_NAMES = [
+    "num_atoms",
+    "num_bonds",
     "atomic_nums",
     "is_hydrogen",
     "is_aromatic",
     "degrees",
     "formal_charges",
+    "total_num_hs",
     "num_hydrogens",
+    "outer_electrons",
     "sigma_electrons",
     "valence_electrons",
     "intrinsic_state",
@@ -173,6 +177,9 @@ _DERIVED_PROPERTY_NAMES = [
     "bond_types",
     "bond_orders",
     "bond_is_aromatic",
+    "gasteiger_charges",
+    "element_properties",
+    "weighting_properties",
 ]
 
 _VARIANT_SMILES = [
@@ -191,10 +198,7 @@ _VARIANT_SMILES = [
 ]
 
 
-@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
-@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
-def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name):
-    mol = preprocess_mol(MolFromSmiles(smiles))
+def _assert_properties_equal(mol, property_name: str) -> None:
     mol_hydrogens = AddHs(mol)
 
     derived = AtomicProperties.with_hydrogens_added(
@@ -205,3 +209,22 @@ def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name)
     assert_allclose(
         getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6
     )
+
+
+@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
+@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
+def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name):
+    _assert_properties_equal(preprocess_mol(MolFromSmiles(smiles)), property_name)
+
+
+@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
+def test_properties_with_hydrogens_added_match_recomputed_reference_mols(
+    property_name, mordred_test_mols
+):
+    for name, mol in mordred_test_mols.items():
+        try:
+            _assert_properties_equal(preprocess_mol(mol), property_name)
+        except AssertionError as err:
+            raise AssertionError(
+                f"{property_name} differs for molecule {name}"
+            ) from err

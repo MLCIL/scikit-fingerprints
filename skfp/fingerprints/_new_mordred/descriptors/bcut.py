@@ -1,8 +1,8 @@
 import numpy as np
 from rdkit.Chem import GetMolFrags, Mol
 
-from skfp.descriptors import atomic_partial_charges
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    gasteiger_charges,
     get_allred_rochow_electronegativity,
     get_atomic_number,
     get_intrinsic_state,
@@ -74,9 +74,15 @@ def calc(mol: Mol) -> np.ndarray:
     values = []
     for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
         if name == "gasteiger_charge":
-            props = atomic_partial_charges(mol, "Gasteiger", "ignore")
+            props = gasteiger_charges(mol)
         else:
             props = atoms_apply_func(func, mol, np.float32)  # type: ignore
+
+        # some properties are undefined for exotic elements, e.g. Gasteiger charges
+        # for metals; the eigendecomposition cannot run then
+        if np.any(np.isnan(props)):
+            values.extend([np.nan, np.nan])
+            continue
 
         np.fill_diagonal(burden_matrix, props)
         eigvals = np.linalg.eigvalsh(burden_matrix)  # ascending order
