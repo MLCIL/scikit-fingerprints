@@ -1,3 +1,11 @@
+from dataclasses import dataclass
+
+import numpy as np
+from rdkit import Chem
+from rdkit.Chem import Mol
+
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+
 """
 Ring count descriptors implemented with RDKit SSSR rings.
 
@@ -6,14 +14,6 @@ https://github.com/JacksonBurns/mordred-community
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
-
-from dataclasses import dataclass
-
-import numpy as np
-from rdkit import Chem
-from rdkit.Chem import Mol
-
-from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,13 +41,20 @@ class RingSets:
     """
     SSSR rings of a molecule and their per-ring properties.
 
-    Shared by the ring count and van der Waals volume descriptors, which would
-    otherwise each re-run ``GetSymmSSSR`` and re-inspect every ring atom.
+    Shared by the ring count, van der Waals volume, and extended topochemical
+    atom descriptors, which would otherwise each re-run ``GetSymmSSSR`` and
+    re-inspect every ring atom. Ring perception depends only on connectivity,
+    so the count is the same for the kekulized molecule.
     """
 
     def __init__(self, mol: Mol, props: AtomicProperties):
         self.mol = mol
-        self._props = props
+
+        # rings hold a handful of atoms each, so indexing Python lists per atom
+        # beats NumPy fancy indexing, which allocates a temporary per ring; the
+        # conversion is done once here and shared by both calls below
+        self._is_aromatic = props.is_aromatic.tolist()
+        self._is_hetero = props.is_hetero.tolist()
 
         self.simple_ring_atom_sets = [set(ring) for ring in Chem.GetSymmSSSR(mol)]
         self.num_rings = len(self.simple_ring_atom_sets)
@@ -60,13 +67,13 @@ class RingSets:
         """
         Cache ring size, aromaticity, and heteroatom presence once per ring.
         """
-        is_aromatic = self._props.is_aromatic
-        is_hetero = self._props.is_hetero
+        is_aromatic = self._is_aromatic
+        is_hetero = self._is_hetero
         return [
             RingProperties(
                 ring,
-                bool(is_aromatic[list(ring)].all()),
-                bool(is_hetero[list(ring)].any()),
+                all(is_aromatic[atom_idx] for atom_idx in ring),
+                any(is_hetero[atom_idx] for atom_idx in ring),
             )
             for ring in ring_atom_sets
         ]

@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, GetSymmSSSR, Mol
+from rdkit.Chem import AddHs, GetMolFrags, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -185,7 +185,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
-    num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
@@ -223,7 +222,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             mol_kekulized,
             distance_matrix_kekulized,
             mol_kekulized_hydrogens,
-            num_rings,
+            rings_regular.num_rings,
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
