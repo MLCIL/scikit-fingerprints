@@ -31,7 +31,7 @@ def test_vdw_volume_abc_values(smiles, expected):
 
     mol_hydrogens = AddHs(mol_regular)
     props_hydrogens = AtomicProperties.with_hydrogens_added(
-        props_regular, mol_hydrogens
+        mol_hydrogens, props_regular
     )
 
     rings = RingSets(mol_regular, props_regular)
