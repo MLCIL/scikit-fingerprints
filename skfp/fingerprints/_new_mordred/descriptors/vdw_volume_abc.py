@@ -1,11 +1,11 @@
 from math import pi
 
 import numpy as np
-from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.descriptors.ring_count import (
-    _ring_atom_sets,
-    _ring_properties,
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    AtomicProperties,
+    get_atomic_number_from_symbol,
 )
 
 """
@@ -37,10 +37,13 @@ _BONDI_RADII = {
 }
 
 # Per-atom van der Waals volume contribution, i.e. sphere volume 4/3 * pi * r^3.
-_ATOM_CONTRIB = {symbol: 4.0 / 3.0 * pi * r**3 for symbol, r in _BONDI_RADII.items()}
+# Bondi sphere volume per atomic number, NaN where the element has no Bondi radius
+_ATOM_VOLUMES = np.full(119, np.nan)
+for _symbol, _radius in _BONDI_RADII.items():
+    _ATOM_VOLUMES[get_atomic_number_from_symbol(_symbol)] = 4.0 / 3.0 * pi * _radius**3
 
 
-def calc(mol_regular: Mol, mol_hydrogens: Mol) -> np.ndarray:
+def calc(rings_regular: RingSets, props_hydrogens: AtomicProperties) -> np.ndarray:
     r"""
     Compute the Mordred ABC van der Waals volume descriptor.
 
@@ -54,24 +57,23 @@ def calc(mol_regular: Mol, mol_hydrogens: Mol) -> np.ndarray:
     rings, and :math:`R_A` the number of non-aromatic rings. Returns NaN when the
     molecule contains an atom without a defined Bondi radius.
 
-    Atom volumes and bonds use the hydrogen-explicit molecule, while rings are
-    counted on ``mol_regular`` whose aromaticity is reliably perceived (unlike
-    ``AddHs``, ``RemoveHs`` re-sanitizes the molecule).
+    Atom volumes and bonds use the hydrogen-explicit molecule, while rings come
+    from ``rings_regular``, built on the hydrogen-suppressed molecule whose
+    aromaticity is reliably perceived (unlike ``AddHs``, ``RemoveHs``
+    re-sanitizes the molecule).
     """
-    try:
-        atom_volume = sum(
-            _ATOM_CONTRIB[atom.GetSymbol()] for atom in mol_hydrogens.GetAtoms()
-        )
-    except KeyError:
+    # an element without a Bondi radius makes the whole descriptor undefined
+    atom_volume = _ATOM_VOLUMES[props_hydrogens.atomic_nums].sum()
+    if not np.isfinite(atom_volume):
         return np.asarray([np.nan], dtype=np.float32)
 
-    n_bonds = mol_hydrogens.GetNumBonds()
+    n_bonds = props_hydrogens.num_bonds
 
     # reuse ring detection from the ring count descriptor: simple (non-fused)
     # aromatic and non-aromatic rings
-    rings = _ring_properties(mol_regular, _ring_atom_sets(mol_regular))
-    n_aromatic_rings = sum(1 for ring in rings if ring.is_aromatic)
-    n_aliphatic_rings = sum(1 for ring in rings if not ring.is_aromatic)
+    rings = rings_regular.simple_rings
+    n_aromatic_rings = sum(ring.is_aromatic for ring in rings)
+    n_aliphatic_rings = len(rings) - n_aromatic_rings
 
     vabc = (
         atom_volume - 5.92 * n_bonds - 14.7 * n_aromatic_rings - 3.8 * n_aliphatic_rings

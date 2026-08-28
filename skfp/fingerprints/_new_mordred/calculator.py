@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, GetSymmSSSR, Mol
+from rdkit.Chem import AddHs, GetMolFrags, Mol
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -162,11 +162,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # yet; the walk counts join later
     adjacency_eigendecomposition = np.linalg.eigh(adjacency_matrix_regular.matrix)
 
-    # per-atom property arrays, read from the molecule once and shared
+    # per-atom property arrays and rings, read from the molecule once and shared
     props_regular = AtomicProperties.from_mol(mol_regular)
-
-    # per-atom property arrays, read from the molecule once and shared
-    props_regular = AtomicProperties.from_mol(mol_regular)
+    rings_regular = ring_count.RingSets(mol_regular, props_regular)
 
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
@@ -189,7 +187,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
-    num_rings = len(GetSymmSSSR(mol_kekulized))
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
@@ -220,14 +217,14 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         constitutional: constitutional.calc(mol_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
         vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
-        ring_count: ring_count.calc(mol_regular),
-        vdw_volume_abc: vdw_volume_abc.calc(mol_regular, mol_hydrogens),
+        ring_count: ring_count.calc(rings_regular),
+        vdw_volume_abc: vdw_volume_abc.calc(rings_regular, props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
             mol_kekulized,
             distance_matrix_kekulized,
             mol_kekulized_hydrogens,
-            num_rings,
+            rings_regular.num_rings,
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),

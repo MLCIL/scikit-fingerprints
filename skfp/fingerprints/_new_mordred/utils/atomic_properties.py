@@ -262,6 +262,8 @@ class AtomicProperties:
         self.num_atoms: int = len(atomic_nums)
         self.num_bonds: int = len(bond_types)
         self.is_hydrogen = atomic_nums == 1
+        # heteroatom: any non-carbon atom, hydrogens included
+        self.is_hetero = atomic_nums != 6
         self.outer_electrons = _N_OUTER_ELECS[atomic_nums]
         self.bond_orders = _BOND_ORDERS[bond_types]
         # the degree of an atom is the number of bonds it takes part in
