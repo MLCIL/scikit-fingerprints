@@ -11,6 +11,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     atom_count,
     autocorrelation,
     barysz_matrix,
+    bcut,
     bond_count,
     carbon_types,
     chi,
@@ -66,6 +67,7 @@ MODULES_2D: list[ModuleType] = [
     atom_count,
     autocorrelation,
     barysz_matrix,
+    bcut,
     bond_count,
     carbon_types,
     chi,
@@ -226,6 +228,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
+        bcut: bcut.calc(mol_regular),
         aromatic: aromatic.calc(props_regular),
         topological_charge: topological_charge.calc(
             adjacency_matrix_regular, distance_matrix_regular
