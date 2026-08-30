@@ -65,6 +65,8 @@ def calc(mol: Mol) -> np.ndarray:
     log_s = (
         _INTERCEPT
         + _MOL_WEIGHT_COEF * np.sqrt(Descriptors.MolWt(mol))
+        # dot product of two 1-D vectors, i.e. the scalar sum over the groups of
+        # each group's match count times its coefficient
         + group_counts @ _GROUP_COEF_VALUES
     )
 
