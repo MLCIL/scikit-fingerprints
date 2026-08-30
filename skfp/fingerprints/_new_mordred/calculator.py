@@ -27,6 +27,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     geometric_index,
     gravitational_index,
     log_s,
+    lipinski,
     mc_gowan_volume,
     molecular_distance_edge,
     molecular_id,
@@ -55,6 +56,9 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix3D,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.molecular_properties import (
+    MolecularProperties,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -83,6 +87,7 @@ MODULES_2D: list[ModuleType] = [
     estate,
     extended_topochemical_atom,
     fragment_complexity,
+    lipinski,
     mc_gowan_volume,
     log_s,
     framework,
@@ -174,6 +179,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     props_regular = AtomicProperties.from_mol(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
 
+    # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
+    mol_properties = MolecularProperties.from_mol(mol_regular)
+
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
     # note that atom numberings are different for those molecules
@@ -217,8 +225,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         autocorrelation: autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate: estate.calc(mol_regular),
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
-            mol_regular, distance_matrix_regular
+            mol_regular, distance_matrix_regular, mol_properties
         ),
+        lipinski: lipinski.calc(mol_properties),
         atom_count: atom_count.calc(mol_regular),
         bond_count: bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types: carbon_types.calc(mol_kekulized),
