@@ -25,6 +25,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     fragment_complexity,
     geometric_index,
     gravitational_index,
+    mc_gowan_volume,
     molecular_distance_edge,
     morse,
     path_count,
@@ -79,6 +80,7 @@ MODULES_2D: list[ModuleType] = [
     estate,
     extended_topochemical_atom,
     fragment_complexity,
+    mc_gowan_volume,
     molecular_distance_edge,
     path_count,
     polarizability,
@@ -219,6 +221,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
         ring_count: ring_count.calc(rings_regular),
         vdw_volume_abc: vdw_volume_abc.calc(rings_regular, props_hydrogens),
+        mc_gowan_volume: mc_gowan_volume.calc(props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
             mol_kekulized,
