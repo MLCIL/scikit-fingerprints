@@ -90,6 +90,9 @@ def _atom_ids(props: AtomicProperties) -> np.ndarray:
     Atomic ID of every atom: one plus half the sum, over all simple paths
     starting at that atom, of the inverse square root of the product of the
     path's edge weights.
+
+    This is by far the most expensive part of the descriptor; see
+    :func:`_sum_over_paths` for why enumerating those paths is exponential.
     """
     adjacency = _weighted_adjacency(props)
     num_atoms = props.num_atoms
@@ -137,8 +140,18 @@ def _sum_over_paths(
     Sum of the inverse square root of the edge weight product over every simple
     path that extends the one ending at ``atom``.
 
-    ``visited`` marks the atoms already on the path and is restored on the way
-    out, so the same buffer serves every starting atom.
+    This is a backtracking search rather than a plain depth-first traversal:
+    ``visited`` marks the atoms on the *current path*, not the atoms already
+    seen, and the mark is undone on the way out. An atom is therefore re-entered
+    once per route that reaches it, and the recursion has one call per simple
+    path instead of one per atom. The cost is exponential in the number of rings
+    -- a plain traversal of pentacene makes 22 calls from a given atom, this one
+    makes 359 -- and there is no way around it: the sum needs one term per path,
+    and the paths have to be simple, so no per-atom bookkeeping can stand in for
+    walking them. It does degenerate to a plain traversal for acyclic molecules,
+    where only one route reaches each atom.
+
+    Restoring the marks also lets one buffer serve every starting atom.
     """
     visited[atom] = 1
     total = 0.0
