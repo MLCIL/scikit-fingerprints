@@ -28,7 +28,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_counts(smiles, num_atoms, num_h_bond_acceptors, num_h_bond_donors):
     mol_regular = preprocess_mol(MolFromSmiles(smiles))
 
-    properties = MolecularProperties.from_mol(mol_regular)
+    properties = MolecularProperties(mol_regular)
 
     assert properties.num_atoms == num_atoms
     assert properties.num_h_bond_acceptors == num_h_bond_acceptors
@@ -47,7 +47,7 @@ def test_counts(smiles, num_atoms, num_h_bond_acceptors, num_h_bond_donors):
 def test_crippen_and_weight(smiles, log_p, molar_refractivity, exact_mol_wt):
     mol_regular = preprocess_mol(MolFromSmiles(smiles))
 
-    properties = MolecularProperties.from_mol(mol_regular)
+    properties = MolecularProperties(mol_regular)
 
     assert_allclose(properties.log_p, log_p, rtol=1e-4)
     assert_allclose(properties.molar_refractivity, molar_refractivity, rtol=1e-4)

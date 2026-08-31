@@ -47,5 +47,5 @@ FEATURE_NAMES = ["Lipinski", "GhoseFilter"]
 def test_mol_filters_values(smiles, expected):
     mol_regular = preprocess_mol(MolFromSmiles(smiles))
 
-    values = mol_filters.calc(MolecularProperties.from_mol(mol_regular))
+    values = mol_filters.calc(MolecularProperties(mol_regular))
     assert_allclose(values, np.asarray(expected, dtype=np.float32))

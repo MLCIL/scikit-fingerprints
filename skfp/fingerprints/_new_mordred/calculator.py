@@ -184,7 +184,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
 
     # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
-    mol_properties = MolecularProperties.from_mol(mol_regular)
+    mol_properties = MolecularProperties(mol_regular)
 
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
