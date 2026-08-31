@@ -38,7 +38,13 @@ _HYDROGEN_ATOMIC_NUM = 1
 _CARBON_ATOMIC_NUM = 6
 _NITROGEN_ATOMIC_NUM = 7
 _OXYGEN_ATOMIC_NUM = 8
-_HALOGEN_ATOMIC_NUMS = np.asarray(sorted(HALOGEN_ATOMIC_NUMS), dtype=np.intp)
+
+# one flag per atomic number, indexed by the atomic number itself. Selecting the
+# halogens this way is a plain gather, where np.isin spends more time sorting its
+# few needles than the whole lookup takes.
+_NUM_ATOMIC_NUMBERS = 119  # atomic numbers 0 to 118, as RDKit reports them
+_IS_HALOGEN = np.zeros(_NUM_ATOMIC_NUMBERS, dtype=bool)
+_IS_HALOGEN[sorted(HALOGEN_ATOMIC_NUMS)] = True
 
 
 def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
@@ -62,18 +68,17 @@ def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     is_hetero = (atomic_nums != _HYDROGEN_ATOMIC_NUM) & (
         atomic_nums != _CARBON_ATOMIC_NUM
     )
-    selections = [
-        np.ones(props_regular.num_atoms, dtype=bool),
-        is_hetero,
-        atomic_nums == _CARBON_ATOMIC_NUM,
-        atomic_nums == _NITROGEN_ATOMIC_NUM,
-        atomic_nums == _OXYGEN_ATOMIC_NUM,
-        np.isin(atomic_nums, _HALOGEN_ATOMIC_NUMS),
+    molecular_ids = [
+        atom_ids.sum(),  # every atom, so no selection to build
+        atom_ids[is_hetero].sum(),
+        atom_ids[atomic_nums == _CARBON_ATOMIC_NUM].sum(),
+        atom_ids[atomic_nums == _NITROGEN_ATOMIC_NUM].sum(),
+        atom_ids[atomic_nums == _OXYGEN_ATOMIC_NUM].sum(),
+        atom_ids[_IS_HALOGEN[atomic_nums]].sum(),
     ]
 
     values = []
-    for selection in selections:
-        molecular_id = atom_ids[selection].sum()
+    for molecular_id in molecular_ids:
         # averaged over every atom of the molecule, not over the selected ones
         values += [molecular_id, molecular_id / props_regular.num_atoms]
 
