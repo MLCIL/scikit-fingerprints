@@ -29,6 +29,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     log_s,
     lipinski,
     mc_gowan_volume,
+    mol_filters,
     molecular_distance_edge,
     molecular_id,
     morse,
@@ -87,10 +88,13 @@ MODULES_2D: list[ModuleType] = [
     estate,
     extended_topochemical_atom,
     fragment_complexity,
-    lipinski,
     mc_gowan_volume,
+<<<<<<< HEAD
     log_s,
     framework,
+=======
+    mol_filters,
+>>>>>>> 7a8aef8 (rename module)
     molecular_distance_edge,
     molecular_id,
     path_count,
@@ -227,7 +231,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
             mol_regular, distance_matrix_regular, mol_properties
         ),
-        lipinski: lipinski.calc(mol_properties),
+        mol_filters: mol_filters.calc(mol_properties),
         atom_count: atom_count.calc(mol_regular),
         bond_count: bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types: carbon_types.calc(mol_kekulized),

@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors import lipinski
+from skfp.fingerprints._new_mordred.descriptors import mol_filters
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
@@ -44,8 +44,8 @@ FEATURE_NAMES = ["Lipinski", "GhoseFilter"]
         ("CC1C(C(C(C(O1)OC2C(CC(C(C2O)OC3C(C(C(CO3)(C)O)NC)O)N)N)O)N)O", [0, 0]),
     ],
 )
-def test_lipinski_values(smiles, expected):
+def test_mol_filters_values(smiles, expected):
     mol_regular = preprocess_mol(MolFromSmiles(smiles))
 
-    values = lipinski.calc(MolecularProperties.from_mol(mol_regular))
+    values = mol_filters.calc(MolecularProperties.from_mol(mol_regular))
     assert_allclose(values, np.asarray(expected, dtype=np.float32))
