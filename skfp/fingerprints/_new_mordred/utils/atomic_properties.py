@@ -16,7 +16,6 @@ from .periodic_table import (
     ELEMENT_PERIOD,
     IONIZATION_POTENTIAL,
     MASS,
-    MC_GOWAN_VOLUME,
     PAULING_ELECTRONEGATIVITY,
     POLARIZABILITY_94,
     SANDERSON_ELECTRONEGATIVITY,
@@ -132,10 +131,6 @@ def get_polarizability(atom: Atom) -> float:
 
 def get_ionization_potential(atom: Atom) -> float:
     return IONIZATION_POTENTIAL[atom.GetAtomicNum()]
-
-
-def get_mc_gowan_volume(atom: Atom) -> float:
-    return MC_GOWAN_VOLUME[atom.GetAtomicNum()]
 
 
 # connectivity properties, depending on atom neighborhood
