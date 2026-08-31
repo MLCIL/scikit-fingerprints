@@ -2,6 +2,7 @@ from types import ModuleType
 
 import numpy as np
 from rdkit.Chem import AddHs, GetMolFrags, Mol
+from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors import (
     abc_index,
@@ -25,6 +26,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     fragment_complexity,
     geometric_index,
     gravitational_index,
+    information_content,
     mc_gowan_volume,
     molecular_distance_edge,
     morse,
@@ -51,7 +53,10 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     DistanceMatrix,
     DistanceMatrix3D,
 )
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
+    bonds_apply_func,
+    preprocess_mol,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -80,6 +85,7 @@ MODULES_2D: list[ModuleType] = [
     estate,
     extended_topochemical_atom,
     fragment_complexity,
+    information_content,
     mc_gowan_volume,
     molecular_distance_edge,
     path_count,
@@ -185,6 +191,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
+    kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
     distance_matrix_kekulized = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
@@ -249,6 +256,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         detour_matrix: detour_matrix.calc(mol_regular, props_regular, n_frags),
         molecular_distance_edge: molecular_distance_edge.calc(
             mol_regular, adjacency_matrix_regular, distance_matrix_regular
+        ),
+        information_content: information_content.calc(
+            mol_hydrogens, props_hydrogens, kekulized_bond_types
         ),
     }
 
