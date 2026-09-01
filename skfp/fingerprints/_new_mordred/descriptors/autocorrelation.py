@@ -1,12 +1,8 @@
 import numpy as np
-from rdkit.Chem import Mol
 
-from skfp.descriptors import atomic_partial_charges
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    PROPERTY_FUNCS,
-    get_intrinsic_state,
-    get_sigma_electrons,
-    get_valence_electrons,
+    WEIGHTING_PROPERTY_NAMES,
+    AtomicProperties,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
@@ -17,38 +13,37 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-# atomic properties used to weight distance matrices
-_PROPS = {
-    **PROPERTY_FUNCS,
-    "valence_electrons": get_valence_electrons,
-    "sigma_electrons": get_sigma_electrons,  # http://dx.doi.org/10.1002%2Fjps.2600721016
-    "intrinsic_state": get_intrinsic_state,  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
-}
+MAX_DISTANCE = 8
 
+_PROP_NAMES_NO_CHARGE = [
+    name for name in WEIGHTING_PROPERTY_NAMES if name != "gasteiger_charge"
+]
 
 FEATURE_NAMES = [
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["autocorr", "autocorr_avg"]
-        for prop in _PROPS
-        for dist in range(9)
+        for prop in _PROP_NAMES_NO_CHARGE
+        for dist in range(MAX_DISTANCE + 1)
     ],
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["autocorr_centered", "autocorr_avg_centered"]
-        for prop in [*_PROPS, "gasteiger_charge"]
-        for dist in range(9)
+        for prop in WEIGHTING_PROPERTY_NAMES
+        for dist in range(MAX_DISTANCE + 1)
     ],
     *[
         f"{desc}_{prop}_lag_{dist}"
         for desc in ["Moreau_autocorr", "Geary_autocorr"]
-        for prop in [*_PROPS, "gasteiger_charge"]
-        for dist in range(1, 9)
+        for prop in WEIGHTING_PROPERTY_NAMES
+        for dist in range(1, MAX_DISTANCE + 1)
     ],
 ]
 
 
-def calc(mol_hydrogens: Mol, distance_matrix_hydrogens: DistanceMatrix) -> np.ndarray:
+def calc(
+    atomic_props_hydrogens: AtomicProperties, distance_matrix_hydrogens: DistanceMatrix
+) -> np.ndarray:
     """
     Autocorrelation descriptors.
 
@@ -59,149 +54,126 @@ def calc(mol_hydrogens: Mol, distance_matrix_hydrogens: DistanceMatrix) -> np.nd
     Following the original Mordred implementation, this function uses hydrogen-explicit
     molecule and distance matrix.
     """
-    atoms = list(mol_hydrogens.GetAtoms())
-    atomic_props = {}
-    for name, func in _PROPS.items():
-        atomic_props[name] = np.array([func(atom) for atom in atoms], dtype=np.float64)
-
-    atomic_props["gasteiger_charge"] = atomic_partial_charges(
-        mol_hydrogens, partial_charge_model="Gasteiger", charge_errors="ignore"
-    )
+    num_atoms = atomic_props_hydrogens.num_atoms
 
     # one-hot stack of distance masks for d = 1...8, shape (8, n, n)
-    # allows bulk tensor computation
-    dist_stack = np.stack(
-        [(distance_matrix_hydrogens.matrix == d) for d in range(1, 9)], axis=0
+    dist_masks = np.stack(
+        [
+            (distance_matrix_hydrogens.matrix == dist)
+            for dist in range(1, MAX_DISTANCE + 1)
+        ],
+        axis=0,
+    ).astype(np.float64)
+
+    # number of atoms exactly d bonds away from each atom, shape (8, n)
+    neighbor_counts = dist_masks.sum(axis=2)
+
+    # number of unordered atom pairs at each distance, shape (8,)
+    pair_counts = 0.5 * neighbor_counts.sum(axis=1)
+
+    # every weighting property at once, shape (n_props, n)
+    props = atomic_props_hydrogens.weighting_properties
+    ats, aats, atsc, aatsc, mats, gats = _get_autocorrelations(
+        props, dist_masks, neighbor_counts, pair_counts, num_atoms
     )
 
-    # number of unordered pairs at each distance (0.5 * count of True), shape (8,)
-    pair_counts = 0.5 * dist_stack.sum(axis=(1, 2))
-
-    ats, aats = _calc_ats_aats(atomic_props, dist_stack, pair_counts)
-    atsc, aatsc, mats = _calc_atsc_aatsc_mats(atomic_props, dist_stack, pair_counts)
-    gats = _calc_gats(atomic_props, dist_stack, pair_counts)
-
-    values = np.concatenate([ats, aats, atsc, aatsc, mats, gats], dtype=np.float32)
-    return values
-
-
-@np.errstate(divide="ignore", invalid="ignore")
-def _calc_ats_aats(
-    atomic_props: dict[str, np.ndarray],
-    dist_stack: np.ndarray,
-    pair_counts: np.ndarray,
-) -> tuple[list[float], list[float]]:
-    """
-    Autocorrelation of Topological Structure (ATS) descriptors.
-
-    Moreau-Broto autocorrelation descriptors, based on weighted atomic
-    correlations at a given distance.
-    """
-    ats_values = []
-    aats_values = []
-
-    for prop_name in _PROPS:
-        props = atomic_props[prop_name]
-
-        # distance 0 has separate formula
-        ats_0 = np.sum(props**2)
-        ats_values.append(ats_0)
-        aats_values.append(ats_0 / len(props))
-
-        ats_d = _weighted_sums(props, dist_stack)  # shape (8,)
-        aats_d = np.where(pair_counts != 0, ats_d / pair_counts, np.nan)
-
-        ats_values.extend(ats_d.tolist())
-        aats_values.extend(aats_d.tolist())
-
-    return ats_values, aats_values
+    # plain (uncentered) ATS and AATS do not use signed partial charge
+    is_charge = np.array(
+        [name == "gasteiger_charge" for name in WEIGHTING_PROPERTY_NAMES]
+    )
+    return np.concatenate(
+        [
+            ats[~is_charge].ravel(),
+            aats[~is_charge].ravel(),
+            atsc.ravel(),
+            aatsc.ravel(),
+            mats.ravel(),
+            gats.ravel(),
+        ],
+        dtype=np.float32,
+    )
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def _calc_atsc_aatsc_mats(
-    atomic_props: dict[str, np.ndarray],
-    dist_stack: np.ndarray,
+def _get_autocorrelations(
+    props: np.ndarray,
+    dist_masks: np.ndarray,
+    neighbor_counts: np.ndarray,
     pair_counts: np.ndarray,
-) -> tuple[list[float], list[float], list[float]]:
+    num_atoms: int,
+) -> tuple[np.ndarray, ...]:
     """
-    ATS centered descriptors, Moran coefficient descriptors (MATS).
+    Calculate every autocorrelation descriptor family, for every atomic property.
+
+    All families are functions of the same two quantities, computed here for all
+    properties and distances at once: the quadratic form ``p^T M_d p`` and the
+    weighted square sum ``sum_i deg_d(i) p_i^2``, where ``M_d`` is the distance-d
+    mask and ``deg_d`` the number of atoms d bonds away.
+
+    Every returned array is indexed by property and then by distance, which is also
+    the order the feature names are in.
     """
-    atsc_values = []
-    aatsc_values = []
-    mats_values = []
+    # M_d @ p for every property and distance, shape (n_props, 8, n)
+    weighted = np.einsum("dij,pj->pdi", dist_masks, props)
+    # p^T M_d p, shape (n_props, 8)
+    quadratic_form = np.einsum("pdi,pi->pd", weighted, props)
 
-    for prop_name in [*_PROPS, "gasteiger_charge"]:
-        props = atomic_props[prop_name]
-        props_centered = props - np.mean(props)
-        sum_squared_props_vec_c = np.sum(props_centered**2)
+    # ATS: sum over unordered atom pairs at distance d of p_i * p_j
+    # masks are symmetric with zero diagonal, so we divide by 2
+    square_sums = np.sum(props**2, axis=1)
+    ats = np.column_stack([square_sums, 0.5 * quadratic_form])
+    aats = _per_pair_average(ats, pair_counts, num_atoms)
 
-        # distance 0 has separate formula
-        atsc_0 = sum_squared_props_vec_c
-        atsc_values.append(atsc_0)
-        aatsc_values.append(atsc_0 / len(props))
+    # ATSC: like above, but on mean-centered properties
+    # note that centering commutes with the product, so a mask applied to a
+    # centered property is the same as the mask applied to the property
+    # minus its mean times the neighbor counts
+    means = props.mean(axis=1, keepdims=True)
+    props_centered = props - means
+    weighted_centered = weighted - means[:, :, np.newaxis] * neighbor_counts
+    centered_square_sums = np.sum(props_centered**2, axis=1)
+    atsc = np.column_stack(
+        [
+            centered_square_sums,
+            0.5 * np.einsum("pdi,pi->pd", weighted_centered, props_centered),
+        ]
+    )
+    aatsc = _per_pair_average(atsc, pair_counts, num_atoms)
 
-        atsc_d = _weighted_sums(props_centered, dist_stack)  # shape (8,)
-        aatsc_d = np.where(pair_counts != 0, atsc_d / pair_counts, np.nan)
+    # MATS (Moran coefficient): the centered per-pair average, normalized by
+    # property variance around its mean
+    variation = centered_square_sums[:, np.newaxis]
+    mats = np.where(variation != 0, num_atoms * aatsc[:, 1:] / variation, np.nan)
+    mats = np.where(pair_counts != 0, mats, np.nan)
 
-        if sum_squared_props_vec_c != 0:
-            mats_d = len(props) * aatsc_d / sum_squared_props_vec_c
-        else:
-            mats_d = np.full_like(aatsc_d, np.nan)
+    # GATS (Geary coefficient): mean squared difference between paired atoms,
+    # normalized by the property variance
+    # note: expanding (p_i - p_j)^2 over the mask gives:
+    # 2 * sum_i deg_d(i) p_i^2 - 2 * (p^T M_d p)
+    # so no pairwise difference matrix has to be formed explicitly, we can use the
+    # quadratic form from above
+    sum_squared_diff = 2.0 * (props**2 @ neighbor_counts.T) - 2.0 * quadratic_form
+    # make sure we get non-negative value (could happen due to float arithmetic)
+    sum_squared_diff = np.maximum(sum_squared_diff, 0.0)
+    mean_squared_diff = np.where(
+        pair_counts != 0, sum_squared_diff / (4 * pair_counts), np.nan
+    )
+    props_var = props.var(axis=1, ddof=1)[:, np.newaxis]
+    gats = np.where(props_var != 0, mean_squared_diff / props_var, np.nan)
+    gats = np.where(pair_counts != 0, gats, np.nan)
 
-        mats_d = np.where(pair_counts != 0, mats_d, np.nan)
-
-        atsc_values.extend(atsc_d.tolist())
-        aatsc_values.extend(aatsc_d.tolist())
-        mats_values.extend(mats_d.tolist())
-
-    return atsc_values, aatsc_values, mats_values
+    return ats, aats, atsc, aatsc, mats, gats
 
 
-@np.errstate(divide="ignore", invalid="ignore")
-def _calc_gats(
-    atomic_props: dict[str, np.ndarray],
-    dist_stack: np.ndarray,
-    pair_counts: np.ndarray,
-) -> list[float]:
+def _per_pair_average(
+    values: np.ndarray, pair_counts: np.ndarray, num_atoms: int
+) -> np.ndarray:
     """
-    Geary coefficient descriptors.
+    Average ATS-like values over the number of contributing atom pairs.
+
+    Distance 0 pairs an atom with itself, so it is averaged over the atom count,
+    while the remaining distances are averaged over their pair count and are NaN
+    where no such pair exists.
     """
-    gats_values = []
-
-    for prop_name in [*_PROPS, "gasteiger_charge"]:
-        props = atomic_props[prop_name]
-        props_var = np.var(props, ddof=1)
-
-        # squared pairwise differences, formed once and reused per distance
-        pairs_sq_diff = (props[:, np.newaxis] - props) ** 2  # shape (n, n)
-        sum_sq_diff = np.tensordot(
-            dist_stack, pairs_sq_diff, axes=([1, 2], [0, 1])
-        )  # shape (8,)
-
-        denom = 4 * pair_counts
-        mean_squared_diff = np.where(denom != 0, sum_sq_diff / denom, np.nan)
-        if props_var != 0:
-            gats_d = mean_squared_diff / props_var
-        else:
-            gats_d = np.full_like(mean_squared_diff, np.nan)
-
-        gats_d = np.where(pair_counts != 0, gats_d, np.nan)
-
-        gats_values.extend(gats_d.tolist())
-
-    return gats_values
-
-
-def _weighted_sums(props: np.ndarray, dist_stack: np.ndarray) -> np.ndarray:
-    """
-    For each distance d (1..8), compute 0.5 * props @ mask_d @ props.
-
-    props_i * props_j is computed as an outer product, giving inter-atomic
-    property correlations, with distance mask to apply to relevant entries.
-    """
-    # (n,) outer product (n,) -> (n, n)
-    props_corr_matrix = np.multiply.outer(props, props)
-
-    # dist_stack (distance masks tensor) has shape (8, n, n)
-    # (8, n, n) tensor dot product (n, n) -> (8,)
-    return 0.5 * np.tensordot(dist_stack, props_corr_matrix, axes=([1, 2], [0, 1]))
+    averaged = np.where(pair_counts != 0, values[:, 1:] / pair_counts, np.nan)
+    return np.column_stack([values[:, 0] / num_atoms, averaged])
