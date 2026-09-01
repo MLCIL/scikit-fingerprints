@@ -1,0 +1,14 @@
+{
+  "Hexane": {"fMF": 0},
+  "Benzene": {"fMF": 0.5},
+  "Caffeine": {"fMF": 0.375},
+  "Lycopene": {"fMF": 0},
+  "Epicatechin": {"fMF": 0.457142857},
+  "Limonene": {"fMF": 0.230769231},
+  "Allicin": {"fMF": 0},
+  "Glutathione": {"fMF": 0},
+  "Digoxin": {"fMF": 0.361344538},
+  "Capsaicin": {"fMF": 0.12244898},
+  "EllagicAcid": {"fMF": 0.571428571},
+  "Astaxanthin": {"fMF": 0.3125}
+}
