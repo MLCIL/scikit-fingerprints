@@ -38,12 +38,30 @@ def calc(
     atomic_props_hydrogens: AtomicProperties,
     kekulized_bond_types: np.ndarray,
 ) -> np.ndarray:
-    """
-    Information content descriptors.
+    r"""
+    Information content descriptors, of orders 0 to ``_MAX_ORDER``.
 
-    Each variant is the entropy of how the atoms fall into classes of equal
-    neighborhoods, either taken as is or rescaled by the size of the molecule, by its
-    bond orders, or by the mass and the atomic number of the atoms.
+    Atoms are grouped by the neighborhood of a given order around them, into classes
+    of :math:`n_g` atoms each, so that :math:`p_g = n_g / A` in a molecule of :math:`A`
+    atoms. Writing :math:`\pi^{*}_b` for the order of the :math:`b`-th bond:
+
+    - neighborhood information content, :math:`{\rm IC}_m = -\sum_g p_g \log_2 p_g`
+    - neighborhood total information content, :math:`{\rm TIC}_m = A \cdot {\rm IC}_m`
+    - structural information content, :math:`{\rm SIC}_m = {\rm IC}_m / \log_2 A`,
+      NaN when :math:`A = 1`
+    - bonding information content,
+      :math:`{\rm BIC}_m = {\rm IC}_m / \log_2 \sum^B_{b=1} \pi^{*}_b`, NaN when
+      :math:`\sum^B_{b=1} \pi^{*}_b \leq 1`
+    - complementary information content,
+      :math:`{\rm CIC}_m = \log_2 A - {\rm IC}_m`
+    - modified information content index,
+      :math:`{\rm MIC}_m = -\sum_g m_g p_g \log_2 p_g`, weighting a class by the mass
+      of its atoms
+    - Z-modified information content index,
+      :math:`{\rm ZMIC}_m = -\sum_g n_g Z_g p_g \log_2 p_g`, by their atomic number
+      and the size of the class
+
+    The molecule carries explicit hydrogens, and its aromatic bonds are kekulized.
     """
     num_atoms = atomic_props_hydrogens.num_atoms  # A
     if num_atoms == 0:
