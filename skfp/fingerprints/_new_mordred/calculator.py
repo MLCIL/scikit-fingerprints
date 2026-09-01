@@ -221,7 +221,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index: zagreb_index.calc(mol_regular, adjacency_matrix_regular),
         acid_base: acid_base.calc(mol_regular),
-        autocorrelation: autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
+        autocorrelation: autocorrelation.calc(
+            props_hydrogens, distance_matrix_hydrogens
+        ),
         estate: estate.calc(mol_regular),
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
             mol_regular, distance_matrix_regular
