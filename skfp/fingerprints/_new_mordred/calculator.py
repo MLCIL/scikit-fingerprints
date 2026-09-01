@@ -267,7 +267,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         distance_matrix: distance_matrix.calc(
             props_regular, n_frags, distance_matrix_regular
         ),
-        detour_matrix: detour_matrix.calc(mol_regular, props_regular, n_frags),
+        detour_matrix: detour_matrix.calc(
+            props_regular, distance_matrix_regular, rings_regular, n_frags
+        ),
         molecular_distance_edge: molecular_distance_edge.calc(
             mol_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
