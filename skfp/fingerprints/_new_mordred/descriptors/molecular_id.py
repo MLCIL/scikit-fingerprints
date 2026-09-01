@@ -34,14 +34,7 @@ FEATURE_NAMES = [
 # Mordred spells the same number as int(1 / eps ** 2)
 _WEIGHT_PRODUCT_LIMIT = 10**20
 
-_HYDROGEN_ATOMIC_NUM = 1
-_CARBON_ATOMIC_NUM = 6
-_NITROGEN_ATOMIC_NUM = 7
-_OXYGEN_ATOMIC_NUM = 8
-
-# one flag per atomic number, indexed by the atomic number itself. Selecting the
-# halogens this way is a plain gather, where np.isin spends more time sorting its
-# few needles than the whole lookup takes.
+# halogen flag per atomic number, for a fast vectorized NumPy lookup
 _NUM_ATOMIC_NUMBERS = 119  # atomic numbers 0 to 118, as RDKit reports them
 _IS_HALOGEN = np.zeros(_NUM_ATOMIC_NUMBERS, dtype=bool)
 _IS_HALOGEN[sorted(HALOGEN_ATOMIC_NUMS)] = True
@@ -65,15 +58,13 @@ def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     atomic_nums = props_regular.atomic_nums
     # a heteroatom here is anything but carbon and hydrogen, unlike the
     # carbon-only definition AtomicProperties.is_hetero uses
-    is_hetero = (atomic_nums != _HYDROGEN_ATOMIC_NUM) & (
-        atomic_nums != _CARBON_ATOMIC_NUM
-    )
+    is_hetero = (atomic_nums != 1) & (atomic_nums != 6)
     molecular_ids = [
         atom_ids.sum(),  # every atom, so no selection to build
         atom_ids[is_hetero].sum(),
-        atom_ids[atomic_nums == _CARBON_ATOMIC_NUM].sum(),
-        atom_ids[atomic_nums == _NITROGEN_ATOMIC_NUM].sum(),
-        atom_ids[atomic_nums == _OXYGEN_ATOMIC_NUM].sum(),
+        atom_ids[atomic_nums == 6].sum(),  # carbon
+        atom_ids[atomic_nums == 7].sum(),  # nitrogen
+        atom_ids[atomic_nums == 8].sum(),  # oxygen
         atom_ids[_IS_HALOGEN[atomic_nums]].sum(),
     ]
 
@@ -90,9 +81,6 @@ def _atom_ids(props: AtomicProperties) -> np.ndarray:
     Atomic ID of every atom: one plus half the sum, over all simple paths
     starting at that atom, of the inverse square root of the product of the
     path's edge weights.
-
-    This is by far the most expensive part of the descriptor; see
-    :func:`_sum_over_paths` for why enumerating those paths is exponential.
     """
     adjacency = _weighted_adjacency(props)
     num_atoms = props.num_atoms
@@ -138,20 +126,12 @@ def _sum_over_paths(
 ) -> float:
     """
     Sum of the inverse square root of the edge weight product over every simple
-    path that extends the one ending at ``atom``.
+    path extending the one that ends at ``atom``.
 
-    This is a backtracking search rather than a plain depth-first traversal:
-    ``visited`` marks the atoms on the *current path*, not the atoms already
-    seen, and the mark is undone on the way out. An atom is therefore re-entered
-    once per route that reaches it, and the recursion has one call per simple
-    path instead of one per atom. The cost is exponential in the number of rings
-    -- a plain traversal of pentacene makes 22 calls from a given atom, this one
-    makes 359 -- and there is no way around it: the sum needs one term per path,
-    and the paths have to be simple, so no per-atom bookkeeping can stand in for
-    walking them. It does degenerate to a plain traversal for acyclic molecules,
-    where only one route reaches each atom.
-
-    Restoring the marks also lets one buffer serve every starting atom.
+    Backtracking search: ``visited`` marks the atoms on the current path and is
+    cleared on the way out, so each simple path is walked once. The cost is
+    exponential in the number of rings. Clearing the marks also lets a single
+    buffer serve every starting atom.
     """
     visited[atom] = 1
     total = 0.0
