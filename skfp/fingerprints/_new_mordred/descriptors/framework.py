@@ -8,9 +8,6 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicPropert
 """
 Molecular framework ratio descriptor.
 
-References
-    * https://doi.org/10.1021/jm9602928
-
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
@@ -30,6 +27,10 @@ def calc(
     its framework: the ring atoms together with the linkers joining them.
 
     The denominator counts hydrogens, so benzene scores 6 / 12 rather than 1.
+
+    Based on Bemis, G. W., & Murcko, M. A. (1996). The properties of known
+    drugs. 1. Molecular frameworks. Journal of Medicinal Chemistry, 39(15),
+    2887-2893. https://doi.org/10.1021/jm9602928
     """
     if num_atoms_hydrogens == 0:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
@@ -46,18 +47,12 @@ def _linker_atoms(props: AtomicProperties, ring_atom_sets: list[set[int]]) -> se
     Atoms outside every ring that lie on a shortest path between two rings.
 
     Each ring is contracted to a single node, so a route between two rings is a
-    path in that quotient graph. Mordred searches once per pair of rings; a
-    breadth-first search from one ring reaches all the others at once, so one
-    search per ring is enough -- linear in the ring count rather than quadratic.
+    path in that quotient graph. A breadth-first search from one ring reaches all
+    the others at once, so one search per ring suffices, taking one shortest path
+    per pair.
 
-    Only one shortest path per pair is taken, as in Mordred. Which one is picked
-    does not matter: a second, different route between two rings would close a
-    cycle, and ring perception turns that cycle into a ring, so its atoms stop
-    being linkers in the first place.
-
-    Hydrogens are left out of the graph. Mordred keeps them, but a hydrogen has
-    a single bond and so can only ever be a dead end, never an interior atom of
-    a path between two rings.
+    Hydrogens are left out of the graph: with a single bond, a hydrogen can only
+    be a dead end, never an interior atom of a path between two rings.
     """
     if len(ring_atom_sets) < 2:
         return set()
