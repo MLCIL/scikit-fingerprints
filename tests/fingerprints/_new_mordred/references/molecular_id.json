@@ -1,0 +1,23 @@
+{
+  "Hexane": {"MID": 10.83915043, "AMID": 1.806525072},
+  "Benzene": {"MID": 11.8125, "AMID": 1.96875},
+  "Caffeine": {"MID": 27.80010233, "AMID": 1.985721595},
+  "Cyanidin": {"MID": 42.68983013, "AMID": 2.032849054},
+  "Lycopene": {"MID": 77.41561711, "AMID": 1.935390428},
+  "Epicatechin": {"MID": 42.68983013, "AMID": 2.032849054},
+  "Limonene": {"MID": 19.38570823, "AMID": 1.938570823},
+  "Allicin": {"MID": 16.65502353, "AMID": 1.85055817},
+  "Glutathione": {"MID": 37.80131214, "AMID": 1.890065607},
+  "Digoxin": {"MID": 113.2392334, "AMID": 2.058895153},
+  "Capsaicin": {"MID": 43.08947003, "AMID": 1.958612274},
+  "EllagicAcid": {"MID": 45.46110533, "AMID": 2.066413879},
+  "Astaxanthin": {"MID": 86.16657979, "AMID": 1.958331359},
+  "DMSO": {"MID": 6.732050808, "AMID": 1.683012702},
+  "DiethylThioketone": {"MID": 10.6758508, "AMID": 1.779308466},
+  "VinylsulfonicAcid": {"MID": 10.46599026, "AMID": 1.74433171},
+  "Thiophene": {"MID": 9.6875, "AMID": 1.9375},
+  "Triethoxyphosphine": {"MID": 18.66994061, "AMID": 1.866994061},
+  "MethylphosphonicAcid": {"MID": 8.5, "AMID": 1.7},
+  "MethylCyclopropane": {"MID": 7.175868588, "AMID": 1.793967147},
+  "Acetonitrile": {"MID": 4.914213562, "AMID": 1.638071187}
+}
