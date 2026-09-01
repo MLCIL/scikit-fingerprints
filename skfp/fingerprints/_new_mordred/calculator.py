@@ -27,7 +27,6 @@ from skfp.fingerprints._new_mordred.descriptors import (
     geometric_index,
     gravitational_index,
     log_s,
-    lipinski,
     mc_gowan_volume,
     mol_filters,
     molecular_distance_edge,
@@ -89,12 +88,9 @@ MODULES_2D: list[ModuleType] = [
     extended_topochemical_atom,
     fragment_complexity,
     mc_gowan_volume,
-<<<<<<< HEAD
     log_s,
     framework,
-=======
     mol_filters,
->>>>>>> 7a8aef8 (rename module)
     molecular_distance_edge,
     molecular_id,
     path_count,
@@ -184,7 +180,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
 
     # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
-    mol_properties = MolecularProperties(mol_regular)
+    mol_properties = MolecularProperties.from_mol(mol_regular)
 
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
