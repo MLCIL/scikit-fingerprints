@@ -210,7 +210,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
-    distance_matrix_kekulized = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
@@ -254,10 +253,11 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         mc_gowan_volume: mc_gowan_volume.calc(props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
-            mol_kekulized,
-            distance_matrix_kekulized,
-            mol_kekulized_hydrogens,
-            rings_regular.num_rings,
+            kekulized_bond_types,
+            props_regular,
+            props_hydrogens,
+            distance_matrix_regular,
+            rings_regular,
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
