@@ -28,6 +28,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     log_s,
     mc_gowan_volume,
     molecular_distance_edge,
+    molecular_id,
     morse,
     path_count,
     polarizability,
@@ -84,6 +85,7 @@ MODULES_2D: list[ModuleType] = [
     mc_gowan_volume,
     log_s,
     molecular_distance_edge,
+    molecular_id,
     path_count,
     polarizability,
     rdkit_descriptors,  # both 2D and 3D
@@ -253,6 +255,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         molecular_distance_edge: molecular_distance_edge.calc(
             mol_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
+        molecular_id: molecular_id.calc(props_regular, n_frags),
     }
 
     for module, values in descriptors_2d.items():
