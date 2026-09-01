@@ -100,10 +100,6 @@ def _weighted_adjacency(props: AtomicProperties) -> list[list[tuple[int, int]]]:
     """
     Neighbors of every atom paired with their bond weight, the product of the
     degrees of the two bonded atoms.
-
-    Kept as nested Python lists of plain ints rather than NumPy arrays: the path
-    search below reads them one edge at a time, where boxing NumPy scalars costs
-    far more than the lookup itself.
     """
     degrees = props.degrees
     begin_idxs = props.bond_begin_idxs.tolist()
