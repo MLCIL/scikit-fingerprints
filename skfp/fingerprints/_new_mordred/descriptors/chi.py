@@ -1,12 +1,9 @@
-from collections import defaultdict
-
 import numpy as np
-from rdkit import Chem
-from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    get_sigma_electrons,
-    get_valence_electrons,
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.subgraphs import (
+    Subgraphs,
+    SubgraphsTopology,
 )
 
 """
@@ -16,162 +13,124 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# subgraph classes
+CHAIN = "chain"  # closes a cycle, branched or not
+PATH = "path"  # acyclic, and no atom joins more than two of its bonds
+PATH_CLUSTER = "path_cluster"  # acyclic and branched, some atom joining exactly two
+CLUSTER = "cluster"  # acyclic and branched, no atom joining exactly two
+SUBGRAPH_TYPES = (CHAIN, PATH, PATH_CLUSTER, CLUSTER)
+
+# The chi families: each covers one subgraph class over a range of orders, and is
+# named by the prefix its features carry. An "A" prefix averages over the subgraphs
+# instead of only summing, so Xp and AXp read the same sums.
+_FAMILIES = (
+    (CHAIN, range(3, 8), ("Xch",)),
+    (CLUSTER, range(3, 7), ("Xc",)),
+    (PATH_CLUSTER, range(4, 7), ("Xpc",)),
+    (PATH, range(8), ("Xp", "AXp")),
+)
+
+# the atom weightings the chi indices use, in the order calc() stacks them:
+# "d" weights an atom by its sigma electrons, "dv" by its valence electrons
+_PROPS = ("d", "dv")
+
+
 FEATURE_NAMES = [
-    "Xch-3d",
-    "Xch-4d",
-    "Xch-5d",
-    "Xch-6d",
-    "Xch-7d",
-    "Xch-3dv",
-    "Xch-4dv",
-    "Xch-5dv",
-    "Xch-6dv",
-    "Xch-7dv",
-    "Xc-3d",
-    "Xc-4d",
-    "Xc-5d",
-    "Xc-6d",
-    "Xc-3dv",
-    "Xc-4dv",
-    "Xc-5dv",
-    "Xc-6dv",
-    "Xpc-4d",
-    "Xpc-5d",
-    "Xpc-6d",
-    "Xpc-4dv",
-    "Xpc-5dv",
-    "Xpc-6dv",
-    "Xp-0d",
-    "Xp-1d",
-    "Xp-2d",
-    "Xp-3d",
-    "Xp-4d",
-    "Xp-5d",
-    "Xp-6d",
-    "Xp-7d",
-    "AXp-0d",
-    "AXp-1d",
-    "AXp-2d",
-    "AXp-3d",
-    "AXp-4d",
-    "AXp-5d",
-    "AXp-6d",
-    "AXp-7d",
-    "Xp-0dv",
-    "Xp-1dv",
-    "Xp-2dv",
-    "Xp-3dv",
-    "Xp-4dv",
-    "Xp-5dv",
-    "Xp-6dv",
-    "Xp-7dv",
-    "AXp-0dv",
-    "AXp-1dv",
-    "AXp-2dv",
-    "AXp-3dv",
-    "AXp-4dv",
-    "AXp-5dv",
-    "AXp-6dv",
-    "AXp-7dv",
+    f"{prefix}-{order}{prop}"
+    for _, orders, prefixes in _FAMILIES
+    for order in orders
+    for prefix in prefixes
+    for prop in _PROPS
 ]
-_CHI_TYPES = ("chain", "path", "path_cluster", "cluster")
-_CHI_PREFIX_TO_TYPE = {
-    "Xch": "chain",
-    "Xp": "path",
-    "AXp": "path",
-    "Xpc": "path_cluster",
-    "Xc": "cluster",
-}
 
 
-def calc(mol: Mol) -> np.ndarray:
+def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     """
-    Compute Mordred Chi descriptors without adding explicit hydrogens.
+    Chi descriptors, shape ``(n_features,)``.
+
+    Each descriptor sums ``prod(property over the subgraph atoms) ** -0.5`` over the
+    subgraphs of one order and class. Both properties are summed in the same pass
+    over each set of subgraphs, since the two differ only in what they weigh the
+    same atoms by, and the averaged families reuse the sums of their plain ones.
     """
-    properties = {
-        "d": np.asarray(
-            [get_sigma_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=np.float32,
-        ),
-        "dv": np.asarray(
-            [get_valence_electrons(atom) for atom in mol.GetAtoms()],
-            dtype=np.float32,
-        ),
-    }
-    subgraphs_by_order = {order: _chi_subgraphs(mol, order) for order in range(1, 8)}
+    # one row per weighting, in _PROPS order, so that a row of the sums below lines
+    # up with the feature name that reads it
+    prop_vals = np.stack([props.sigma_electrons.astype(float), props.valence_electrons])
 
     values = []
-    for name in FEATURE_NAMES:
-        chi_type, order, prop, averaged = _parse_chi_feature_name(name)
-        if order == 0:
-            node_sets = [[atom.GetIdx()] for atom in mol.GetAtoms()]
-        else:
-            node_sets = subgraphs_by_order[order][chi_type]
-        values.append(_chi_value(node_sets, properties[prop], averaged))
+    for subgraph_type, orders, prefixes in _FAMILIES:
+        for order in orders:
+            products = _subgraph_prop_products(
+                subgraphs, order, subgraph_type, prop_vals
+            )
+            totals, num_subgraphs = _chi_sums(products)
+
+            for prefix in prefixes:
+                averaged = prefix.startswith("A")
+                for total in totals:
+                    if averaged:
+                        total = total / num_subgraphs if num_subgraphs else np.nan
+                    values.append(total)
 
     return np.asarray(values, dtype=np.float32)
 
 
-def _chi_subgraphs(mol: Mol, order: int) -> dict[str, list[list[int]]]:
-    classified: dict[str, list[list[int]]] = {chi_type: [] for chi_type in _CHI_TYPES}
-    bond_endpoints = [
-        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()
-    ]
+def _subgraph_prop_products(
+    subgraphs: Subgraphs,
+    order: int,
+    subgraph_type: str,
+    prop_vals: np.ndarray,
+) -> np.ndarray:
+    """
+    Product of every property over the atoms of each subgraph of one order and chi
+    class, shape ``(n_props, n_subgraphs)``.
 
-    for bond_idxs in Chem.FindAllSubgraphsOfLengthN(mol, order):
-        # count how many subgraph edges are incident to each atom (its degree
-        # within this subgraph)
-        deg: defaultdict[int, int] = defaultdict(int)
-        for a, b in (bond_endpoints[i] for i in bond_idxs):
-            deg[a] += 1
-            deg[b] += 1
+    Order 0 and the paths are read off directly. Other classes need this
+    order's subgraphs classified.
+    """
+    if order == 0:
+        # order 0 subgraphs are the individual atoms, which belong to every class,
+        # so each product is over a single atom
+        return prop_vals
 
-        # A subgraph contains a cycle iff n_edges >= n_nodes (for connected subgraphs).
-        if len(bond_idxs) >= len(deg):
-            chi_type = "chain"
-        else:
-            d = set(deg.values())
-            if d <= {1, 2}:
-                chi_type = "path"
-            elif 2 in d:
-                chi_type = "path_cluster"
-            else:
-                chi_type = "cluster"
+    if subgraph_type == PATH:
+        # the paths are already held as atoms, for the path count descriptors
+        return prop_vals[:, subgraphs.paths(order).atom_idxs].prod(axis=2)
 
-        classified[chi_type].append(list(deg.keys()))
-
-    return classified
+    topology = subgraphs.topology(order)
+    class_mask = _class_mask(topology, subgraph_type)
+    return topology.atom_products(prop_vals)[:, class_mask]
 
 
-def _parse_chi_feature_name(name: str) -> tuple[str, int, str, bool]:
-    prefix, order_and_prop = name.split("-", maxsplit=1)
-    averaged = prefix.startswith("A")
-    chi_type = _CHI_PREFIX_TO_TYPE[prefix]
-    order = int(order_and_prop[0])
-    prop = order_and_prop[1:]
-    return chi_type, order, prop, averaged
+def _class_mask(topology: SubgraphsTopology, subgraph_type: str) -> np.ndarray:
+    """
+    Which subgraphs of a given order belong to a given subgraph type (Chi class).
+    Which of one order's subgraphs belong to a chi class, shape ``(n_subgraphs,)``.
+
+    The four classes partition the subgraphs, so exactly one of these masks holds
+    for any given subgraph.
+
+    Returns a mask over subgraphs, array of shape (n_subgraphs,).
+    """
+    if subgraph_type == CHAIN:
+        return topology.is_cyclic
+    if subgraph_type == PATH:
+        return topology.is_path
+
+    is_branched = ~topology.is_cyclic & (topology.max_degree > 2)
+    if subgraph_type == PATH_CLUSTER:
+        return is_branched & topology.has_degree_2
+    if subgraph_type == CLUSTER:
+        return is_branched & ~topology.has_degree_2
+    raise ValueError(f"Unknown chi subgraph class {subgraph_type!r}")
 
 
-def _chi_value(
-    node_sets: list[list[int]],
-    prop_values: np.ndarray,
-    averaged: bool,
-) -> np.float32:
-    if averaged and len(node_sets) == 0:
-        return np.float32(np.nan)
+def _chi_sums(products: np.ndarray) -> tuple[np.ndarray, int]:
+    """
+    Sum of ``product over the subgraph atoms ** -0.5`` over subgraphs, for every
+    property at once, given the products of shape ``(n_props, n_subgraphs)``.
 
-    value = 0.0
-    for nodes in node_sets:
-        product = 1.0
-        for node in nodes:
-            product *= prop_values[node]
-
-        if product <= 0:
-            return np.float32(np.nan)
-
-        value += product**-0.5
-
-    if averaged:
-        value /= len(node_sets)
-
-    return np.float32(value)
+    A property whose subgraph product is non-positive anywhere sums to NaN.
+    """
+    totals = np.where((products <= 0).any(axis=1), np.nan, (products**-0.5).sum(axis=1))
+    return totals, products.shape[1]

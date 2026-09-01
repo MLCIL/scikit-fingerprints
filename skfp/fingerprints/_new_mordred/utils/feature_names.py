@@ -6,7 +6,7 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-# 2D descriptors, in the order mordred lists them
+# 2D descriptors
 FEATURE_NAMES_2D = [
     "ABC",
     "ABCGG",
@@ -1623,7 +1623,7 @@ FEATURE_NAMES_2D = [
     "mZagreb2",
 ]
 
-# descriptors that need a conformer, in the order mordred lists them
+# 3D, conformer-based descriptors
 FEATURE_NAMES_3D = [
     "PNSA1",
     "PNSA2",
@@ -1840,6 +1840,4 @@ FEATURE_NAMES_3D = [
     "PBF",
 ]
 
-# the 3D output appends the conformer descriptors to the 2D ones, so a 2D feature
-# sits at the same position whether or not the 3D ones are computed
 ALL_FEATURE_NAMES = FEATURE_NAMES_2D + FEATURE_NAMES_3D
