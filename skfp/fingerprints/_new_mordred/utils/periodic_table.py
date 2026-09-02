@@ -103,7 +103,3 @@ ELEMENT_PERIOD = PeriodicTable(
 )
 
 HALOGEN_ATOMIC_NUMS: frozenset[int] = frozenset({9, 17, 35, 53, 85, 117})
-
-
-# kept until extended_topochemical_atom moves off the atom-by-atom lookup
-PERIOD = ELEMENT_PERIOD
