@@ -221,7 +221,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 2D descriptors
     descriptors_2d: dict[ModuleType, np.ndarray] = {
-        abc_index: abc_index.calc(mol_regular, distance_matrix_regular),
+        abc_index: abc_index.calc(props_regular, distance_matrix_regular),
         walk_count: walk_count.calc(props_regular, adjacency_eigendecomposition),
         path_count: path_count.calc(props_regular, subgraphs_regular),
         adjacency_matrix: adjacency_matrix.calc(
@@ -284,7 +284,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             props_regular, distance_matrix_regular, rings_regular, n_frags
         ),
         molecular_distance_edge: molecular_distance_edge.calc(
-            mol_regular, adjacency_matrix_regular, distance_matrix_regular
+            props_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
         molecular_id: molecular_id.calc(props_regular, n_frags),
         information_content: information_content.calc(
