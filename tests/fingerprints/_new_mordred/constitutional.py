@@ -8,6 +8,7 @@ from skfp.fingerprints._new_mordred.descriptors.constitutional import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -32,7 +33,7 @@ def computed_values(mordred_test_mols):
     computed = {}
     for name in _MOLECULES:
         mol = preprocess_mol(mordred_test_mols[name], explicit_hydrogens=True)
-        values = calc(mol)
+        values = calc(AtomicProperties.from_mol(mol))
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
