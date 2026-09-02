@@ -9,6 +9,7 @@ from skfp.fingerprints._new_mordred.descriptors.molecular_distance_edge import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix,
@@ -41,7 +42,7 @@ def computed_values(mordred_test_mols):
     for name in _REFERENCE:
         mol_regular = preprocess_mol(mordred_test_mols[name])
         values = calc(
-            mol_regular,
+            AtomicProperties.from_mol(mol_regular),
             AdjacencyMatrix(mol_regular),
             DistanceMatrix.from_mol(mol_regular),
         )
@@ -63,7 +64,9 @@ def test_molecular_distance_edge_reference_values(
 def test_molecular_distance_edge_output_shape(mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols["Caffeine"])
     values = calc(
-        mol_regular, AdjacencyMatrix(mol_regular), DistanceMatrix.from_mol(mol_regular)
+        AtomicProperties.from_mol(mol_regular),
+        AdjacencyMatrix(mol_regular),
+        DistanceMatrix.from_mol(mol_regular),
     )
 
     assert isinstance(values, np.ndarray)
@@ -76,7 +79,9 @@ def test_molecular_distance_edge_no_matching_atoms(mordred_test_mols):
     # while carbon buckets that occur are finite
     mol_regular = preprocess_mol(mordred_test_mols["Hexane"])
     values = calc(
-        mol_regular, AdjacencyMatrix(mol_regular), DistanceMatrix.from_mol(mol_regular)
+        AtomicProperties.from_mol(mol_regular),
+        AdjacencyMatrix(mol_regular),
+        DistanceMatrix.from_mol(mol_regular),
     )
     result = dict(zip(FEATURE_NAMES, values, strict=True))
 
