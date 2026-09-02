@@ -171,8 +171,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
     adjacency_matrix_regular = AdjacencyMatrix(mol_regular)
-    # shared by the adjacency matrix descriptors and, through them, by nothing else
-    # yet; the walk counts join later
+    # shared by the adjacency matrix descriptors and the walk counts
     adjacency_eigendecomposition = np.linalg.eigh(adjacency_matrix_regular.matrix)
 
     # per-atom property arrays and rings, read from the molecule once and shared
@@ -213,7 +212,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # 2D descriptors
     descriptors_2d: dict[ModuleType, np.ndarray] = {
         abc_index: abc_index.calc(mol_regular, distance_matrix_regular),
-        walk_count: walk_count.calc(mol_regular, adjacency_matrix_regular),
+        walk_count: walk_count.calc(props_regular, adjacency_eigendecomposition),
         path_count: path_count.calc(props_regular, subgraphs_regular),
         adjacency_matrix: adjacency_matrix.calc(
             props_regular,
