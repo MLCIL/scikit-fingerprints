@@ -44,21 +44,22 @@ def calc(
     )
 
     # keep only lower-triangle atom pairs (strictly below the diagonal), so each
-    # unordered pair is counted once; mark everything else as unreachable so it
-    # is dropped when filtering by topological distance
+    # unordered pair is counted once; everything else is mapped to order 0, which
+    # is dropped below
     dist = distance_matrix_regular.matrix * np.tri(*charge_terms.shape)
-    dist[dist == 0] = np.inf
+    orders = np.where(dist <= _MAX_ORDER, dist, 0).astype(np.intp)
 
-    raw = np.zeros(_MAX_ORDER, dtype=np.float32)
-    mean = np.zeros(_MAX_ORDER, dtype=np.float32)
-    for order in range(1, _MAX_ORDER + 1):
-        mask = dist == order
-        count = np.count_nonzero(mask)
-        raw_sum = np.abs(charge_terms[mask]).sum()
+    # accumulate all orders
+    counts = np.bincount(orders.ravel(), minlength=_MAX_ORDER + 1)[1:]
+    raw = np.bincount(
+        orders.ravel(), weights=np.abs(charge_terms).ravel(), minlength=_MAX_ORDER + 1
+    )
 
-        raw[order - 1] = raw_sum
-        mean[order - 1] = raw_sum / count if count else 0.0
+    # drop the unused order 0 bucket
+    raw = raw[1:]
 
+    mean = np.divide(raw, counts, out=np.zeros_like(raw), where=counts != 0)
+    mean = mean.astype(np.float32)
     global_charge = mean.sum()
 
     values = np.concatenate([raw, mean, [global_charge]], dtype=np.float32)
