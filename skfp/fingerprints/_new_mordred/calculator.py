@@ -250,7 +250,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             rings_regular,
             n_frags,
         ),
-        barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
+        barysz_matrix: barysz_matrix.calc(props_regular, n_frags),
         bcut: bcut.calc(mol_regular),
         aromatic: aromatic.calc(props_regular),
         topological_charge: topological_charge.calc(
