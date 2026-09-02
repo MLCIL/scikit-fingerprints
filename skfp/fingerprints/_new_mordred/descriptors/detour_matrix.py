@@ -137,7 +137,10 @@ def _get_ring_systems(ring_atom_sets: list[set[int]]) -> list[set[int]]:
     """
     systems = [set(ring) for ring in ring_atom_sets]
 
-    # merging two systems can bring a third within reach, so repeat until stable
+    # merging two systems can bring a third within reach, one sharing a single
+    # atom with each of them and two with the two of them together, so a single
+    # pass is not enough. Every merge breaks out to start the scan over, and the
+    # systems are returned once a whole pass finds no pair left to merge.
     while True:
         for first, second in itertools.combinations(systems, 2):
             if len(first & second) >= 2:
@@ -159,12 +162,20 @@ def _are_ring_systems_complete(
     the perceived rings. Cage-like molecules break it in two ways: RDKit's rings
     do not always cover every cycle of such a molecule, and two rings sharing a
     single atom can still be part of one cage, where a path leaving through one
-    of the shared atoms comes back through another - unlike a genuine spiro atom.
+    of the shared atoms comes back through another, unlike a true spiro atom.
 
-    Both show up as cycles unaccounted for, which the cycle rank counts. The rank
-    of the whole molecule (``bonds - atoms + 1``, for a connected one) splits over
-    the parts it cannot be traversed between, so it equals the ranks of the ring
-    systems summed, and any cycle escaping them makes that sum come out lower.
+    Both show up as cycles unaccounted for, which is what comparing two cycle
+    ranks catches: the one of the whole molecule against the ones of the ring
+    systems summed. The rank counts how many cycles are independent, the number
+    of bonds it carries over a spanning tree, each of them closing one cycle.
+
+    The rank of the molecule (``bonds - atoms + 1``, for a connected one) splits
+    over the parts it cannot be traversed between, so the two come out equal when
+    the systems hold every cycle. Sharing no bonds, the systems are always
+    independent of one another, so their sum can never come out higher. It comes
+    out lower when a cycle has bonds no single system holds, whether it was left
+    out of the perceived rings or split between two systems: it counts towards the
+    rank of the molecule, but towards none of theirs.
     """
     begins, ends = props.bond_begin_idxs, props.bond_end_idxs
 
@@ -173,11 +184,11 @@ def _are_ring_systems_complete(
     rank_sum = 0
     is_inside = np.zeros(props.num_atoms, dtype=bool)
     for ring_system in ring_systems:
-        atoms = list(ring_system)
-        is_inside[atoms] = True
+        ring_system_atoms = list(ring_system)
+        is_inside[ring_system_atoms] = True
         num_bonds = np.count_nonzero(is_inside[begins] & is_inside[ends])
-        rank_sum += num_bonds - len(atoms) + 1
-        is_inside[atoms] = False
+        rank_sum += num_bonds - len(ring_system_atoms) + 1
+        is_inside[ring_system_atoms] = False
 
     return rank_sum == props.num_bonds - props.num_atoms + 1
 
