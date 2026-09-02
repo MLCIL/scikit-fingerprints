@@ -1,6 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix,
@@ -53,18 +53,15 @@ for _idx, (_z, _v1, _v2) in enumerate(_BUCKETS):
 
 @np.errstate(divide="ignore", invalid="ignore")
 def calc(
-    mol_regular: Mol,
+    atomic_props_regular: AtomicProperties,
     adjacency_matrix_regular: AdjacencyMatrix,
     distance_matrix_regular: DistanceMatrix,
 ) -> np.ndarray:
-    num_atoms = mol_regular.GetNumAtoms()
-    adj = adjacency_matrix_regular.matrix
+    num_atoms = atomic_props_regular.num_atoms
     dists = distance_matrix_regular.matrix
 
-    atomic_nums = np.fromiter(
-        (atom.GetAtomicNum() for atom in mol_regular.GetAtoms()), int, num_atoms
-    )
-    valences = adj.sum(axis=0).astype(int)
+    atomic_nums = atomic_props_regular.atomic_nums
+    valences = adjacency_matrix_regular.degree.astype(int)
 
     # enumerate atom pairs (unordered) and bucket by valence
     i, j = np.triu_indices(num_atoms, k=1)
