@@ -61,7 +61,7 @@ def calc_3d(
     mol_hydrogens_conformer: Mol,
     cpsa_2d: np.ndarray,
     gasteiger_charges_hydrogens: np.ndarray,
-):
+) -> np.ndarray:
     """
     Charged partial surface area (CPSA) descriptors.
 

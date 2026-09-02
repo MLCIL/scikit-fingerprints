@@ -12,34 +12,39 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 @pytest.mark.parametrize(
+    # total surface areas as mordred-community itself computes them, summing its
+    # SurfaceArea over the atoms at mesh level 5, the level its CPSA descriptors
+    # use; these molecules are the ones its own SASA test covers
     "name, expected_value",
     [
-        ("Hexane", 296.910),
-        ("Benzene", 243.552),
-        ("Caffeine", 369.973),
-        ("Cyanidin", 483.873),
-        ("Lycopene", 1172.253),
-        ("Epicatechin", 489.498),
-        ("Limonene", 361.278),
-        ("Allicin", 356.872),
-        ("Glutathione", 530.679),
-        ("Digoxin", 1074.428),
-        ("Capsaicin", 641.527),
-        ("EllagicAcid", 440.267),
-        ("Astaxanthin", 1080.941),
-        ("DMSO", 227.926),
-        ("DiethylThioketone", 290.503),
-        ("VinylsulfonicAcid", 246.033),
-        ("Thiophene", 227.046),
-        ("Triethoxyphosphine", 396.482),
-        ("MethylphosphonicAcid", 235.685),
-        ("MethylCyclopropane", 229.071),
-        ("Acetonitrile", 182.197),
-        ("Histidine", 335.672),
+        ("Hexane", 285.439),
+        ("Benzene", 235.120),
+        ("Caffeine", 359.799),
+        ("Cyanidin", 475.270),
+        ("Lycopene", 1138.664),
+        ("Epicatechin", 476.793),
+        ("Limonene", 347.205),
+        ("Allicin", 347.681),
+        ("Glutathione", 520.563),
+        ("Digoxin", 1054.415),
+        ("Capsaicin", 622.420),
+        ("EllagicAcid", 435.430),
+        ("Astaxanthin", 1055.327),
+        ("DMSO", 221.022),
+        ("DiethylThioketone", 280.823),
+        ("VinylsulfonicAcid", 240.107),
+        ("Thiophene", 220.846),
+        ("Triethoxyphosphine", 382.125),
+        ("MethylphosphonicAcid", 230.275),
+        ("MethylCyclopropane", 218.009),
+        ("Acetonitrile", 177.003),
+        ("Histidine", 327.239),
     ],
 )
 def test_sasa_reference_values(name, expected_value, mordred_test_mols_hydrogens_3d):
     mol = mordred_test_mols_hydrogens_3d[name]
     actual_value = solvent_accessible_surface_area(mol).sum()
-    # 5% relative tolerance, matching mordred's own SASA test
-    assert_allclose(actual_value, expected_value, rtol=0.05)
+    # 3% relative tolerance: we share mordred's radii, but integrate the exposed
+    # fraction of each atom on FreeSASA's 100 test points against its 5112-point
+    # icosphere, and RDKit exposes no way to raise that count
+    assert_allclose(actual_value, expected_value, rtol=0.03)
