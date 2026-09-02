@@ -1,10 +1,7 @@
-"""
-Code has been adapted from the BSD-licensed mordred-community library.
-
-https://github.com/JacksonBurns/mordred-community
-
-See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
-"""
+# This code has been adapted from the BSD-licensed mordred-community library.
+# https://github.com/JacksonBurns/mordred-community
+#
+# See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 
 # 2D descriptors
 FEATURE_NAMES_2D = [
