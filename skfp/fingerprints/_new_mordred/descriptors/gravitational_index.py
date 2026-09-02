@@ -1,10 +1,11 @@
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit.Chem.rdchem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix3D,
 )
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -39,9 +40,8 @@ def calc(
     - ``p`` suffix: sum only over bonded pairs (adjacency matrix) instead of
       over all atom pairs.
 
-    All distance and adjacency matrices are injected by the calculator.
-    ``mol_regular`` still carries the 3D conformer (``RemoveHs`` preserves the
-    heavy-atom coordinates), so its 3D distance matrix is well defined.
+    The hydrogen-suppressed molecule still carries the 3D conformer (``RemoveHs``
+    preserves the heavy-atom coordinates), so its 3D distance matrix is well-defined.
     """
     grav, grav_pair = _variant_values(
         mol_regular, distance_matrix_3d_regular, adjacency_matrix_regular
@@ -64,7 +64,8 @@ def _variant_values(
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
     """
-    masses = np.asarray([atom.GetMass() for atom in mol.GetAtoms()], dtype=np.float32)
+    # atom masses are the only thing this descriptor needs off the molecule
+    masses = atoms_apply_func(Atom.GetMass, mol, np.float64)
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 
