@@ -13,8 +13,6 @@ from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import safe_valu
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 """
-Mordred descriptors implemented as direct RDKit wrappers.
-
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 

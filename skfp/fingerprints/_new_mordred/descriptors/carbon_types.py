@@ -4,8 +4,6 @@ import numpy as np
 from rdkit.Chem import HybridizationType, Mol
 
 """
-Carbon type descriptors.
-
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
