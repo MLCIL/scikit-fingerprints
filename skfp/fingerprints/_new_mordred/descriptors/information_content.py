@@ -38,28 +38,33 @@ def calc(
     atomic_props_hydrogens: AtomicProperties,
     kekulized_bond_types: np.ndarray,
 ) -> np.ndarray:
-    r"""
+    """
     Information content descriptors, of orders 0 to ``_MAX_ORDER``.
 
     Atoms are grouped by the neighborhood of a given order around them, into classes
-    of :math:`n_g` atoms each, so that :math:`p_g = n_g / A` in a molecule of :math:`A`
-    atoms. Writing :math:`\pi^{*}_b` for the order of the :math:`b`-th bond:
+    of atoms coded alike. One class holds n of the molecule's A atoms, a share
+    p = n / A of them; B is the sum of the bond orders over all bonds; and every sum
+    below runs over the classes, one term each:
 
-    - neighborhood information content, :math:`{\rm IC}_m = -\sum_g p_g \log_2 p_g`
-    - neighborhood total information content, :math:`{\rm TIC}_m = A \cdot {\rm IC}_m`
-    - structural information content, :math:`{\rm SIC}_m = {\rm IC}_m / \log_2 A`,
-      NaN when :math:`A = 1`
-    - bonding information content,
-      :math:`{\rm BIC}_m = {\rm IC}_m / \log_2 \sum^B_{b=1} \pi^{*}_b`, NaN when
-      :math:`\sum^B_{b=1} \pi^{*}_b \leq 1`
-    - complementary information content,
-      :math:`{\rm CIC}_m = \log_2 A - {\rm IC}_m`
-    - modified information content index,
-      :math:`{\rm MIC}_m = -\sum_g m_g p_g \log_2 p_g`, weighting a class by the mass
-      of its atoms
-    - Z-modified information content index,
-      :math:`{\rm ZMIC}_m = -\sum_g n_g Z_g p_g \log_2 p_g`, by their atomic number
-      and the size of the class
+    - neighborhood information content, the entropy of those shares:
+        IC = sum of -p * log2(p)
+    - neighborhood total information content, that entropy over the whole molecule
+      rather than per atom:
+        TIC = A * IC
+    - structural information content, IC against the log2(A) that A atoms can reach
+      at most; NaN for a single atom:
+        SIC = IC / log2(A)
+    - bonding information content, the same against the bonds instead; NaN when
+      B <= 1:
+        BIC = IC / log2(B)
+    - complementary information content, how far IC falls short of that maximum:
+        CIC = log2(A) - IC
+    - modified information content index, IC with every term weighted by the mass of
+      the class's atoms:
+        MIC = sum of -mass * p * log2(p)
+    - Z-modified information content index, weighted instead by their atomic number
+      and by the size of the class:
+        ZMIC = sum of -n * Z * p * log2(p)
 
     The molecule carries explicit hydrogens, and its aromatic bonds are kekulized.
     """
