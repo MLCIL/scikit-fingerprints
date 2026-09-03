@@ -59,6 +59,7 @@ from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
 )
+from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -178,6 +179,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # per-atom property arrays and rings, read from the molecule once and shared
     props_regular = AtomicProperties.from_mol(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
+    subgraphs_regular = Subgraphs(props_regular)
 
     # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
     mol_properties = MolecularProperties(mol_regular)
@@ -212,7 +214,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     descriptors_2d: dict[ModuleType, np.ndarray] = {
         abc_index: abc_index.calc(mol_regular, distance_matrix_regular),
         walk_count: walk_count.calc(mol_regular, adjacency_matrix_regular),
-        path_count: path_count.calc(mol_regular),
+        path_count: path_count.calc(props_regular, subgraphs_regular),
         adjacency_matrix: adjacency_matrix.calc(
             props_regular,
             n_frags,
@@ -257,7 +259,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         cpsa: cpsa_2d,
         polarizability: polarizability.calc(props_hydrogens),
-        chi: chi.calc(mol_regular),
+        chi: chi.calc(props_regular, subgraphs_regular),
         fragment_complexity: fragment_complexity.calc(props_regular),
         eccentric_connectivity_index: eccentric_connectivity_index.calc(
             adjacency_matrix_regular, distance_matrix_regular

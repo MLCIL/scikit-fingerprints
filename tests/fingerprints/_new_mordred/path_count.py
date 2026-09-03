@@ -5,7 +5,9 @@ from numpy.testing import assert_allclose
 from skfp.fingerprints._new_mordred.descriptors.path_count import (
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -335,5 +337,6 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_path_count_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
-    values = calc(mol_regular)
+    props = AtomicProperties.from_mol(mol_regular)
+    values = calc(props, Subgraphs(props))
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-5)
