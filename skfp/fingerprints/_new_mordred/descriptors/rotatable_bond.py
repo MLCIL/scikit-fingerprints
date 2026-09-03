@@ -2,8 +2,6 @@ import numpy as np
 from rdkit.Chem import Mol, rdMolDescriptors
 
 """
-Rotatable bond descriptors implemented with RDKit bond counters.
-
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
