@@ -9,8 +9,6 @@ from skfp.fingerprints._new_mordred.utils.molecular_properties import (
 )
 
 """
-Mordred descriptors implemented as direct RDKit wrappers.
-
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 

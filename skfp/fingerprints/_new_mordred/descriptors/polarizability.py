@@ -16,6 +16,7 @@ def calc(atomic_props_hydrogens: AtomicProperties) -> np.ndarray:
     polarizabilities = atomic_props_hydrogens.get("polarizability")
 
     atom_polarizability = polarizabilities.sum()
+
     bond_polarizability = np.abs(
         polarizabilities[atomic_props_hydrogens.bond_begin_idxs]
         - polarizabilities[atomic_props_hydrogens.bond_end_idxs]
