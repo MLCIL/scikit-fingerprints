@@ -1,16 +1,12 @@
 import numpy as np
-from rdkit.Chem import (
-    Crippen,
-    Descriptors,
-    GraphDescriptors,
-    Mol,
-    MolSurf,
-    rdMolDescriptors,
-)
+from rdkit.Chem import GraphDescriptors, Mol, MolSurf, rdMolDescriptors
 from rdkit.Chem.EState import EState_VSA
 
 from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import safe_value
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
+from skfp.fingerprints._new_mordred.utils.molecular_properties import (
+    MolecularProperties,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -58,19 +54,20 @@ def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
     ]
 
 
-def _average_exact_mol_wt(mol: Mol) -> float:
+def _average_exact_mol_wt(mol_properties: MolecularProperties) -> float:
     """
     Compute average exact molecular weight.
 
     The AMW descriptor is exact molecular weight divided by total atom count,
     including implicit hydrogens in the atom denominator.
     """
-    return Descriptors.ExactMolWt(mol) / rdMolDescriptors.CalcNumAtoms(mol)
+    return mol_properties.exact_mol_wt / mol_properties.num_atoms
 
 
 def calc_rdkit_2d(
     mol_regular: Mol,
     distance_matrix_regular: DistanceMatrix,
+    mol_properties: MolecularProperties,
 ) -> np.ndarray:
     """
     Compute 2D descriptors that map directly to RDKit descriptor functions.
@@ -86,16 +83,16 @@ def calc_rdkit_2d(
             mol_regular,
             dMat=distance_matrix_regular.matrix,
         ),
-        rdMolDescriptors.CalcNumHBA(mol_regular),
-        rdMolDescriptors.CalcNumHBD(mol_regular),
+        mol_properties.num_h_bond_acceptors,
+        mol_properties.num_h_bond_donors,
         MolSurf.LabuteASA(mol_regular),
         *_calc_moe_type_descriptors(mol_regular),
-        Crippen.MolLogP(mol_regular),
-        Crippen.MolMR(mol_regular),
+        mol_properties.log_p,
+        mol_properties.molar_refractivity,
         rdMolDescriptors.CalcTPSA(mol_regular),
         rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True),
-        Descriptors.ExactMolWt(mol_regular),
-        safe_value(_average_exact_mol_wt, mol_regular),
+        mol_properties.exact_mol_wt,
+        safe_value(_average_exact_mol_wt, mol_properties),
     ]
 
     return np.asarray(values, dtype=np.float32)
