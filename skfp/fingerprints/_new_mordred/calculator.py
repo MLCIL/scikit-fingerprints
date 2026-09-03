@@ -24,11 +24,15 @@ from skfp.fingerprints._new_mordred.descriptors import (
     estate,
     extended_topochemical_atom,
     fragment_complexity,
+    framework,
     geometric_index,
     gravitational_index,
     information_content,
+    log_s,
     mc_gowan_volume,
+    mol_filters,
     molecular_distance_edge,
+    molecular_id,
     morse,
     path_count,
     polarizability,
@@ -56,6 +60,9 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import (
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
     bonds_apply_func,
     preprocess_mol,
+)
+from skfp.fingerprints._new_mordred.utils.molecular_properties import (
+    MolecularProperties,
 )
 
 """
@@ -87,7 +94,11 @@ MODULES_2D: list[ModuleType] = [
     fragment_complexity,
     information_content,
     mc_gowan_volume,
+    log_s,
+    framework,
+    mol_filters,
     molecular_distance_edge,
+    molecular_id,
     path_count,
     polarizability,
     rdkit_descriptors,  # both 2D and 3D
@@ -174,6 +185,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     props_regular = AtomicProperties.from_mol(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
 
+    # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
+    mol_properties = MolecularProperties(mol_regular)
+
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
     # note that atom numberings are different for those molecules
@@ -218,15 +232,20 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         autocorrelation: autocorrelation.calc(mol_hydrogens, distance_matrix_hydrogens),
         estate: estate.calc(mol_regular),
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
-            mol_regular, distance_matrix_regular
+            mol_regular, distance_matrix_regular, mol_properties
         ),
+        mol_filters: mol_filters.calc(mol_properties),
         atom_count: atom_count.calc(mol_regular),
         bond_count: bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
         carbon_types: carbon_types.calc(mol_kekulized),
         constitutional: constitutional.calc(mol_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
+        log_s: log_s.calc(mol_regular),
         vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),
         ring_count: ring_count.calc(rings_regular),
+        framework: framework.calc(
+            props_regular, rings_regular, props_hydrogens.num_atoms
+        ),
         vdw_volume_abc: vdw_volume_abc.calc(rings_regular, props_hydrogens),
         mc_gowan_volume: mc_gowan_volume.calc(props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
@@ -257,6 +276,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         molecular_distance_edge: molecular_distance_edge.calc(
             mol_regular, adjacency_matrix_regular, distance_matrix_regular
         ),
+        molecular_id: molecular_id.calc(props_regular, n_frags),
         information_content: information_content.calc(
             mol_hydrogens, props_hydrogens, kekulized_bond_types
         ),
