@@ -101,42 +101,45 @@ class Subgraphs:
 
     def __init__(self, props: AtomicProperties):
         # atom indices of the two ends of every bond, shape (n_bonds, 2)
-        self._bond_atoms = np.stack(
-            [props.bond_begin_idxs, props.bond_end_idxs], axis=1
-        )
+        self.bond_atoms = np.stack([props.bond_begin_idxs, props.bond_end_idxs], axis=1)
         self._num_atoms = props.num_atoms
-        self._num_bonds = props.num_bonds
 
-        # atom indices of the two ends of every bond, shape (n_bonds, 2)
-        self.bond_atoms = self._bond_atoms
         # which bonds each atom takes part in
         self.bonds_of_atom = self._build_atom_adjacency()
 
         # which bonds share an atom
-        self._bonds_share_atom = self._line_graph_neighbors(
-            self._bond_atoms, self.bonds_of_atom
+        bonds_share_atom = self._line_graph_neighbors(
+            self.bond_atoms, self.bonds_of_atom
         )
 
-        # order -> bond indexes
-        self._subgraph_cache: dict[int, np.ndarray] = {}
+        # bond indexes of every subgraph, one entry per order
+        # every order is enumerated in one pass, since each is grown from previous one
+        subgraphs = self._enumerate_subgraphs(
+            bonds_share_atom, props.num_bonds, SUBGRAPH_MAX_NUM_BONDS
+        )
 
-        # order -> topological info
-        self._analyzed_cache: dict[int, tuple[SubgraphsTopology, Paths]] = {}
+        # topology and paths of every subgraph, one tuple for each
+        # both hold one entry per order, indexed by order - 1, since order 0 has
+        # no bonds and is never enumerated
+        analyzed = [
+            self._topology_and_paths(bond_idxs, self.bond_atoms, order)
+            for order, bond_idxs in enumerate(subgraphs, start=1)
+        ]
+        self._topologies = tuple(topology for topology, _ in analyzed)
+        self._paths = tuple(paths for _, paths in analyzed)
 
     def topology(self, order: int) -> SubgraphsTopology:
         """
         Graph topology info for all subgraphs with a given order (number of bonds).
         """
-        topology, _ = self._calculate_topology_and_paths(order)
-        return topology
+        return self._topologies[order - 1]
 
     def paths(self, order: int) -> Paths:
         """
         Select all paths of a given order (length, number of bonds), up to
         ``SUBGRAPH_MAX_NUM_BONDS``.
         """
-        _, paths = self._calculate_topology_and_paths(order)
-        return paths
+        return self._paths[order - 1]
 
     def _build_atom_adjacency(self) -> np.ndarray:
         """
@@ -144,43 +147,18 @@ class Subgraphs:
 
         Unused cells for lower-degree atoms get value -1.
         """
-        degrees = np.bincount(self._bond_atoms.ravel(), minlength=self._num_atoms)
+        degrees = np.bincount(self.bond_atoms.ravel(), minlength=self._num_atoms)
         max_degree = int(degrees.max()) if degrees.size else 0
         bonds_of_atom = np.full((self._num_atoms, max_degree), -1, dtype=np.intp)
 
         # filling row by row keeps each atom's bonds in ascending order
         next_slot = np.zeros(self._num_atoms, dtype=np.intp)
-        for bond, (begin, end) in enumerate(self._bond_atoms):
+        for bond, (begin, end) in enumerate(self.bond_atoms):
             for atom in (begin, end):
                 bonds_of_atom[atom, next_slot[atom]] = bond
                 next_slot[atom] += 1
 
         return bonds_of_atom
-
-    def _subgraph_bond_idxs(self, order: int) -> np.ndarray:
-        """
-        Bond indices of every connected subgraph with ``order`` bonds, ascending
-        within each row, shape ``(n_subgraphs, order)``.
-        """
-        if not self._subgraph_cache:
-            # every order is enumerated in one pass, since each is grown from previous one
-            self._subgraph_cache = self._enumerate_subgraphs(
-                self._bonds_share_atom, self._num_bonds, SUBGRAPH_MAX_NUM_BONDS
-            )
-
-        return self._subgraph_cache[order]
-
-    def _calculate_topology_and_paths(
-        self, order: int
-    ) -> tuple[SubgraphsTopology, Paths]:
-        """
-        Analyze the subgraphs of a given order, calculating topology and paths.
-        """
-        if order not in self._analyzed_cache:
-            self._analyzed_cache[order] = self._topology_and_paths(
-                self._subgraph_bond_idxs(order), self._bond_atoms, order
-            )
-        return self._analyzed_cache[order]
 
     @staticmethod
     def _line_graph_neighbors(
@@ -207,11 +185,12 @@ class Subgraphs:
     @staticmethod
     def _enumerate_subgraphs(
         neighbors: list[set[int]], num_bonds: int, max_order: int
-    ) -> dict[int, np.ndarray]:
+    ) -> tuple[np.ndarray, ...]:
         """
         Enumerate connected subgraphs up to ``max_order`` bonds.
 
-        Returns dict: order -> bond indices of each subgraph, shape (n_subgraphs, order)
+        Returns one entry per order, indexed by order - 1: the bond indices of each
+        subgraph of that order, shape (n_subgraphs, order)
 
         Subgraph enumeration uses ESU algorithm Wernicke, "Efficient detection of
         network motifs"), which fixes for each subgraph a single order in which
@@ -228,22 +207,22 @@ class Subgraphs:
         bonds in different orders: passing over a bond drops it from that branch for
         good.
         """
-        by_order: dict[int, list[tuple[int, ...]]] = {
-            order: [] for order in range(1, max_order + 1)
-        }
+        by_order: list[list[tuple[int, ...]]] = [[] for _ in range(max_order)]
 
-        def grow(subgraph: list[int], offered: set[int], root: int) -> None:
-            by_order[len(subgraph)].append(tuple(sorted(subgraph)))
+        # ``touching`` is the bonds the subgraph can already reach; whatever the next
+        # bond adds has to lie beyond these, since these were on offer before and were
+        # declined. It is threaded through rather than recomputed, since a subgraph
+        # reaches exactly what its parent reached plus what the added bond reaches
+        def grow(
+            subgraph: list[int], offered: set[int], touching: set[int], root: int
+        ) -> None:
+            by_order[len(subgraph) - 1].append(tuple(sorted(subgraph)))
             if len(subgraph) == max_order:
                 return
 
-            # the bonds the subgraph can already reach; whatever the next bond adds has
-            # to lie beyond these, since these were on offer before and were declined
-            touching = set().union(*(neighbors[bond] for bond in subgraph))
-
             # popping from a copy makes a declined bond stay declined for this branch,
             # while each child gets its own offer set to work through
-            offered = set(offered)
+            offered = offered.copy()
             while offered:
                 added = offered.pop()
                 newly_reachable = {
@@ -251,20 +230,26 @@ class Subgraphs:
                     for bond in neighbors[added]
                     if bond > root and bond not in subgraph and bond not in touching
                 }
-                grow([*subgraph, added], offered | newly_reachable, root)
+                # adding a bond extends the reach of the subgraph by its own
+                grow(
+                    [*subgraph, added],
+                    offered | newly_reachable,
+                    touching | neighbors[added],
+                    root,
+                )
 
         for root_bond in range(num_bonds):
             above_root = {bond for bond in neighbors[root_bond] if bond > root_bond}
-            grow([root_bond], above_root, root_bond)
+            grow([root_bond], above_root, neighbors[root_bond], root_bond)
 
-        return {
-            order: (
-                np.array(rows, dtype=np.intp)
-                if rows
-                else np.empty((0, order), dtype=np.intp)
-            )
-            for order, rows in by_order.items()
-        }
+        result = tuple(
+            np.array(rows, dtype=np.intp)
+            if rows
+            else np.empty((0, order), dtype=np.intp)
+            for order, rows in enumerate(by_order, start=1)
+        )
+
+        return result
 
     @classmethod
     def _topology_and_paths(
@@ -281,27 +266,30 @@ class Subgraphs:
             topology = SubgraphsTopology(empty, empty, empty, no_flags, empty, no_flags)
             return topology, cls._no_paths(order)
 
-        # atoms at ends of subgraph's bonds
-        # sorted within each subgraph, so that repeats of an atom land next to each other
-        # shape ``(n_subgraphs, 2 * order)``
+        # the two atoms of each subgraph bond, one row per subgraph, sorted within the
+        # row so that repeats of an atom land next to each other, then flattened
         row_width = 2 * order
         endpoints = np.sort(
             bond_atoms[bond_idxs].reshape(num_subgraphs, row_width), axis=1
         ).ravel()
 
-        # one run of equal atom indices is one atom of the subgraph, and the length of
-        # the run is how many of the subgraph's bonds meet at that atom
+        # one run of equal atoms is one atom of the subgraph, its length that atom's
+        # degree within the subgraph
         is_run_start = np.ones(endpoints.shape, dtype=bool)
         is_run_start[1:] = endpoints[1:] != endpoints[:-1]
-        is_run_start[::row_width] = True  # a run never spans two subgraphs
+        is_run_start[::row_width] = True  # rows are back to back, a run spans only one
         run_start_idxs = np.flatnonzero(is_run_start)
+
+        # one entry per run, i.e. per (subgraph, atom), the runs of a subgraph adjacent
         degrees = np.diff(run_start_idxs, append=endpoints.size)
         subgraph_of_run = run_start_idxs // row_width
-
         atoms = endpoints[run_start_idxs]
+
+        # ragged view: subgraph i owns atom_counts[i] entries from atom_offsets[i]
         atom_counts = np.bincount(subgraph_of_run, minlength=num_subgraphs)
         atom_offsets = cls._run_starts(atom_counts)
 
+        # a tree has one bond fewer than atoms, so no fewer means a cycle
         is_cyclic = order >= atom_counts
         has_degree_2 = (
             np.bincount(subgraph_of_run, weights=degrees == 2, minlength=num_subgraphs)
