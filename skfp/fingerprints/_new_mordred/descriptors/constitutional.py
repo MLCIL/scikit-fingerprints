@@ -1,9 +1,8 @@
 import numpy as np
-from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Atom
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    PROPERTY_FUNCS,
+    CARBON_ELEMENT_PROPERTIES,
+    AtomicProperties,
 )
 
 """
@@ -14,6 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
+    # sums, one per element property, in ELEMENT_PROPERTY_TABLES order
     "SZ",
     "Sm",
     "Sv",
@@ -22,6 +22,7 @@ FEATURE_NAMES = [
     "Sare",
     "Sp",
     "Si",
+    # the same properties again, as means
     "MZ",
     "Mm",
     "Mv",
@@ -32,43 +33,15 @@ FEATURE_NAMES = [
     "Mi",
 ]
 
-_NUM_ELEMENTS = 119
 
-
-def _get_normalized_property_table() -> np.ndarray:
+def calc(props_hydrogens: AtomicProperties) -> np.ndarray:
     """
-    Precompute each atomic property divided by its value for carbon.
+    Constitutional descriptors: the sum (``S*``) and mean (``M*``) over the atoms of
+    every element property, each normalized by the property's value for carbon.
+
+    Hydrogens count as atoms here, so this works on the hydrogen-explicit molecule.
+    Normalizing the sums rather than the individual atoms divides eight times instead
+    of once per atom, which the sum of a quotient permits.
     """
-    atoms = tuple(Atom(atomic_num) for atomic_num in range(_NUM_ELEMENTS))
-    property_values = np.asarray(
-        [
-            [property_func(atom) for atom in atoms]
-            for property_func in PROPERTY_FUNCS.values()
-        ],
-        dtype=np.float64,
-    )
-    # Keep shape as (num_properties, 1) so broadcasting divides each row by carbon
-    # while preserving the atom axis.
-    carbon_values = property_values[:, 6].reshape(-1, 1)
-    return property_values / carbon_values
-
-
-_CARBON_NORMALIZED_PROPERTIES = _get_normalized_property_table()
-
-
-def calc(mol_hydrogens: Mol) -> np.ndarray:
-    """
-    Compute the Mordred constitutional descriptors.
-
-    For each atomic property, the property values of all atoms, including explicit
-    hydrogens, are normalized by the corresponding value for carbon. The `S*`
-    descriptors are their sums and the `M*` descriptors are their means.
-    """
-    atomic_numbers = np.fromiter(
-        (atom.GetAtomicNum() for atom in mol_hydrogens.GetAtoms()),
-        dtype=np.intp,
-        count=mol_hydrogens.GetNumAtoms(),
-    )
-    sums = _CARBON_NORMALIZED_PROPERTIES[:, atomic_numbers].sum(axis=1)
-    means = sums / atomic_numbers.size
-    return np.concatenate((sums, means)).astype(np.float32)
+    sums = props_hydrogens.element_properties.sum(axis=1) / CARBON_ELEMENT_PROPERTIES
+    return np.concatenate((sums, sums / props_hydrogens.num_atoms)).astype(np.float32)

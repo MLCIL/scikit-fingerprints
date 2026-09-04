@@ -214,9 +214,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # need to copy, since Kekulize modifies in place
     mol_kekulized = preprocess_mol(Mol(mol_regular), kekulize=True, sanitize=False)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
-    mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
-    )
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     # E-state indices are shared by EState and VSA descriptors
@@ -251,10 +248,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             mol_properties,
         ),
         mol_filters: mol_filters.calc(mol_properties),
-        atom_count: atom_count.calc(mol_regular),
-        bond_count: bond_count.calc(mol_hydrogens, mol_kekulized_hydrogens),
+        atom_count: atom_count.calc(mol_regular, props_regular),
+        bond_count: bond_count.calc(props_hydrogens, kekulized_bond_types),
         carbon_types: carbon_types.calc(mol_kekulized),
-        constitutional: constitutional.calc(mol_hydrogens),
+        constitutional: constitutional.calc(props_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
         log_s: log_s.calc(mol_regular),
         vertex_adjacency_info: vertex_adjacency_info.calc(props_regular),

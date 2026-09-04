@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdchem import Atom, Bond, BondType, Mol
@@ -387,17 +385,3 @@ class AtomicProperties:
                 (2.0 / periods) ** 2 * self.valence_electrons + 1
             ) / self.sigma_electrons
         return np.where(self.sigma_electrons == 0, np.nan, values)
-
-
-# kept until autocorrelation, barysz_matrix and constitutional move to
-# AtomicProperties; they still read one property of one atom at a time
-PROPERTY_FUNCS: dict[str, Callable[[Atom], float]] = {
-    "atomic_number": get_atomic_number,
-    "mass": get_mass,
-    "van_der_Waals_volume": get_van_der_waals_volume,
-    "Sanderson_electronegativity": get_sanderson_electronegativity,
-    "Pauling_electronegativity": get_pauling_electronegativity,
-    "Allred_Rochow_electronegativity": get_allred_rochow_electronegativity,
-    "polarizability": get_polarizability,
-    "ionization_potential": get_ionization_potential,
-}

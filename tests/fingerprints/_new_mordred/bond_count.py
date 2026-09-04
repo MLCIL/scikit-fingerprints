@@ -1,8 +1,11 @@
 import numpy as np
 import pytest
 from rdkit.Chem import AddHs, Kekulize, MolFromSmiles, RWMol
+from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors.bond_count import FEATURE_NAMES, calc
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import bonds_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,9 +19,10 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 def _calc(smiles: str) -> np.ndarray:
     mol = AddHs(MolFromSmiles(smiles))
-    mol_kek = RWMol(AddHs(MolFromSmiles(smiles)))
+    mol_kek = RWMol(MolFromSmiles(smiles))
     Kekulize(mol_kek)
-    values = calc(mol, mol_kek)
+    kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kek, np.intp)
+    values = calc(AtomicProperties.from_mol(mol), kekulized_bond_types)
     return values
 
 
