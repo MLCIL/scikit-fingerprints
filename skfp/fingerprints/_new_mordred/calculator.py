@@ -234,7 +234,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             adjacency_eigendecomposition,
         ),
         wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
-        zagreb_index: zagreb_index.calc(mol_regular, adjacency_matrix_regular),
+        zagreb_index: zagreb_index.calc(props_regular, adjacency_matrix_regular),
         acid_base: acid_base.calc(mol_regular),
         autocorrelation: autocorrelation.calc(
             props_hydrogens, distance_matrix_hydrogens
