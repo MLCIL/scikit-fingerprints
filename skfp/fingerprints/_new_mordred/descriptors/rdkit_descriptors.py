@@ -220,14 +220,15 @@ def _bertz_complexity(props: AtomicProperties, weighted_distances: np.ndarray) -
         connection_counts = np.ones(1)
     total_connections = connection_counts.sum()
 
-    atom_type_counts = np.bincount(props.atomic_nums)
-    atom_type_counts = atom_type_counts[atom_type_counts > 0]
-
-    connection_entropy = total_connections * (
-        _information_entropy(connection_counts) + np.log2(total_connections)
+    # Bertz's index sums this with a second term for the distribution of atom types,
+    # but that term never contributes in RDKit: it feeds integer atom counts to an
+    # entropy routine that returns zero for integer arrays, and only the connection
+    # counts come out as floats. Mordred wraps RDKit, so matching it means leaving
+    # the atom type term out rather than computing it.
+    return float(
+        total_connections
+        * (_information_entropy(connection_counts) + np.log2(total_connections))
     )
-    atom_type_entropy = props.num_atoms * _information_entropy(atom_type_counts)
-    return float(atom_type_entropy + connection_entropy)
 
 
 def _information_entropy(counts: np.ndarray) -> np.floating:
