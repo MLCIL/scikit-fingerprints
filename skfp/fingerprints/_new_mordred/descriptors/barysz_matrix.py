@@ -1,13 +1,13 @@
 import numpy as np
-from rdkit.Chem import Mol
-from rdkit.Chem.rdchem import Atom
+from scipy.sparse import coo_matrix, csr_matrix
 from scipy.sparse.csgraph import floyd_warshall
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    PROPERTY_FUNCS,
+    CARBON_ELEMENT_PROPERTIES,
+    ELEMENT_PROPERTY_TABLES,
     AtomicProperties,
 )
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import spectral_attributes
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -32,10 +32,12 @@ _ATTR_NAMES = [
     "VR3",
 ]
 
-FEATURE_NAMES = [f"{attr}_Dz{prop}" for prop in PROPERTY_FUNCS for attr in _ATTR_NAMES]
+FEATURE_NAMES = [
+    f"{attr}_Dz{prop}" for prop in ELEMENT_PROPERTY_TABLES for attr in _ATTR_NAMES
+]
 
 
-def calc(mol_regular: Mol, props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
+def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     Barysz matrix spectral descriptors.
 
@@ -48,76 +50,82 @@ def calc(mol_regular: Mol, props_regular: AtomicProperties, n_frags: int) -> np.
     """
     if n_frags != 1:
         values_nan = np.full(
-            len(PROPERTY_FUNCS) * len(_ATTR_NAMES), np.nan, dtype=np.float32
+            len(ELEMENT_PROPERTY_TABLES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
         )
 
         return values_nan
 
-    values: list = []
-    for prop_func in PROPERTY_FUNCS.values():
-        matrix = _barysz_matrix(mol_regular, prop_func)
-        if matrix is None:
-            values.extend([np.nan] * len(_ATTR_NAMES))
-        else:
-            values.extend(
-                _barysz_matrix_attribute_values(props_regular, n_frags, matrix)
-            )
+    # bond graph is the same for all properties, only the shortest paths weighted
+    # by properties and the spectral attributes differ
+    bond_graph = _BondGraph(atomic_props_regular)
+    weights, diagonals = _bond_weights_and_diagonals(atomic_props_regular)
+    is_defined = np.isfinite(weights).all(axis=1) & np.isfinite(diagonals).all(axis=1)
 
-    return np.asarray(values, dtype=np.float32)
+    matrices = []
+    for weight_row, diagonal in zip(
+        weights[is_defined], diagonals[is_defined], strict=True
+    ):
+        matrix = floyd_warshall(
+            bond_graph.get_prop_weighted_matrix(weight_row.astype(np.float32)),
+            directed=False,
+        )
+        np.fill_diagonal(matrix, diagonal)
+        matrices.append(matrix)
+
+    # a property whose matrix does not exist keeps its attributes at NaN
+    values = np.full((len(ELEMENT_PROPERTY_TABLES), len(_ATTR_NAMES)), np.nan)
+    if matrices:
+        values[is_defined] = spectral_attributes(
+            np.stack(matrices), atomic_props_regular, hermitian=True, n_frags=n_frags
+        )
+
+    return values.ravel().astype(np.float32)
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def _barysz_matrix(mol: Mol, prop_func) -> np.ndarray | None:
-    carbon_value = prop_func(Atom(6))  # Carbon
+def _bond_weights_and_diagonals(
+    props: AtomicProperties,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Bond weights and matrix diagonals of every atomic property, of shapes
+    ``(n_props, n_bonds)`` and ``(n_props, n_atoms)``.
 
-    property_values = np.asarray(
-        [prop_func(atom) for atom in mol.GetAtoms()], dtype=np.float32
+    A bond weighs the inverse of the properties of the atoms it joins and of its own
+    order, normalized by the value a carbon-carbon bond of that kind would have.
+    """
+    carbon_values = CARBON_ELEMENT_PROPERTIES[:, np.newaxis]
+    prop_vals = props.element_properties.astype(np.float32)
+
+    begins, ends = props.bond_begin_idxs, props.bond_end_idxs
+    weights = carbon_values**2 / (
+        prop_vals[:, begins] * prop_vals[:, ends] * props.bond_orders
     )
-    if np.any(~np.isfinite(property_values)):
-        return None
+    diagonals = 1.0 - carbon_values.astype(np.float32) / prop_vals
+    return weights, diagonals
 
-    n_atoms = mol.GetNumAtoms()
-    matrix = np.full((n_atoms, n_atoms), np.inf, dtype=np.float32)
-    np.fill_diagonal(matrix, 0.0)
 
-    bonds = mol.GetBonds()
-    if bonds:
-        i_arr = np.array([b.GetBeginAtomIdx() for b in bonds])
-        j_arr = np.array([b.GetEndAtomIdx() for b in bonds])
-        bo_arr = np.array([b.GetBondTypeAsDouble() for b in bonds])
-        weights = carbon_value**2 / (
-            property_values[i_arr] * property_values[j_arr] * bo_arr
+class _BondGraph:
+    """
+    COO sparse matrix graph representation. Easy to add weighting by properties
+    later.
+    """
+
+    def __init__(self, props: AtomicProperties):
+        self.shape = (props.num_atoms, props.num_atoms)
+        # compressing sorts the bonds by atom, which reorders their weights as well
+        pattern = coo_matrix(
+            (np.arange(props.num_bonds), (props.bond_begin_idxs, props.bond_end_idxs)),
+            shape=self.shape,
+            dtype=np.intp,
+        ).tocsr()
+        self._bond_order = pattern.data
+        self._indices = pattern.indices
+        self._indptr = pattern.indptr
+
+    def get_prop_weighted_matrix(self, weights: np.ndarray) -> csr_matrix:
+        """
+        Return the same bonds, carrying the given weights.
+        """
+        return csr_matrix(
+            (weights[self._bond_order], self._indices, self._indptr), shape=self.shape
         )
-        if not np.all(np.isfinite(weights)):
-            return None
-        matrix[i_arr, j_arr] = weights
-        matrix[j_arr, i_arr] = weights
-
-    matrix = floyd_warshall(matrix, directed=False)
-    diagonal = 1.0 - carbon_value / property_values
-    if np.any(~np.isfinite(diagonal)):
-        return None
-
-    np.fill_diagonal(matrix, diagonal)
-    return matrix
-
-
-def _barysz_matrix_attribute_values(
-    props: AtomicProperties, n_frags: int, matrix: np.ndarray
-) -> list[float | np.floating]:
-    attrs = MatrixAttributes(matrix, props, hermitian=True, n_frags=n_frags)
-    return [
-        attrs.graph_energy,
-        attrs.leading_eigenvalue,
-        attrs.spectral_diameter,
-        attrs.sp_ad,
-        attrs.sp_mad,
-        attrs.log_ee,
-        attrs.sm1,
-        attrs.ve1,
-        attrs.ve2,
-        attrs.ve3,
-        attrs.vr1,
-        attrs.vr2,
-        attrs.vr3,
-    ]
