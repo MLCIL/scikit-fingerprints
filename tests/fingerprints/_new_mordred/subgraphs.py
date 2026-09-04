@@ -49,6 +49,22 @@ def _paths_to_order(subgraphs: Subgraphs, order: int):
     return paths
 
 
+def _subgraph_bond_idxs(subgraphs: Subgraphs, order: int) -> np.ndarray:
+    """
+    Bond indices of every subgraph of one order.
+
+    Subgraphs keeps only the topologies and paths it derives, so the enumeration
+    is re-run here to get at its raw output.
+    """
+    neighbors = Subgraphs._line_graph_neighbors(
+        subgraphs.bond_atoms, subgraphs.bonds_of_atom
+    )
+    enumerated = Subgraphs._enumerate_subgraphs(
+        neighbors, len(subgraphs.bond_atoms), SUBGRAPH_MAX_NUM_BONDS
+    )
+    return enumerated[order - 1]  # one entry per order, indexed from zero
+
+
 def _row_set(bond_idxs: np.ndarray) -> set[tuple[int, ...]]:
     bond_idxs = np.asarray(bond_idxs)
     if bond_idxs.size == 0:
@@ -70,14 +86,14 @@ def test_enumeration_matches_rdkit_per_order(smiles, order):
     expected = {
         tuple(sorted(subgraph)) for subgraph in FindAllSubgraphsOfLengthN(mol, order)
     }
-    assert _row_set(_subgraphs_of(smiles)._subgraph_bond_idxs(order)) == expected
+    assert _row_set(_subgraph_bond_idxs(_subgraphs_of(smiles), order)) == expected
 
 
 @pytest.mark.parametrize("smiles", _SMILES)
 @pytest.mark.parametrize("order", range(1, SUBGRAPH_MAX_NUM_BONDS + 1))
 def test_subgraph_rows_are_ascending_and_correctly_shaped(smiles, order):
     """Rows must be sorted, since the path deduplication relies on it."""
-    bond_idxs = np.asarray(_subgraphs_of(smiles)._subgraph_bond_idxs(order))
+    bond_idxs = np.asarray(_subgraph_bond_idxs(_subgraphs_of(smiles), order))
     assert bond_idxs.ndim == 2
     assert bond_idxs.shape[1] == order
     if bond_idxs.size:
@@ -92,8 +108,8 @@ def test_classes_partition_the_subgraphs_of_each_order(smiles):
     """
     subgraphs = _subgraphs_of(smiles)
     for order in range(1, SUBGRAPH_MAX_NUM_BONDS + 1):
-        num_subgraphs = len(np.asarray(subgraphs._subgraph_bond_idxs(order)))
         topology = subgraphs.topology(order)
+        num_subgraphs = len(topology.is_cyclic)
         by_type = sum(
             int(_class_mask(topology, subgraph_type).sum())
             for subgraph_type in SUBGRAPH_TYPES
@@ -106,8 +122,8 @@ def test_atom_idxs_span_the_atoms_of_their_subgraphs(smiles):
     mol = preprocess_mol(MolFromSmiles(smiles))
     subgraphs = _subgraphs_of(smiles)
     for order in range(1, SUBGRAPH_MAX_NUM_BONDS + 1):
-        num_subgraphs = len(np.asarray(subgraphs._subgraph_bond_idxs(order)))
         topology = subgraphs.topology(order)
+        num_subgraphs = len(topology.is_cyclic)
         for subgraph_idx in range(num_subgraphs):
             atoms = topology.atom_idxs(subgraph_idx).tolist()
             assert len(set(atoms)) == len(atoms)  # no repeated atom
@@ -121,8 +137,8 @@ def test_atom_products_multiply_over_each_subgraph(smiles):
     subgraphs = _subgraphs_of(smiles)
     rng = np.random.default_rng(0)
     for order in range(1, SUBGRAPH_MAX_NUM_BONDS + 1):
-        num_subgraphs = len(np.asarray(subgraphs._subgraph_bond_idxs(order)))
         topology = subgraphs.topology(order)
+        num_subgraphs = len(topology.is_cyclic)
         values = rng.uniform(0.5, 2.0, size=(2, mol.GetNumAtoms()))
         products = topology.atom_products(values)
         assert products.shape == (2, num_subgraphs)
