@@ -1,3 +1,12 @@
+"""
+Mordred descriptors implemented as direct RDKit wrappers.
+
+This code has been adapted from the BSD-licensed mordred-community library.
+https://github.com/JacksonBurns/mordred-community
+
+See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
+"""
+
 import numpy as np
 from rdkit.Chem import GraphDescriptors, Mol, MolSurf, rdMolDescriptors
 from rdkit.Chem.EState import EState_VSA
@@ -7,13 +16,6 @@ from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
 )
-
-"""
-This code has been adapted from the BSD-licensed mordred-community library.
-https://github.com/JacksonBurns/mordred-community
-
-See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
-"""
 
 FEATURE_NAMES_2D = [
     "BalabanJ",
