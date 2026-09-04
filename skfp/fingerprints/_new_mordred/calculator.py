@@ -26,6 +26,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     framework,
     geometric_index,
     gravitational_index,
+    kappa_shape_index,
     log_s,
     mc_gowan_volume,
     mol_filters,
@@ -91,6 +92,7 @@ MODULES_2D: list[ModuleType] = [
     mc_gowan_volume,
     log_s,
     framework,
+    kappa_shape_index,
     mol_filters,
     molecular_distance_edge,
     molecular_id,
@@ -260,6 +262,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         cpsa: cpsa_2d,
         polarizability: polarizability.calc(props_hydrogens),
         chi: chi.calc(props_regular, subgraphs_regular),
+        kappa_shape_index: kappa_shape_index.calc(props_regular, subgraphs_regular),
         fragment_complexity: fragment_complexity.calc(props_regular),
         eccentric_connectivity_index: eccentric_connectivity_index.calc(
             adjacency_matrix_regular, distance_matrix_regular
