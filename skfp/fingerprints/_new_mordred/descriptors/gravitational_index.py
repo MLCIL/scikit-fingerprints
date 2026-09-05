@@ -1,10 +1,11 @@
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
     AdjacencyMatrix,
     DistanceMatrix3D,
 )
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -64,7 +65,8 @@ def _variant_values(
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
     """
-    masses = np.asarray([atom.GetMass() for atom in mol.GetAtoms()], dtype=np.float32)
+    # RDKit masses, not the Mordred mass table used by the other descriptors
+    masses = atoms_apply_func(Atom.GetMass, mol, np.float32)
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 

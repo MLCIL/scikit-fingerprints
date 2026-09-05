@@ -37,9 +37,9 @@ _RDKIT_PERIODIC_TABLE = Chem.GetPeriodicTable()
 # bond order per bond type, as RDKit's GetBondTypeAsDouble reports it; molecules
 # only ever carry these four types, and any other one stays NaN so that it shows up
 # in the descriptors that use bond orders rather than passing as some other order
-_BOND_ORDERS = np.full(max(int(bond_type) for bond_type in BondType.values) + 1, np.nan)
-_BOND_ORDERS[[int(BondType.SINGLE), int(BondType.DOUBLE)]] = [1.0, 2.0]
-_BOND_ORDERS[[int(BondType.TRIPLE), int(BondType.AROMATIC)]] = [3.0, 1.5]
+BOND_ORDERS = np.full(max(int(bond_type) for bond_type in BondType.values) + 1, np.nan)
+BOND_ORDERS[[int(BondType.SINGLE), int(BondType.DOUBLE)]] = [1.0, 2.0]
+BOND_ORDERS[[int(BondType.TRIPLE), int(BondType.AROMATIC)]] = [3.0, 1.5]
 
 # number of outer (valence) electrons per atomic number
 _N_OUTER_ELECS = np.array(
@@ -260,7 +260,7 @@ class AtomicProperties:
         # heteroatom: any non-carbon atom, hydrogens included
         self.is_hetero = atomic_nums != 6
         self.outer_electrons = _N_OUTER_ELECS[atomic_nums]
-        self.bond_orders = _BOND_ORDERS[bond_types]
+        self.bond_orders = BOND_ORDERS[bond_types]
         # the degree of an atom is the number of bonds it takes part in
         self.degrees = self._count_neighbors(np.ones(self.num_atoms, dtype=bool))
 
