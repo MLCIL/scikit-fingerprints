@@ -32,7 +32,6 @@ dependencies = [
     "huggingface_hub>=0.20.0,<2",
     "joblib>=1.0.0,<2",
     "mordredcommunity>=2.0.0,<3",
-    "networkx>=3.4.2",
     "numpy>=1.26.4,<3",
     "pandas>=1.5.3,<4",
     "rdkit>=2023.9.6,<=2026.3.5",
