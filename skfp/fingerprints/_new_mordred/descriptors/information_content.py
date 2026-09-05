@@ -75,6 +75,7 @@ def calc(
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     atomic_nums = atomic_props_hydrogens.atomic_nums  # Z
+    # RDKit masses, not the Mordred mass table used by the other descriptors
     masses = atoms_apply_func(Atom.GetMass, mol_hydrogens, np.float64)
 
     # the kekulized types cover the bonds between heavy atoms only, as they were read
