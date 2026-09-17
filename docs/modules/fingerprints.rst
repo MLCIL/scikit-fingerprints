@@ -59,3 +59,4 @@ Neural fingerprints
     :toctree: generated/
 
     CLAMPFingerprint
+    CheMeleonFingerprint

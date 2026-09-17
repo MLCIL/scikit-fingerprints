@@ -7,11 +7,11 @@ from numpy.testing import assert_allclose, assert_array_equal
 pytest.importorskip("torch")
 pytest.importorskip("chemprop")
 
-from skfp.fingerprints.neural.chemeleon import ChemeleonFingerprint
+from skfp.fingerprints.neural.chemeleon import CheMeleonFingerprint
 
 
 def test_chemeleon_output_basic_properties(smiles_list):
-    fp = ChemeleonFingerprint()
+    fp = CheMeleonFingerprint()
     X = fp.transform(smiles_list)
 
     assert X.shape == (len(smiles_list), 2048)
@@ -37,7 +37,7 @@ def test_chemeleon_reference_values():
         "CN1CCCC1c1cccnc1",  # nicotine
     ]
 
-    X_skfp = ChemeleonFingerprint().transform(smiles)
+    X_skfp = CheMeleonFingerprint().transform(smiles)
     expected = _load_chemeleon_data_file()
 
     assert_allclose(X_skfp, expected, atol=1e-5)
@@ -46,7 +46,7 @@ def test_chemeleon_reference_values():
 
 
 def test_chemeleon_mols_vs_smiles_input_parity(smiles_list, mols_list):
-    fp = ChemeleonFingerprint()
+    fp = CheMeleonFingerprint()
     X_smiles = fp.transform(smiles_list)
     X_mols = fp.transform(mols_list)
 
@@ -54,8 +54,8 @@ def test_chemeleon_mols_vs_smiles_input_parity(smiles_list, mols_list):
 
 
 def test_chemeleon_parallel_consistency(smiles_list):
-    X_serial = ChemeleonFingerprint(n_jobs=1).transform(smiles_list)
-    X_parallel = ChemeleonFingerprint(n_jobs=-1).transform(smiles_list)
+    X_serial = CheMeleonFingerprint(n_jobs=1).transform(smiles_list)
+    X_parallel = CheMeleonFingerprint(n_jobs=-1).transform(smiles_list)
 
     assert_allclose(X_serial, X_parallel, atol=1e-5)
 

@@ -16,11 +16,11 @@ from skfp.fingerprints.neural.base_neural_fp_transformer import (
 from skfp.utils import ensure_mols
 
 
-class ChemeleonFingerprint(BaseNeuralFingerprintTransformer):
+class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
     """
     CheMeleon fingerprint.
 
-    CheMeleon [1]_ uses pretrained message passing neural networks (MPNNs) to generate
+    CheMeleon [1]_ uses pretrained message passing neural networks (D-MPNNs) to generate
     2048-dimensional learned embeddings of molecular graphs.
 
     Requires neural optional dependency, installed as scikit-fingerprints[neural]
@@ -77,9 +77,9 @@ class ChemeleonFingerprint(BaseNeuralFingerprintTransformer):
 
     Examples
     --------
-    >>> from skfp.fingerprints.neural import ChemeleonFingerprint
+    >>> from skfp.fingerprints.neural import CheMeleonFingerprint
     >>> smiles = ["O", "CC", "[C-]#N", "CC=O"]
-    >>> fp = ChemeleonFingerprint()
+    >>> fp = CheMeleonFingerprint()
     >>> fp.transform(smiles)  # doctest: +SKIP
     array([...], shape=(4, 2048), dtype=float32)
     """
@@ -136,7 +136,6 @@ class ChemeleonFingerprint(BaseNeuralFingerprintTransformer):
 
     @classmethod
     def _load_model(cls, path: str) -> MPNN:
-        """Load pretrained CheMeleon MPNN from a checkpoint file."""
         chemeleon_mp = torch.load(path, map_location="cpu", weights_only=True)
         mp = BondMessagePassing(**chemeleon_mp["hyper_parameters"])
         mp.load_state_dict(chemeleon_mp["state_dict"])

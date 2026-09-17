@@ -1,5 +1,5 @@
 try:
-    from .chemeleon import ChemeleonFingerprint
+    from .chemeleon import CheMeleonFingerprint
     from .clamp import CLAMPFingerprint
 except ImportError:
     pass
