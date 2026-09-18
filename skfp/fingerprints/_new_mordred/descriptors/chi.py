@@ -106,13 +106,10 @@ def _subgraph_prop_products(
 
 def _class_mask(topology: SubgraphsTopology, subgraph_type: str) -> np.ndarray:
     """
-    Which subgraphs of a given order belong to a given subgraph type (Chi class).
     Which of one order's subgraphs belong to a chi class, shape ``(n_subgraphs,)``.
 
     The four classes partition the subgraphs, so exactly one of these masks holds
     for any given subgraph.
-
-    Returns a mask over subgraphs, array of shape (n_subgraphs,).
     """
     if subgraph_type == CHAIN:
         return topology.is_cyclic
