@@ -48,7 +48,7 @@ documentation = "https://scikit-fingerprints.readthedocs.io/latest"
 [project.optional-dependencies]
 neural = [
     "torch>=2.0.0",
-    "chemprop>=1.7.1",
+    "chemprop>=2.2.0",
 ]
 
 [dependency-groups]
