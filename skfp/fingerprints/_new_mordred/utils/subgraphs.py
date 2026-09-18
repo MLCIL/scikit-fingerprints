@@ -114,7 +114,7 @@ class Subgraphs:
 
         # bond indexes of every subgraph, one entry per order
         # every order is enumerated in one pass, since each is grown from previous one
-        subgraphs = self._enumerate_subgraphs(
+        self._subgraphs = self._enumerate_subgraphs(
             bonds_share_atom, props.num_bonds, SUBGRAPH_MAX_NUM_BONDS
         )
 
@@ -123,7 +123,7 @@ class Subgraphs:
         # no bonds and is never enumerated
         analyzed = [
             self._topology_and_paths(bond_idxs, self.bond_atoms, order)
-            for order, bond_idxs in enumerate(subgraphs, start=1)
+            for order, bond_idxs in enumerate(self._subgraphs, start=1)
         ]
         self._topologies = tuple(topology for topology, _ in analyzed)
         self._paths = tuple(paths for _, paths in analyzed)
@@ -140,6 +140,13 @@ class Subgraphs:
         ``SUBGRAPH_MAX_NUM_BONDS``.
         """
         return self._paths[order - 1]
+
+    def _subgraph_bond_idxs(self, order: int) -> np.ndarray:
+        """
+        Bond indices of every connected subgraph with ``order`` bonds, ascending
+        within each row, shape ``(n_subgraphs, order)``.
+        """
+        return self._subgraphs[order - 1]
 
     def _build_atom_adjacency(self) -> np.ndarray:
         """
