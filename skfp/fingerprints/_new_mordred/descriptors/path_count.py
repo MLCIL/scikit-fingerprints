@@ -53,8 +53,8 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     pi_counts[k]: sum over those paths of the product of their bond orders
     """
     # order 0 is a lone atom: one path per atom, with no bond orders to multiply
-    path_counts = [float(props.num_atoms)]
-    pi_counts = [float(props.num_atoms)]
+    path_counts = [props.num_atoms]
+    pi_counts = [props.num_atoms]
 
     for order in range(1, MAX_ORDER + 1):
         # enumerated subgraphs (including paths) shared with Chi descriptors only
@@ -65,16 +65,20 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
             paths = _grow_paths(paths, subgraphs)
 
         bond_idxs = paths.bond_idxs
-        path_counts.append(float(len(bond_idxs)))
-        pi_counts.append(float(props.bond_orders[bond_idxs].prod(axis=1).sum()))
+        path_counts.append(len(bond_idxs))
+        pi_counts.append(props.bond_orders[bond_idxs].prod(axis=1).sum())
 
     # piPC starts at 1
     pi_log_counts = [np.log(pi_count + 1) for pi_count in pi_counts[1:]]
 
     values = [
-        *path_counts[2:],  # MPC starts at order 2
+        # molecular path counts, number of paths of given length
+        *path_counts[2:],
+        # total number of paths
         sum(path_counts),
+        # pi-weighted bonds, with higher weights for higher-order bonds, log-scale
         *pi_log_counts,
+        # total pi-weighted path count
         np.log(sum(pi_counts) + 1),
     ]
 

@@ -58,19 +58,21 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     prop_vals = np.stack([props.sigma_electrons.astype(float), props.valence_electrons])
 
     values = []
-    for subgraph_type, orders, prefixes in _FAMILIES:
-        for order in orders:
-            products = _subgraph_prop_products(
-                subgraphs, order, subgraph_type, prop_vals
-            )
-            totals, num_subgraphs = _chi_sums(products)
+    # properties with negative values end up as NaNs
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for subgraph_type, orders, prefixes in _FAMILIES:
+            for order in orders:
+                products = _subgraph_prop_products(
+                    subgraphs, order, subgraph_type, prop_vals
+                )
+                totals, num_subgraphs = _chi_sums(products)
 
-            for prefix in prefixes:
-                averaged = prefix.startswith("A")
-                for total in totals:
-                    if averaged:
-                        total = total / num_subgraphs if num_subgraphs else np.nan
-                    values.append(total)
+                for prefix in prefixes:
+                    averaged = prefix.startswith("A")
+                    for total in totals:
+                        if averaged:
+                            total = total / num_subgraphs if num_subgraphs else np.nan
+                        values.append(total)
 
     return np.asarray(values, dtype=np.float32)
 
@@ -104,13 +106,10 @@ def _subgraph_prop_products(
 
 def _class_mask(topology: SubgraphsTopology, subgraph_type: str) -> np.ndarray:
     """
-    Which subgraphs of a given order belong to a given subgraph type (Chi class).
     Which of one order's subgraphs belong to a chi class, shape ``(n_subgraphs,)``.
 
     The four classes partition the subgraphs, so exactly one of these masks holds
     for any given subgraph.
-
-    Returns a mask over subgraphs, array of shape (n_subgraphs,).
     """
     if subgraph_type == CHAIN:
         return topology.is_cyclic
@@ -131,6 +130,8 @@ def _chi_sums(products: np.ndarray) -> tuple[np.ndarray, int]:
     property at once, given the products of shape ``(n_props, n_subgraphs)``.
 
     A property whose subgraph product is non-positive anywhere sums to NaN.
+    Assumes this function is wrapped in np.errstate().
     """
-    totals = np.where((products <= 0).any(axis=1), np.nan, (products**-0.5).sum(axis=1))
+    totals = (1 / np.sqrt(products)).sum(axis=1)
+    totals = np.where(np.isfinite(totals), totals, np.nan)
     return totals, products.shape[1]

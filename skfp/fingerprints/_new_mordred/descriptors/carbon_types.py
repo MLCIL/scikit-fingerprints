@@ -1,16 +1,14 @@
-"""
-Carbon type descriptors.
+from collections import defaultdict
 
+import numpy as np
+from rdkit.Chem import HybridizationType, Mol
+
+"""
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
-
-from collections import defaultdict
-
-import numpy as np
-from rdkit.Chem import HybridizationType, Mol
 
 FEATURE_NAMES = [
     "C1SP1",

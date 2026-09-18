@@ -1,14 +1,12 @@
-"""
-Rotatable bond descriptors implemented with RDKit bond counters.
+import numpy as np
+from rdkit.Chem import Mol, rdMolDescriptors
 
+"""
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
-
-import numpy as np
-from rdkit.Chem import Mol, rdMolDescriptors
 
 FEATURE_NAMES = ["nRot", "RotRatio"]
 
