@@ -5,20 +5,21 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 pytest.importorskip("torch")
+pytest.importorskip("chemprop")
 
-from skfp.fingerprints.neural import CLAMPFingerprint
+from skfp.fingerprints.neural.chemeleon import CheMeleonFingerprint
 
 
-def test_clamp_output_basic_properties(smiles_list):
-    fp = CLAMPFingerprint()
+def test_chemeleon_output_basic_properties(smiles_list):
+    fp = CheMeleonFingerprint()
     X = fp.transform(smiles_list)
 
-    assert X.shape == (len(smiles_list), 768)
+    assert X.shape == (len(smiles_list), 2048)
     assert X.dtype == np.float32
     assert np.all(np.isfinite(X))
 
 
-def test_clamp_reference_values():
+def test_chemeleon_reference_values():
     # This test compares the output of scikit-fingerprints implementation
     # with the original implementation on small subset of molecules
     smiles = [
@@ -30,31 +31,31 @@ def test_clamp_reference_values():
         "CN1CCCC1c1cccnc1",  # nicotine
     ]
 
-    X_skfp = CLAMPFingerprint().transform(smiles)
-    expected = _load_clamp_data_file()
+    X_skfp = CheMeleonFingerprint().transform(smiles)
+    expected = _load_chemeleon_data_file()
 
     assert_allclose(X_skfp, expected, atol=1e-5)
-    assert X_skfp.shape == (len(smiles), 768)
+    assert X_skfp.shape == (len(smiles), 2048)
     assert X_skfp.dtype == np.float32
 
 
-def test_clamp_mols_vs_smiles_input_parity(smiles_list, mols_list):
-    fp = CLAMPFingerprint()
+def test_chemeleon_mols_vs_smiles_input_parity(smiles_list, mols_list):
+    fp = CheMeleonFingerprint()
     X_smiles = fp.transform(smiles_list)
     X_mols = fp.transform(mols_list)
 
     assert_array_equal(X_smiles, X_mols)
 
 
-def test_clamp_parallel_consistency(smiles_list):
-    X_serial = CLAMPFingerprint(n_jobs=1).transform(smiles_list)
-    X_parallel = CLAMPFingerprint(n_jobs=-1).transform(smiles_list)
+def test_chemeleon_parallel_consistency(smiles_list):
+    X_serial = CheMeleonFingerprint(n_jobs=1).transform(smiles_list)
+    X_parallel = CheMeleonFingerprint(n_jobs=-1).transform(smiles_list)
 
     assert_allclose(X_serial, X_parallel, atol=1e-5)
 
 
-def _load_clamp_data_file() -> np.ndarray:
-    filename = "clamp_fp.npy"
+def _load_chemeleon_data_file() -> np.ndarray:
+    filename = "chemeleon_fp.npy"
 
     if "tests" in os.listdir():
         return np.load(os.path.join("tests", "fingerprints", "data", filename))

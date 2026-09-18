@@ -202,5 +202,4 @@ class CLAMPFingerprint(BaseNeuralFingerprintTransformer):
 
     def _forward_nn(self, X: torch.Tensor) -> torch.Tensor:
         model = self.get_model()
-        with torch.inference_mode():
-            return model(X)
+        return model(X)

@@ -25,7 +25,7 @@ extensions = [
     "nbsphinx",
 ]
 
-autodoc_mock_imports = ["torch"]
+autodoc_mock_imports = ["torch", "chemprop"]
 
 autodoc_default_options = {
     "inherited-members": True,

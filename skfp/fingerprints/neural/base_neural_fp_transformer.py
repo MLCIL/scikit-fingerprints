@@ -207,7 +207,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
             If ``sparse`` is True, a sparse SciPy CSR array is returned.
             Otherwise, a dense NumPy array is returned.
         """
-        with torch.no_grad():
+        with torch.inference_mode():
             X_input = self._prepare_input(X)
             X_input = self._to_device(X_input)
             X_output = self._forward_nn(X_input)
@@ -258,7 +258,9 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
         if isinstance(X, np.ndarray):
             return torch.from_numpy(X).to(self.device)
         if hasattr(X, "to"):
-            return X.to(self.device)
+            X_moved = X.to(self.device)
+            # Some packages return None from .to() method, so we need to check
+            return X if X_moved is None else X_moved
         if isinstance(X, dict) and all(hasattr(x, "to") for x in X.values()):
             return {k: v.to(self.device) for k, v in X.items()}
         raise RuntimeError("Cannot convert NN model to requested device")
