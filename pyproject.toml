@@ -13,7 +13,6 @@ readme = "README.md"
 classifiers = [
     "Intended Audience :: Information Technology",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -25,7 +24,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "descriptastorus>=2.0.0,<3",
     "e3fp>=1.2.6,<2",
@@ -101,7 +100,7 @@ filterwarnings = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 check_untyped_defs = true  # check all functions, this fixes some tests
 allow_redefinition_old = true  # we redefine variables a lot for efficiency
 # most libraries used are not properly typed in Python, particularly RDKit

@@ -43,7 +43,7 @@ We encourage you to submit pull requests (PRs) to improve our project. To do so,
 Prerequisites:
 
 - Git
-- Python 3.10 or higher
+- Python 3.11 or higher
 - uv
 - Pandoc
 
