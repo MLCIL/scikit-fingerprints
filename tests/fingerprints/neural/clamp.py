@@ -19,17 +19,8 @@ def test_clamp_output_basic_properties(smiles_list):
 
 
 def test_clamp_reference_values():
-    # Reference values were computed with the upstream
-    # `clamp.models.pretrained.PretrainedCLAMP.encode_smiles(...)` pipeline
-    # from the ml-jku/clamp repository, using the same pretrained checkpoint.
-    # Molecules were chosen so that their unfolded RDKit fingerprints have no
-    # folding collisions at fp_size=8192, which is the only known source of
-    # divergence between our implementation and the upstream one (see the
-    # `mhnreact.molutils.getFingerprint` collision-handling bug). For these
-    # collision-free molecules the two pipelines produce bit-identical
-    # 768-dimensional embeddings; any regression in our implementation
-    # (architecture, weight loading, featurization) will therefore fail this
-    # test.
+    # This test compares the output of scikit-fingerprints implementation
+    # with the original implementation on small subset of molecules
     smiles = [
         "CCO",  # ethanol
         "c1ccccc1",  # benzene

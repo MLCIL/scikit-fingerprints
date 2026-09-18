@@ -259,6 +259,7 @@ class BaseNeuralFingerprintTransformer(BaseFingerprintTransformer):
             return torch.from_numpy(X).to(self.device)
         if hasattr(X, "to"):
             X_moved = X.to(self.device)
+            # Some packages return None from .to() method, so we need to check
             return X if X_moved is None else X_moved
         if isinstance(X, dict) and all(hasattr(x, "to") for x in X.values()):
             return {k: v.to(self.device) for k, v in X.items()}

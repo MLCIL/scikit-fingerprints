@@ -20,8 +20,7 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
     """
     CheMeleon fingerprint.
 
-    CheMeleon [1]_ uses pretrained message passing neural networks (D-MPNNs) to generate
-    2048-dimensional learned embeddings of molecular graphs.
+    CheMeleon [1]_ is a pretrained directed message-passing neural network (D-MPNN). It generates 2048-dimensional embeddings.
 
     Requires neural optional dependency, installed as scikit-fingerprints[neural]
 
@@ -69,11 +68,11 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
 
     References
     ----------
-    .. [1] `Burns et al.
-        "CheMeleon: Descriptor-based Foundation Model for Molecular Property
-        Prediction"
-        arXiv:2506.15792, 2025.
-        <https://arxiv.org/abs/2506.15792>`_
+    .. [1] `Jackson W. Burns et al.
+        "Deep Learning Foundation Models for Low-Data Regimes from Classical
+        Molecular Descriptors"
+        J. Chem. Inf. Model. 2026, 66, 17, 10692-10701
+        <https://pubs.acs.org/doi/10.1021/acs.jcim.6c01546>`_
 
     Examples
     --------

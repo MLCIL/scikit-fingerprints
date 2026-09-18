@@ -20,14 +20,8 @@ def test_chemeleon_output_basic_properties(smiles_list):
 
 
 def test_chemeleon_reference_values():
-    # Reference values were computed with the upstream `CheMeleonFingerprint`
-    # class from `chemeleon_fingerprint.py` in the JacksonBurns/chemeleon
-    # repository, using the same pretrained `chemeleon_mp.pt` checkpoint
-    # (Zenodo record 15460715). Both pipelines use the same Chemprop
-    # featurization and message passing, so they produce bit-identical
-    # 2048-dimensional embeddings; any regression in our implementation
-    # (architecture, weight loading, featurization) will therefore fail this
-    # test.
+    # This test compares the output of scikit-fingerprints implementation
+    # with the original implementation on small subset of molecules
     smiles = [
         "CCO",  # ethanol
         "c1ccccc1",  # benzene
