@@ -23,7 +23,7 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
     CheMeleon [1]_ is a pretrained directed message-passing neural network (D-MPNN).
     It generates 2048-dimensional embeddings.
 
-    Requires neural optional dependency, installed as scikit-fingerprints[neural]
+    Requires ``neural`` optional dependency, installed as ``scikit-fingerprints[neural]``.
 
     Parameters
     ----------
