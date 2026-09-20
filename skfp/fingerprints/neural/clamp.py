@@ -25,7 +25,7 @@ class CLAMPCompoundEncoder(nn.Module):
         Output (768)
 
     Dropout layers are retained to match the original model weights. They have
-    no effect at inference time in default ``eval()`` mode
+    no effect at inference time in the default ``eval()`` mode.
 
     References
     ----------
@@ -59,11 +59,12 @@ class CLAMPFingerprint(BaseNeuralFingerprintTransformer):
     """
     CLAMP fingerprint.
 
-    CLAMP (Contrastive Language And Molecule Pre-training) uses a pretrained two-layer MLP compound encoder from CLAMP [1]_ to
-    transform concatenated ECFP count (4096 bits) and RDKit count (4096 bits)
-    fingerprints into 768-dimensional learned embeddings.
+    CLAMP (Contrastive Language And Molecule Pre-training) uses a pretrained
+    two-layer MLP compound encoder from CLAMP [1]_ to transform concatenated
+    ECFP count (4096 bits) and RDKit count (4096 bits) fingerprints into
+    768-dimensional learned embeddings.
 
-    Requires neural optional dependency, installed as scikit-fingerprints[neural]
+    Requires ``neural`` optional dependency, installed as ``scikit-fingerprints[neural]``.
 
     Parameters
     ----------
@@ -202,5 +203,4 @@ class CLAMPFingerprint(BaseNeuralFingerprintTransformer):
 
     def _forward_nn(self, X: torch.Tensor) -> torch.Tensor:
         model = self.get_model()
-        with torch.inference_mode():
-            return model(X)
+        return model(X)
