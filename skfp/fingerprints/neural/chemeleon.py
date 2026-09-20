@@ -20,7 +20,8 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
     """
     CheMeleon fingerprint.
 
-    CheMeleon [1]_ is a pretrained directed message-passing neural network (D-MPNN). It generates 2048-dimensional embeddings.
+    CheMeleon [1]_ is a pretrained directed message-passing neural network (D-MPNN).
+    It generates 2048-dimensional embeddings.
 
     Requires neural optional dependency, installed as scikit-fingerprints[neural]
 
