@@ -30,20 +30,33 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     https://doi.org/10.1002/qsar.19850040303
     """
     num_atoms = props.num_atoms
-    numerators = [
-        num_atoms * (num_atoms - 1) ** 2,
-        (num_atoms - 1) * (num_atoms - 2) ** 2,
-        (num_atoms - 2) ** 2 * (num_atoms - 3)
-        if num_atoms % 2 == 0
-        else (num_atoms - 1) * (num_atoms - 3) ** 2,
+
+    # the least path-rich graph is the linear chain, for every order
+    min_paths = [num_atoms - order for order in (1, 2, 3)]
+
+    # leaves per hub, split as evenly as the atom count allows
+    if num_atoms % 2 == 0:
+        max_paths_3 = ((num_atoms - 2) / 2) ** 2
+    else:
+        max_paths_3 = (num_atoms - 1) / 2 * ((num_atoms - 3) / 2)
+
+    max_paths = [
+        num_atoms * (num_atoms - 1) / 2,  # complete graph, every atom pair bonded
+        (num_atoms - 1) * (num_atoms - 2) / 2,  # star, every leaf pair via the hub
+        max_paths_3,  # two stars joined by a bond, leaves split evenly
     ]
 
+    # orders 1 and 2 are normalized by 2, order 3 by 4
+    scales = [2, 2, 4]
+
+    num_paths = [len(subgraphs.paths(order).bond_idxs) for order in (1, 2, 3)]
+
     values = [
-        numerator / (num_paths * num_paths) if num_paths else float("nan")
-        for numerator, num_paths in zip(
-            numerators,
-            (len(subgraphs.paths(order).bond_idxs) for order in (1, 2, 3)),
-            strict=True,
+        scale * num_max_paths * num_min_paths / (num_mol_paths * num_mol_paths)
+        if num_mol_paths
+        else float("nan")
+        for scale, num_max_paths, num_min_paths, num_mol_paths in zip(
+            scales, max_paths, min_paths, num_paths, strict=True
         )
     ]
     return np.asarray(values, dtype=np.float32)
