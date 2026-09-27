@@ -59,7 +59,7 @@ def calc(
     attrs = MatrixAttributes(
         detour_matrix,
         atomic_props_regular,
-        hermitian=True,
+        hermitian=True,  # detour matrix is always symmetric
         n_frags=n_frags,
     )
 
@@ -307,7 +307,8 @@ def _get_ring_system_correction(
     longest = _longest_paths_in_ring_system(props, atoms, within)
 
     # every atom reaches the ring system through the one of its atoms closest to
-    # it, since all of its paths into the system pass through that atom
+    # it, since all of its paths into the system pass through that atom. It is the
+    # only one that close: a second would close a cycle leaving the system.
     gates = np.argmin(shortest_distances[:, atoms], axis=1)
     return (longest - within)[gates[:, np.newaxis], gates]
 
