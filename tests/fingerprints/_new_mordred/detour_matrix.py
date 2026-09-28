@@ -3,10 +3,17 @@ from pathlib import Path
 
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import GetMolFrags
+from rdkit.Chem import GetMolFrags, MolFromSmiles
 
-from skfp.fingerprints._new_mordred.descriptors.detour_matrix import FEATURE_NAMES, calc
+from skfp.fingerprints._new_mordred.descriptors.detour_matrix import (
+    FEATURE_NAMES,
+    _are_ring_systems_complete,
+    _get_ring_systems,
+    calc,
+)
+from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -56,7 +63,13 @@ def computed_values(mordred_test_mols):
         mol = mordred_test_mols[name]
         n_frags = len(GetMolFrags(mol))
         mol_regular = preprocess_mol(mol)
-        values = calc(mol_regular, AtomicProperties.from_mol(mol_regular), n_frags)
+        props = AtomicProperties.from_mol(mol_regular)
+        values = calc(
+            props,
+            DistanceMatrix.from_mol(mol_regular),
+            RingSets(mol_regular, props),
+            n_frags,
+        )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
@@ -69,3 +82,18 @@ def test_detour_matrix_reference_values(feature_name, molecule, computed_values)
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]
     assert_allclose(actual, expected, atol=1e-5, equal_nan=True)
+
+
+def test_detour_index_cage_with_incomplete_ring_systems():
+    # a cage whose perceived rings miss some of its cycles, so the detour matrix
+    # has to fall back to the bridgeless components; expected value from a brute
+    # force over all simple paths (the rings alone would give 185)
+    mol = preprocess_mol(MolFromSmiles("C1C2C34C1C21CC12C3C42"))
+    props = AtomicProperties.from_mol(mol)
+    rings = RingSets(mol, props)
+    ring_systems = _get_ring_systems(rings.simple_ring_atom_sets)
+    assert not _are_ring_systems_complete(props, ring_systems)
+
+    values = calc(props, DistanceMatrix.from_mol(mol), rings, n_frags=1)
+    detour_index = values[FEATURE_NAMES.index("DetourIndex")]
+    assert_allclose(detour_index, 270)
