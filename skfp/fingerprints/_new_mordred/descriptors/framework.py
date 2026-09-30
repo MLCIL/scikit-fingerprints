@@ -36,7 +36,7 @@ def calc(
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     ring_atom_sets = rings_regular.simple_ring_atom_sets
-    framework_atoms = {atom for ring in ring_atom_sets for atom in ring}
+    framework_atoms = set(np.flatnonzero(rings_regular.is_in_ring).tolist())
     framework_atoms |= _linker_atoms(props_regular, ring_atom_sets)
 
     return np.asarray([len(framework_atoms) / num_atoms_hydrogens], dtype=np.float32)
