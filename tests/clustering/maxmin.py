@@ -7,6 +7,7 @@ from rdkit.DataStructs import BulkTanimotoSimilarity
 from scipy.sparse import csr_matrix
 
 from skfp.clustering import MaxMinClustering
+from skfp.clustering.utils import array_to_bitvectors
 
 
 @pytest.fixture(params=["dense", "sparse"])
@@ -60,7 +61,7 @@ def test_assignment_is_nearest_centroid(binary_X, maxmin_clusterer):
     clusterer = maxmin_clusterer
     clusterer.fit(binary_X)
 
-    bitvects = clusterer._array_to_bitvectors(binary_X)
+    bitvects = array_to_bitvectors(binary_X)
     centroids = clusterer.centroid_bitvectors_
     labels = clusterer.labels_
 
