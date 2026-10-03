@@ -65,6 +65,8 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     for weight_row, diagonal in zip(
         weights[is_defined], diagonals[is_defined], strict=True
     ):
+        # the bond graph stores each bond in one direction only, directed=False makes
+        # every bond traversable both ways
         matrix = floyd_warshall(
             bond_graph.get_prop_weighted_matrix(weight_row.astype(np.float32)),
             directed=False,
@@ -106,19 +108,27 @@ def _bond_weights_and_diagonals(
 
 class _BondGraph:
     """
-    COO sparse matrix graph representation. Easy to add weighting by properties
-    later.
+    Sparsity structure of the molecular bond graph, shared by all atomic properties.
+
+    The CSR layout (indices and row pointers) of the adjacency matrix is built once
+    from the bonds. Each property then only supplies its per-bond weights, which
+    ``get_prop_weighted_matrix`` arranges in CSR order to give that property's
+    weighted adjacency matrix, without rebuilding the structure. Each bond is
+    stored once, in one direction only, so the matrix must be used with undirected
+    shortest paths (e.g. ``floyd_warshall(..., directed=False)``).
     """
 
     def __init__(self, props: AtomicProperties):
         self.shape = (props.num_atoms, props.num_atoms)
+        # each bond is stored once, in the begin -> end direction only, so the matrix
+        # is directed on its own and must be used with undirected shortest paths
         # compressing sorts the bonds by atom, which reorders their weights as well
         pattern = coo_matrix(
             (np.arange(props.num_bonds), (props.bond_begin_idxs, props.bond_end_idxs)),
             shape=self.shape,
             dtype=np.intp,
         ).tocsr()
-        self._bond_order = pattern.data
+        self._csr_bond_idxs = pattern.data
         self._indices = pattern.indices
         self._indptr = pattern.indptr
 
@@ -127,5 +137,6 @@ class _BondGraph:
         Return the same bonds, carrying the given weights.
         """
         return csr_matrix(
-            (weights[self._bond_order], self._indices, self._indptr), shape=self.shape
+            (weights[self._csr_bond_idxs], self._indices, self._indptr),
+            shape=self.shape,
         )
