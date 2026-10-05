@@ -38,7 +38,7 @@ def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.nd
 
     Every descriptor sums ``w_i * w_j * sin(s * r_ij) / (s * r_ij)`` over the atom
     pairs, for one atom weighting ``w`` and one scale ``s``. Only distinct pairs
-    contribute, so we cna sum over them, rather than using a symmetric matrix.
+    contribute, so we can sum over them, rather than using a symmetric matrix.
     """
     num_atoms = len(atomic_nums)
 
@@ -48,15 +48,16 @@ def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.nd
     first, second = np.triu_indices(num_atoms, k=1)
     pair_distances = distance_matrix_3d.matrix[first, second]
 
-    # sin(s * r) / (s * r) for every scale, shape (32, n_pairs)
-    # first scale is zero, where the kernel takes its limit value of 1
+    # sin(s * r) / (s * r) for every scale, shape (32, n_pairs).
+    # Feature dist_k uses frequency s = k - 1, so _DISTANCES is 1..32
+    # and the divisors below are 0..31. The s = 0 kernel is the limit 1.
     kernels = np.empty((len(_DISTANCES), len(pair_distances)), dtype=np.float64)
     kernels[0] = 1.0
     kernels[1:] = _sines_of_multiples(pair_distances, len(_DISTANCES) - 1) / (
         np.multiply.outer(_DISTANCES[1:] - 1, pair_distances)
     )
 
-    # property values of both atoms of every pair, multiplied, shape (n_props, n_pairs)
+    # carbon-normalized atom weights, shape (n_props, n_atoms)
     prop_vectors = np.stack(
         [
             np.ones(num_atoms)
@@ -67,6 +68,7 @@ def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.nd
             for name in _PROPS
         ]
     )
+    # w_i * w_j over the unordered pairs, shape (n_props, n_pairs)
     pair_weights = prop_vectors[:, first] * prop_vectors[:, second]
 
     # product for all property x scale combinations, shape (n_props, 32)
