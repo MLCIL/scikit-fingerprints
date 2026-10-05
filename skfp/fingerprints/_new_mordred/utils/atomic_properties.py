@@ -257,18 +257,19 @@ class AtomicProperties:
         self.num_atoms: int = len(atomic_nums)
         self.num_bonds: int = len(bond_types)
         self.is_hydrogen = atomic_nums == 1
+        self.is_carbon = atomic_nums == 6
         # heteroatom: any non-carbon atom, hydrogens included
-        self.is_hetero = atomic_nums != 6
+        self.is_hetero = ~self.is_carbon
         self.outer_electrons = _N_OUTER_ELECS[atomic_nums]
         self.bond_orders = BOND_ORDERS[bond_types]
         # the degree of an atom is the number of bonds it takes part in
-        self.degrees = self._count_neighbors(np.ones(self.num_atoms, dtype=bool))
+        self.degrees = self.count_neighbors(np.ones(self.num_atoms, dtype=bool))
 
         # hydrogens per atom, counting neighbor hydrogen atoms as well, so that the
         # count is the same with and without explicit hydrogens
-        self.num_hydrogens = total_num_hs + self._count_neighbors(self.is_hydrogen)
+        self.num_hydrogens = total_num_hs + self.count_neighbors(self.is_hydrogen)
         # sigma electrons: the non-hydrogen neighbors of an atom
-        self.sigma_electrons = self._count_neighbors(~self.is_hydrogen)
+        self.sigma_electrons = self.count_neighbors(~self.is_hydrogen)
         self.valence_electrons = self._valence_electrons()
         self.intrinsic_state = self._intrinsic_state()
 
@@ -359,14 +360,32 @@ class AtomicProperties:
             raise KeyError(f'"{name}" is not an atomic weighting property')
         return self.weighting_properties[row]
 
-    def _count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
+    def sum_over_bonds(
+        self, at_begin: np.ndarray, at_end: np.ndarray | None = None
+    ) -> np.ndarray:
+        """
+        For every atom, the sum of per-bond values over the bonds it takes part in.
+
+        ``at_begin[i]`` is added to the atom at the beginning of bond ``i``, and
+        ``at_end[i]`` to the atom at its end. Without ``at_end``, both atoms of a
+        bond get the same value, ``at_begin[i]``.
+        """
+        if at_end is None:
+            at_end = at_begin
+        totals = np.bincount(
+            self.bond_begin_idxs, weights=at_begin, minlength=self.num_atoms
+        )
+        totals += np.bincount(
+            self.bond_end_idxs, weights=at_end, minlength=self.num_atoms
+        )
+        return totals
+
+    def count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
         """
         For every atom, the number of its neighbors satisfying the mask.
         """
         begins, ends = self.bond_begin_idxs, self.bond_end_idxs
-        counts = np.bincount(begins, weights=atom_mask[ends], minlength=self.num_atoms)
-        counts += np.bincount(ends, weights=atom_mask[begins], minlength=self.num_atoms)
-        return counts.astype(np.intp)
+        return self.sum_over_bonds(atom_mask[ends], atom_mask[begins]).astype(np.intp)
 
     def _valence_electrons(self) -> np.ndarray:
         """
