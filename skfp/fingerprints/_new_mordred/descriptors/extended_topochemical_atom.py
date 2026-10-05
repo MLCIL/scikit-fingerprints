@@ -95,6 +95,10 @@ def calc(
     atomic_nums = props.atomic_nums
     core_counts, epsilons = _core_counts_and_epsilons(atomic_nums)
     degrees = props.degrees
+    # the alkane reference drops hydrogen atoms and their bonds, so it holds only the
+    # heavy atoms; one surviving RemoveHs (isotope, hydride) would count as a carbon
+    is_heavy = ~props.is_hydrogen
+    alkane_degrees = props.sigma_electrons[is_heavy]
 
     gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
         props, kekulized_bond_types, rings.is_in_ring, core_counts, epsilons
@@ -127,13 +131,15 @@ def calc(
 
     # composite + functionality indices, which compare the molecule with its alkane
     # reference: the same skeleton with every atom a carbon and every bond single
-    gamma_alkane = _alkane_gamma(degrees)
+    gamma_alkane = _alkane_gamma(alkane_degrees)
     eta_composite = _composite_and_functionality(
         gamma,
         distance_matrix.matrix,
         gamma_alkane,
-        # the alkane has the same skeleton, and therefore the same distances
-        None if gamma_alkane is None else distance_matrix.matrix,
+        # hydrogens are terminal, so no heavy-atom distance runs through one
+        None
+        if gamma_alkane is None
+        else distance_matrix.matrix[np.ix_(is_heavy, is_heavy)],
         num_atoms,
     )
 
@@ -143,7 +149,7 @@ def calc(
     if gamma_alkane is None:
         eta_delta_alpha = np.array([np.nan, np.nan], dtype=np.float32)
     else:
-        core_count_alkane = num_atoms * _CARBON_CORE_COUNT
+        core_count_alkane = len(alkane_degrees) * _CARBON_CORE_COUNT
         d_a = max((core_count - core_count_alkane) / num_atoms, 0.0)
         d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
         eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
@@ -151,7 +157,9 @@ def calc(
     eta_epsilon_values = _epsilon_values(
         epsilons,
         props_hydrogens,
-        _alkane_hydrogens_mean_epsilon(degrees) if gamma_alkane is not None else np.nan,
+        _alkane_hydrogens_mean_epsilon(alkane_degrees)
+        if gamma_alkane is not None
+        else np.nan,
         _saturated_mean_epsilon(props, kekulized_bond_types),
     )
 
@@ -254,8 +262,9 @@ def _beta_delta(
     Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that is
     adjacent to an aromatic neighbor, otherwise 0.
     """
-    # RDKit's total valence: the bonds an atom has, plus its hydrogens
-    bond_orders = BOND_ORDERS[bond_types]
+    # RDKit's total valence: the bonds an atom has, plus its hydrogens. A NaN order
+    # (a dative bond, which adds nothing to its donor) would read below as False
+    bond_orders = np.nan_to_num(BOND_ORDERS[bond_types], nan=0.0)
     valences = props.total_num_hs + props.sum_over_bonds(bond_orders)
     has_lone_pairs = props.outer_electrons - valences > 0
 
@@ -373,13 +382,17 @@ def _epsilon_values(
     eps_3 = alkane_hydrogens_mean_epsilon
     eps_4 = saturated_mean_epsilon
 
-    # heavy atoms and hydrogens bonded to heteroatoms, on the H-explicit molecule
+    # heavy atoms and hydrogens bonded to heteroatoms, on the H-explicit molecule.
+    # Deliberate deviation: Mordred tests only ``GetNeighbors()[0]``, which for a
+    # hydrogen with several bonds comes down to bond ordering. They differ only
+    # there, e.g. ETA_epsilon_5 of [Fe][H-]C is 1.175 here against Mordred's 0.883.
     is_hydrogen = props_hydrogens.is_hydrogen
     is_carbon = props_hydrogens.is_carbon
-    bonded_to_carbon = np.zeros(props_hydrogens.num_atoms, dtype=bool)
     begins, ends = props_hydrogens.bond_begin_idxs, props_hydrogens.bond_end_idxs
-    bonded_to_carbon[begins] = is_carbon[ends]
-    bonded_to_carbon[ends] |= is_carbon[begins]
+    # indices repeat, and both plain and in-place fancy indexing would keep one write
+    bonded_to_carbon = np.zeros(props_hydrogens.num_atoms, dtype=bool)
+    np.logical_or.at(bonded_to_carbon, begins, is_carbon[ends])
+    np.logical_or.at(bonded_to_carbon, ends, is_carbon[begins])
     eps_5 = eps_hydrogens[~is_hydrogen | ~bonded_to_carbon].mean()
 
     return np.array(
