@@ -79,7 +79,6 @@ IONIZATION_POTENTIAL = PeriodicTable.from_file("ionization_potential.txt")
 MASS = PeriodicTable.from_file("mass.txt")
 MC_GOWAN_VOLUME = PeriodicTable.from_file("mc_gowan_volume.txt")
 PAULING_ELECTRONEGATIVITY = PeriodicTable.from_file("pauling_electron_negativity.txt")
-POLARIZABILITY_78 = PeriodicTable.from_file("polarizalibity78.txt")
 POLARIZABILITY_94 = PeriodicTable.from_file("polarizalibity94.txt")
 SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
     "sanderson_electron_negativity.txt"
