@@ -1,7 +1,6 @@
 import numpy as np
-from rdkit.Chem import Mol
 
-from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -39,26 +38,46 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol: Mol, adjacency_matrix: AdjacencyMatrix) -> np.ndarray:
-    power = adjacency_matrix.order()
-    molecular_walk_counts: list[float] = []
-    self_returning_walk_counts: list[float] = []
+MAX_ORDER = 10
 
-    for num_order in range(1, 11):
-        if num_order > 1:
-            power = adjacency_matrix.order(num_order)
 
-        if num_order == 1:
-            molecular_walk_counts.append(0.5 * float(power.sum()))
-        else:
-            molecular_walk_counts.append(np.log(float(power.sum()) + 1))
-            self_returning_walk_counts.append(np.log(float(np.trace(power)) + 1))
+def calc(
+    props: AtomicProperties, eigendecomposition: tuple[np.ndarray, np.ndarray]
+) -> np.ndarray:
+    """
+    Walk count descriptors.
+
+    A walk of length k is a sequence of k bonds, and the entries of the k-th power
+    of the adjacency matrix count the walks of that length between two atoms. The
+    whole matrix sums to the molecular walk count, and its trace counts the walks
+    returning to the atom they started from.
+
+    Both sums follow from the eigenvalues of the adjacency matrix, because its
+    powers have the same eigenvectors and the k-th power of an eigenvalue. This
+    is faster than repeated matrix multiplications.
+    """
+    eigvals, eigvecs = eigendecomposition
+
+    # the weight each eigenvalue carries in a sum over the whole matrix
+    weights = eigvecs.sum(axis=0) ** 2
+
+    orders = np.arange(1, MAX_ORDER + 1)[:, np.newaxis]
+    eigval_powers = eigvals**orders
+
+    # walks are counted, so both sums are whole numbers, and rounding to one takes
+    # out whatever the eigenvalue powers left behind of their cancellation
+    walk_counts = np.rint(eigval_powers @ weights)
+    self_returning_counts = np.rint(eigval_powers.sum(axis=1))
+
+    # the first molecular walk count is the bond count, the rest are on a log scale
+    molecular = np.concatenate([[0.5 * walk_counts[0]], np.log(walk_counts[1:] + 1)])
+    self_returning = np.log(self_returning_counts[1:] + 1)
 
     values = [
-        *molecular_walk_counts,
-        mol.GetNumAtoms() + sum(molecular_walk_counts),
-        *self_returning_walk_counts,
-        mol.GetNumAtoms() + sum(self_returning_walk_counts),
+        *molecular,
+        props.num_atoms + molecular.sum(),
+        *self_returning,
+        props.num_atoms + self_returning.sum(),
     ]
 
     return np.asarray(values, dtype=np.float32)
