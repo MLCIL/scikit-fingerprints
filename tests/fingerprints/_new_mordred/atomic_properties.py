@@ -2,14 +2,11 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from rdkit import rdBase
-from rdkit.Chem import Atom, BondType, MolFromSmiles, RWMol
+from rdkit.Chem import BondType, MolFromSmiles, RWMol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     BOND_ORDERS,
     AtomicProperties,
-    get_intrinsic_state,
-    get_valence_vertex_degree,
-    get_vertex_degree,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
@@ -50,11 +47,11 @@ _SMILES = {
 }
 
 
-def build_atom(label: str, explicit_hs: bool) -> Atom:
+def atom_property(label: str, explicit_hs: bool, property_name: str) -> float:
     mol = MolFromSmiles(_SMILES[label])
     if explicit_hs:
         mol = preprocess_mol(mol, explicit_hydrogens=True)
-    return mol.GetAtomWithIdx(1)
+    return getattr(AtomicProperties(mol), property_name)[1]
 
 
 @pytest.mark.parametrize("explicit_hs", [True, False], ids=["explicit_H", "implicit_H"])
@@ -89,8 +86,7 @@ def build_atom(label: str, explicit_hs: bool) -> Atom:
     ],
 )
 def test_vertex_degree(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_vertex_degree(atom)
+    actual_value = atom_property(label, explicit_hs, "vertex_degree")
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
@@ -124,8 +120,7 @@ def test_vertex_degree(label, expected_value, explicit_hs):
     ],
 )
 def test_valence_vertex_degree(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_valence_vertex_degree(atom)
+    actual_value = atom_property(label, explicit_hs, "valence_vertex_degree")
     assert_allclose(actual_value, expected_value, atol=1e-2)
 
 
@@ -155,8 +150,7 @@ def test_valence_vertex_degree(label, expected_value, explicit_hs):
     ],
 )
 def test_intrinsic_state(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_intrinsic_state(atom)
+    actual_value = atom_property(label, explicit_hs, "intrinsic_state")
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
