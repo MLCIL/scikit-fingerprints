@@ -1,21 +1,9 @@
 import numpy as np
-from rdkit.Chem import GetMolFrags, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    gasteiger_charges,
-    get_allred_rochow_electronegativity,
-    get_atomic_number,
-    get_intrinsic_state,
-    get_ionization_potential,
-    get_mass,
-    get_pauling_electronegativity,
-    get_polarizability,
-    get_sanderson_electronegativity,
-    get_sigma_electrons,
-    get_valence_electrons,
-    get_van_der_waals_volume,
+    WEIGHTING_PROPERTY_NAMES,
+    AtomicProperties,
 )
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -25,93 +13,62 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-# atomic properties used to weight distance matrices
-_PROPS_NAMES = [
-    "atomic_number",
-    "mass",
-    "van_der_Waals_volume",
-    "Sanderson_electronegativity",
-    "Pauling_electronegativity",
-    "Allred_Rochow_electronegativity",
-    "polarizability",
-    "ionization_potential",
-    "valence_electrons",
-    "sigma_electrons",  # http://dx.doi.org/10.1002%2Fjps.2600721016
-    "intrinsic_state",  # http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html, p.283
-    "gasteiger_charge",
-]
-_PROPS_FUNCS = [
-    get_atomic_number,
-    get_mass,
-    get_van_der_waals_volume,
-    get_sanderson_electronegativity,
-    get_pauling_electronegativity,
-    get_allred_rochow_electronegativity,
-    get_polarizability,
-    get_ionization_potential,
-    get_valence_electrons,
-    get_sigma_electrons,
-    get_intrinsic_state,
-    None,  # Gasteiger charges are calculated separately
-]
-
 FEATURE_NAMES = [
     f"BCUT_{prop}_{kind}_eigval"
-    for prop in _PROPS_NAMES
+    for prop in WEIGHTING_PROPERTY_NAMES
     for kind in ["smallest", "largest"]
 ]
 
 
-def calc(mol: Mol) -> np.ndarray:
+def calc(props: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     BCUT descriptors.
-    """
-    burden_matrix = _get_burden_matrix(mol)
 
-    if len(GetMolFrags(mol)) > 1:
+    Burden eigenvalues: the off-diagonal entries of the Burden matrix encode the
+    bonding pattern, while the diagonal carries an atomic property. The smallest
+    and largest eigenvalues are taken for each property.
+
+    Requires a connected molecule (single fragment).
+    """
+    if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
-    values = []
-    for name, func in zip(_PROPS_NAMES, _PROPS_FUNCS, strict=True):
-        if name == "gasteiger_charge":
-            props = gasteiger_charges(mol)
-        else:
-            props = atoms_apply_func(func, mol, np.float32)  # type: ignore
+    # the properties differ only along the diagonal, so the matrices are stacked and
+    # decomposed in one call; an undefined property, such as the Gasteiger charge of
+    # a metal, has no matrix of its own and stays NaN
+    prop_vals = props.weighting_properties
+    is_defined = np.isfinite(prop_vals).all(axis=1)
 
-        # some properties are undefined for exotic elements, e.g. Gasteiger charges
-        # for metals; the eigendecomposition cannot run then
-        if np.any(np.isnan(props)):
-            values.extend([np.nan, np.nan])
-            continue
+    matrices = np.repeat(
+        _get_burden_matrix(props)[np.newaxis], is_defined.sum(), axis=0
+    )
+    diagonal = np.arange(props.num_atoms)
+    matrices[:, diagonal, diagonal] = prop_vals[is_defined]
 
-        np.fill_diagonal(burden_matrix, props)
-        eigvals = np.linalg.eigvalsh(burden_matrix)  # ascending order
+    values = np.full((len(prop_vals), 2), np.nan)
+    eigvals = np.linalg.eigvalsh(matrices)  # ascending order
+    values[is_defined] = eigvals[:, [0, -1]]
 
-        smallest = eigvals[0]
-        largest = eigvals[-1]
-
-        values.extend([smallest, largest])
-
-    return np.asarray(values, dtype=np.float32)
+    return values.ravel().astype(np.float32)
 
 
-def _get_burden_matrix(mol: Mol) -> np.ndarray:
-    num_atoms = mol.GetNumAtoms()
+def _get_burden_matrix(props: AtomicProperties) -> np.ndarray:
+    """
+    Burden matrix with an as-yet unset diagonal.
 
-    mat = 0.001 * np.ones((num_atoms, num_atoms))
+    Off-diagonal entries are 0.001 for atom pairs that are not bonded, and the
+    bond order divided by ten for bonded pairs, with 0.01 added when either atom
+    is terminal.
+    """
+    matrix = np.full((props.num_atoms, props.num_atoms), 0.001)
 
-    for bond in mol.GetBonds():
-        a = bond.GetBeginAtom()
-        b = bond.GetEndAtom()
-        i = a.GetIdx()
-        j = b.GetIdx()
+    begins = props.bond_begin_idxs
+    ends = props.bond_end_idxs
+    degrees = props.degrees
+    weights = props.bond_orders / 10.0
+    weights = weights + 0.01 * ((degrees[begins] == 1) | (degrees[ends] == 1))
 
-        w = bond.GetBondTypeAsDouble() / 10.0
+    matrix[begins, ends] = weights
+    matrix[ends, begins] = weights
 
-        if a.GetDegree() == 1 or b.GetDegree() == 1:
-            w += 0.01
-
-        mat[i, j] = w
-        mat[j, i] = w
-
-    return mat
+    return matrix

@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import MolFromSmiles
+from rdkit.Chem import GetMolFrags, Mol, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.bcut import FEATURE_NAMES, calc
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -11,6 +12,11 @@ https://github.com/JacksonBurns/mordred-community
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
+
+
+def _calc(mol: Mol) -> dict[str, float]:
+    values = calc(AtomicProperties.from_mol(mol), len(GetMolFrags(mol)))
+    return dict(zip(FEATURE_NAMES, values, strict=True))
 
 
 @pytest.mark.parametrize(
@@ -34,8 +40,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_test_mols):
     mol = mordred_test_mols[name]
 
-    values = calc(mol)
-    values = dict(zip(FEATURE_NAMES, values, strict=True))
+    values = _calc(mol)
     actual_smallest = values["BCUT_mass_smallest_eigval"]
     actual_largest = values["BCUT_mass_largest_eigval"]
 
@@ -46,5 +51,5 @@ def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_tes
 
 def test_disconnected_mol_all_nan():
     mol = MolFromSmiles("[Na].[Cl]")
-    values = calc(mol)
-    assert_allclose(values, np.nan)
+    values = _calc(mol)
+    assert_allclose(list(values.values()), np.nan)
