@@ -157,7 +157,9 @@ def calc_indices(
     See Hall, Mohney and Kier, J. Chem. Inf. Comput. Sci. 31, 76-81 (1991).
 
     Computes the same values as RDKit's ``EState.EStateIndices``, which walks over
-    the atom pairs one by one in Python.
+    the atom pairs one by one in Python. Here the pair sum is a matrix product:
+    with ``w[i, j] = 1 / (d[i, j] + 1)^2``, the perturbation of atom ``i`` is
+    ``sum_j w[i, j] * (I[i] - I[j]) = I[i] * sum_j w[i, j] - (w @ I)[i]``.
     """
     degrees = props.degrees
     valence_electrons = props.outer_electrons - props.total_num_hs

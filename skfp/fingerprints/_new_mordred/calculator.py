@@ -214,10 +214,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         mol, kekulize=True, explicit_hydrogens=True
     )
 
-    # graph radius and diameter from the hydrogen-suppressed distance matrix
     # E-state indices are shared by EState and VSA descriptors
     estate_indices = estate.calc_indices(props_regular, distance_matrix_regular)
 
+    # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
     graph_diameter = distance_matrix_regular.diameter
 
@@ -241,7 +241,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         estate: estate.calc(mol_regular, estate_indices),
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
             mol_regular,
-            props_regular,
             distance_matrix_regular,
             estate_indices,
             mol_properties,
