@@ -17,7 +17,6 @@ from .periodic_table import (
     PAULING_ELECTRONEGATIVITY,
     POLARIZABILITY_94,
     SANDERSON_ELECTRONEGATIVITY,
-    VAN_DER_WAALS_RADII,
     VAN_DER_WAALS_VOLUME,
     PeriodicTable,
 )
@@ -80,55 +79,8 @@ ELEMENT_PROPERTY_MATRIX = np.vstack(
 CARBON_ELEMENT_PROPERTIES = np.array(list(CARBON_PROPERTY_VALUES.values()))
 
 
-def get_element_symbol(atomic_num: int) -> str:
-    return _RDKIT_PERIODIC_TABLE.GetElementSymbol(atomic_num)
-
-
 def get_atomic_number_from_symbol(symbol: str) -> int:
     return _RDKIT_PERIODIC_TABLE.GetAtomicNumber(symbol)
-
-
-def get_atomic_number(atom: Atom) -> int:
-    return atom.GetAtomicNum()
-
-
-def get_mass(atom: Atom) -> float:
-    # element mass from Mordred data tables, different from RDKit ones
-    return MASS[atom.GetAtomicNum()]
-
-
-def get_van_der_waals_radius_rdkit(atom: Atom) -> float:
-    # radius used by RDKit
-    return _RDKIT_PERIODIC_TABLE.GetRvdw(atom.GetAtomicNum())
-
-
-def get_van_der_waals_radius(atom: Atom) -> float:
-    # radius used by Mordred & PaDEL-Descriptor
-    return VAN_DER_WAALS_RADII[atom.GetAtomicNum()]
-
-
-def get_van_der_waals_volume(atom: Atom) -> float:
-    return VAN_DER_WAALS_VOLUME[atom.GetAtomicNum()]
-
-
-def get_sanderson_electronegativity(atom: Atom) -> float:
-    return SANDERSON_ELECTRONEGATIVITY[atom.GetAtomicNum()]
-
-
-def get_pauling_electronegativity(atom: Atom) -> float:
-    return PAULING_ELECTRONEGATIVITY[atom.GetAtomicNum()]
-
-
-def get_allred_rochow_electronegativity(atom: Atom) -> float:
-    return ALLRED_ROCHOW_ELECTRONEGATIVITY[atom.GetAtomicNum()]
-
-
-def get_polarizability(atom: Atom) -> float:
-    return POLARIZABILITY_94[atom.GetAtomicNum()]
-
-
-def get_ionization_potential(atom: Atom) -> float:
-    return IONIZATION_POTENTIAL[atom.GetAtomicNum()]
 
 
 # connectivity properties, depending on atom neighborhood
@@ -151,50 +103,6 @@ WEIGHTING_PROPERTY_NAMES: list[str] = [
 _WEIGHTING_PROPERTY_ROWS: dict[str, int] = {
     name: row for row, name in enumerate(WEIGHTING_PROPERTY_NAMES)
 }
-
-
-def get_sigma_electrons(atom: Atom) -> int:
-    """
-    Return the number of sigma (single-bond framework) electrons on an atom,
-    approximated as the count of its non-hydrogen neighbors.
-
-    See http://dx.doi.org/10.1002%2Fjps.2600721016.
-    """
-    return sum(1 for a in atom.GetNeighbors() if a.GetAtomicNum() != 1)
-
-
-def get_valence_electrons(atom: Atom) -> float:
-    """
-    Valence delta-value used in molecular connectivity indices.
-
-    Based on Kier, L. B., & Hall, L. H. (1983). General definition of
-    valence delta-values for molecular connectivity. Journal of
-    Pharmaceutical Sciences, 72(10), 1170-1173.
-    https://doi.org/10.1002/jps.2600721016
-    """
-    N = atom.GetAtomicNum()
-    if N == 1:
-        return 0.0
-    Zv = _RDKIT_PERIODIC_TABLE.GetNOuterElecs(N) - atom.GetFormalCharge()
-    Z = N - atom.GetFormalCharge()
-    h = atom.GetTotalNumHs() + sum(
-        1 for a in atom.GetNeighbors() if a.GetAtomicNum() == 1
-    )
-    return (Zv - h) / (Z - Zv - 1)
-
-
-def get_intrinsic_state(atom: Atom) -> float:
-    """
-    Intrinsic state value used in electrotopological-state (E-state) indices.
-
-    See the Molconn-Z 4.00 manual, chapter 2, p. 283:
-    http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html.
-    """
-    d = get_sigma_electrons(atom)
-    if d == 0:
-        return np.nan
-    dv = get_valence_electrons(atom)
-    return ((2.0 / ELEMENT_PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
 
 
 def gasteiger_charges(mol: Mol) -> np.ndarray:
@@ -266,7 +174,8 @@ class AtomicProperties:
         # hydrogens per atom, counting neighbor hydrogen atoms as well, so that the
         # count is the same with and without explicit hydrogens
         self.num_hydrogens = total_num_hs + self.count_neighbors(self.is_hydrogen)
-        # sigma electrons: the non-hydrogen neighbors of an atom
+        # sigma electrons: the non-hydrogen neighbors of an atom, see
+        # http://dx.doi.org/10.1002%2Fjps.2600721016
         self.sigma_electrons = self.count_neighbors(~self.is_hydrogen)
         self.valence_electrons = self._valence_electrons()
         self.intrinsic_state = self._intrinsic_state()
@@ -387,7 +296,12 @@ class AtomicProperties:
 
     def _valence_electrons(self) -> np.ndarray:
         """
-        Valence delta-value of every atom, as in :func:`get_valence_electrons`.
+        Valence delta-value of every atom, used in molecular connectivity indices.
+
+        Based on Kier, L. B., & Hall, L. H. (1983). General definition of
+        valence delta-values for molecular connectivity. Journal of
+        Pharmaceutical Sciences, 72(10), 1170-1173.
+        https://doi.org/10.1002/jps.2600721016
         """
         # the formal charge cancels out of the denominator: (Z - q) - (Zv - q) - 1
         numerator = self.outer_electrons - self.formal_charges - self.num_hydrogens
@@ -396,7 +310,11 @@ class AtomicProperties:
 
     def _intrinsic_state(self) -> np.ndarray:
         """
-        Intrinsic state of every atom, as in :func:`get_intrinsic_state`.
+        Intrinsic state of every atom, used in electrotopological-state (E-state)
+        indices.
+
+        See the Molconn-Z 4.00 manual, chapter 2, p. 283:
+        http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html.
         """
         periods = ELEMENT_PERIOD.lookup(self.atomic_nums)
         with np.errstate(divide="ignore", invalid="ignore"):
