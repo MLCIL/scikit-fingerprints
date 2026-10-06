@@ -1,4 +1,5 @@
 import itertools
+from collections import defaultdict
 
 import numpy as np
 from rdkit.Chem import EState, Mol
@@ -116,20 +117,21 @@ def calc(mol: Mol) -> np.ndarray:
     atom_types = EState.TypeAtoms(mol)
     indices = EState.EStateIndices(mol)
 
+    # EState index values of all atoms carrying each atom type
+    matched = defaultdict(list)
+    for labels, index in zip(atom_types, indices, strict=True):
+        for label in labels:
+            matched[label].append(index)
+
     values = []
     for atom_type in _ATOM_TYPES:
-        # EState index values of all atoms carrying this atom type.
-        matched = [
-            index
-            for labels, index in zip(atom_types, indices, strict=True)
-            if atom_type in labels
-        ]
+        type_indices = matched.get(atom_type, [])
 
-        count = len(matched)
-        total = float(sum(matched))
-        if matched:
-            maximum = max(matched)
-            minimum = min(matched)
+        count = len(type_indices)
+        total = float(sum(type_indices))
+        if type_indices:
+            maximum = max(type_indices)
+            minimum = min(type_indices)
         else:
             maximum = np.nan
             minimum = np.nan
