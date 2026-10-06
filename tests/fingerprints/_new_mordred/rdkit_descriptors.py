@@ -6,27 +6,6 @@ from rdkit import Chem
 
 from skfp.fingerprints._new_mordred.descriptors import rdkit_descriptors
 
-RDKIT_2D_FEATURE_NAMES = [
-    "BalabanJ",
-    "BertzCT",
-    "nHBAcc",
-    "nHBDon",
-    "LabuteASA",
-    *[f"PEOE_VSA{i}" for i in range(1, 14)],
-    *[f"SMR_VSA{i}" for i in range(1, 10)],
-    *[f"SlogP_VSA{i}" for i in range(1, 12)],
-    *[f"EState_VSA{i}" for i in range(1, 11)],
-    *[f"VSA_EState{i}" for i in range(1, 10)],
-    "SLogP",
-    "SMR",
-    "TopoPSA(NO)",
-    "TopoPSA",
-    "MW",
-    "AMW",
-]
-
-RDKIT_3D_FEATURE_NAMES = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
-
 
 def test_rdkit_descriptors_avoid_lambda_wrappers():
     source = Path(rdkit_descriptors.__file__).read_text()

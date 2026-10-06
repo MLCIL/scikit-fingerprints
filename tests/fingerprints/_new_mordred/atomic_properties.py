@@ -1,13 +1,10 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, Atom, MolFromSmiles
+from rdkit.Chem import AddHs, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     AtomicProperties,
-    get_intrinsic_state,
-    get_sigma_electrons,
-    get_valence_electrons,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
@@ -48,11 +45,11 @@ _SMILES = {
 }
 
 
-def build_atom(label: str, explicit_hs: bool) -> Atom:
+def atom_property(label: str, explicit_hs: bool, property_name: str) -> float:
     mol = MolFromSmiles(_SMILES[label])
     if explicit_hs:
         mol = AddHs(mol)
-    return mol.GetAtomWithIdx(1)
+    return getattr(AtomicProperties.from_mol(mol), property_name)[1]
 
 
 @pytest.mark.parametrize("explicit_hs", [True, False], ids=["explicit_H", "implicit_H"])
@@ -87,8 +84,7 @@ def build_atom(label: str, explicit_hs: bool) -> Atom:
     ],
 )
 def test_sigma_electrons(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_sigma_electrons(atom)
+    actual_value = atom_property(label, explicit_hs, "sigma_electrons")
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
@@ -122,8 +118,7 @@ def test_sigma_electrons(label, expected_value, explicit_hs):
     ],
 )
 def test_valence_electrons(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_valence_electrons(atom)
+    actual_value = atom_property(label, explicit_hs, "valence_electrons")
     assert_allclose(actual_value, expected_value, atol=1e-2)
 
 
@@ -153,8 +148,7 @@ def test_valence_electrons(label, expected_value, explicit_hs):
     ],
 )
 def test_intrinsic_state(label, expected_value, explicit_hs):
-    atom = build_atom(label, explicit_hs)
-    actual_value = get_intrinsic_state(atom)
+    actual_value = atom_property(label, explicit_hs, "intrinsic_state")
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
