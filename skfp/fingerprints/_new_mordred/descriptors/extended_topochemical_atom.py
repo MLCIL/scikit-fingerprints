@@ -71,6 +71,7 @@ FEATURE_NAMES = [
 
 def calc(
     kekulized_bond_types: np.ndarray,
+    kekulized_bond_types_hydrogens: np.ndarray,
     props: AtomicProperties,
     props_hydrogens: AtomicProperties,
     distance_matrix: DistanceMatrix,
@@ -160,7 +161,7 @@ def calc(
         _alkane_hydrogens_mean_epsilon(alkane_degrees)
         if gamma_alkane is not None
         else np.nan,
-        _saturated_mean_epsilon(props, kekulized_bond_types),
+        _saturated_mean_epsilon(props, kekulized_bond_types_hydrogens),
     )
 
     # ETA delta beta
