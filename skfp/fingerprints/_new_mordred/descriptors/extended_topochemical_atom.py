@@ -227,10 +227,12 @@ def _beta_and_gamma(
     is_hydrogen = props.is_hydrogen
     epsilon_gaps = np.abs(epsilons[begins] - epsilons[ends])
 
-    # sigma contribution: only between heavy-atom neighbors
-    between_heavy = ~is_hydrogen[begins] & ~is_hydrogen[ends]
-    sigma_weights = np.where(epsilon_gaps <= 0.3, 0.5, 0.75) * between_heavy
-    beta_sigma = props.sum_over_bonds(sigma_weights)
+    # sigma contribution, which an atom takes from a bond leading to a heavy atom;
+    # a hydrogen surviving RemoveHs still takes it from its own heavy neighbor
+    sigma_weights = np.where(epsilon_gaps <= 0.3, 0.5, 0.75)
+    beta_sigma = props.sum_over_bonds(
+        sigma_weights * ~is_hydrogen[ends], sigma_weights * ~is_hydrogen[begins]
+    )
 
     # non-sigma (pi / aromatic) bond contribution, which an atom only takes from a
     # bond leading to a heavy atom
@@ -429,10 +431,11 @@ def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
 
     All of its atoms have the same core count and the same epsilon, so every bond
     contributes half a beta unit to both of its atoms and gamma comes out as the
-    reciprocal of the degree. ``None`` when the reference does not exist, which is
-    the case exactly when some atom has more bonds than a carbon can have.
+    reciprocal of the degree. ``None`` when the reference does not exist: either
+    some atom has more bonds than a carbon can have, or, as for a lone hydrogen
+    molecule, there is no heavy atom to put in it.
     """
-    if degrees.max(initial=0) > _MAX_CARBON_DEGREE:
+    if len(degrees) == 0 or degrees.max(initial=0) > _MAX_CARBON_DEGREE:
         return None
 
     with np.errstate(divide="ignore"):
