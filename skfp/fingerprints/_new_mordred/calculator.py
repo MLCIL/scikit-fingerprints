@@ -213,6 +213,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
+    kekulized_bond_types_hydrogens = bonds_apply_func(
+        Bond.GetBondType, mol_kekulized_hydrogens, np.intp
+    )[: props_regular.num_bonds]  # AddHs appends, so heavy-atom bonds keep their order
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
@@ -254,6 +257,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
             kekulized_bond_types,
+            kekulized_bond_types_hydrogens,
             props_regular,
             props_hydrogens,
             distance_matrix_regular,

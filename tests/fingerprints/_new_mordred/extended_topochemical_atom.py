@@ -49,8 +49,16 @@ def _compute(mol):
     mol_kekulized = preprocess_mol(mol, kekulize=True)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
 
+    mol_kekulized_hydrogens = preprocess_mol(
+        mol, kekulize=True, explicit_hydrogens=True
+    )
+    kekulized_bond_types_hydrogens = bonds_apply_func(
+        Bond.GetBondType, mol_kekulized_hydrogens, np.intp
+    )[: props_regular.num_bonds]
+
     values = calc(
         kekulized_bond_types,
+        kekulized_bond_types_hydrogens,
         props_regular,
         props_hydrogens,
         distance_matrix_regular,
@@ -96,6 +104,10 @@ def test_disconnected_mol_all_nan():
         ("N->[Pt](Cl)Cl", 0.9159183673469389),  # dative bond
         ("O->[Fe](Cl)(Cl)Cl", 1.124829931972789),
         ("C[Mn]1[H-][Mn]1C", 0.5685714285714285),  # bridging hydride
+        # hydralazine, whose fused ring kekulizes one way with the hydrogens
+        # explicit and another without them, changing how many hydrogens the
+        # saturated variant takes
+        ("NNc1nncc2ccccc12", 0.5285714285714286),
     ],
 )
 def test_eta_epsilon_4_saturated_variant_hydrogens(smiles, expected):

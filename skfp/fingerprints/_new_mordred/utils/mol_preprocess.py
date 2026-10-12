@@ -64,11 +64,11 @@ def preprocess_mol(
         Input molecule.
 
     explicit_hydrogens : bool, default=False
-        If ``True``, add explicit hydrogens via ``AddHs`` as the final step.
+        If ``True``, add explicit hydrogens via ``AddHs``, before any kekulization.
 
     kekulize : bool, default=False
-        If ``True``, kekulize the molecule after sanitization, converting
-        aromatic bonds to alternating single and double bonds.
+        If ``True``, kekulize the molecule as the last step, converting aromatic
+        bonds to alternating single and double bonds.
 
     sanitize : bool, default=True
         If ``True`` (default), start by removing hydrogens via ``RemoveHs``,
@@ -84,10 +84,12 @@ def preprocess_mol(
     if sanitize:
         mol = Chem.RemoveHs(mol, updateExplicitCount=True)
 
-    if kekulize:
-        Chem.Kekulize(mol)
-
+    # hydrogens first, as Mordred does: a ring with more than one valid Kekule
+    # structure resolves differently once they are explicit
     if explicit_hydrogens:
         mol = Chem.AddHs(mol)
+
+    if kekulize:
+        Chem.Kekulize(mol)
 
     return mol
