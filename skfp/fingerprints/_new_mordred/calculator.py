@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, Kekulize, Mol
+from rdkit.Chem import AddHs, GetMolFrags, Mol
 from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors import (
@@ -213,12 +213,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     mol_kekulized_hydrogens = preprocess_mol(
         mol, kekulize=True, explicit_hydrogens=True
     )
-    # Mordred kekulizes after adding hydrogens, which can pick another Kekule structure
-    mol_hydrogens_kekulized = Mol(mol_hydrogens)
-    Kekulize(mol_hydrogens_kekulized, clearAromaticFlags=True)
-    kekulized_bond_types_hydrogens = bonds_apply_func(
-        Bond.GetBondType, mol_hydrogens_kekulized, np.intp
-    )[: props_regular.num_bonds]  # AddHs appends, so heavy-atom bonds keep their order
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
@@ -260,7 +254,6 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
             kekulized_bond_types,
-            kekulized_bond_types_hydrogens,
             props_regular,
             props_hydrogens,
             distance_matrix_regular,
