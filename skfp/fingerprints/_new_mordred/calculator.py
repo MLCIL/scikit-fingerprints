@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, Mol
+from rdkit.Chem import GetMolFrags, Mol
 from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors import (
@@ -195,7 +195,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
     # note that atom numberings are different for those molecules
-    mol_hydrogens = AddHs(mol_regular)
+    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True, sanitize=False)
     props_hydrogens = AtomicProperties.with_hydrogens_added(
         mol_hydrogens, props_regular
     )
@@ -208,10 +208,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
-    mol_kekulized = preprocess_mol(mol, kekulize=True)
+    mol_kekulized = preprocess_mol(mol_regular, kekulize=True, sanitize=False)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
     mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
+        mol_hydrogens, kekulize=True, sanitize=False
     )
     kekulized_bond_types_hydrogens = bonds_apply_func(
         Bond.GetBondType, mol_kekulized_hydrogens, np.intp

@@ -90,6 +90,10 @@ def preprocess_mol(
         mol = Chem.AddHs(mol)
 
     if kekulize:
+        # Kekulize works in place; RemoveHs/AddHs already return a new molecule,
+        # otherwise copy so the caller's molecule keeps its aromatic bonds
+        if not (sanitize or explicit_hydrogens):
+            mol = Chem.Mol(mol)
         Chem.Kekulize(mol)
 
     return mol
