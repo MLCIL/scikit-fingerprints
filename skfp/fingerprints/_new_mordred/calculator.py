@@ -1,7 +1,7 @@
 from types import ModuleType
 
 import numpy as np
-from rdkit.Chem import AddHs, GetMolFrags, Mol
+from rdkit.Chem import GetMolFrags, Mol
 from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors import (
@@ -195,7 +195,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # hydrogen-explicit molecule
     # added hydrogens have no coordinates, so for 3D we build this separately
     # note that atom numberings are different for those molecules
-    mol_hydrogens = AddHs(mol_regular)
+    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True, sanitize=False)
     props_hydrogens = AtomicProperties.with_hydrogens_added(
         mol_hydrogens, props_regular
     )
@@ -208,11 +208,13 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
-    mol_kekulized = preprocess_mol(mol, kekulize=True)
+    mol_kekulized = preprocess_mol(mol_regular, kekulize=True, sanitize=False)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
-    distance_matrix_kekulized = DistanceMatrix.from_mol(mol_kekulized)
     mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
+        mol_hydrogens, kekulize=True, sanitize=False
+    )
+    kekulized_bond_types_hydrogens = bonds_apply_func(
+        Bond.GetBondType, mol_kekulized_hydrogens, np.intp
     )
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
@@ -254,10 +256,12 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         mc_gowan_volume: mc_gowan_volume.calc(props_hydrogens),
         topological_index: topological_index.calc(graph_radius, graph_diameter),
         extended_topochemical_atom: extended_topochemical_atom.calc(
-            mol_kekulized,
-            distance_matrix_kekulized,
-            mol_kekulized_hydrogens,
-            rings_regular.num_rings,
+            kekulized_bond_types,
+            kekulized_bond_types_hydrogens,
+            props_regular,
+            props_hydrogens,
+            distance_matrix_regular,
+            rings_regular,
             n_frags,
         ),
         barysz_matrix: barysz_matrix.calc(mol_regular, props_regular, n_frags),
@@ -285,7 +289,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         molecular_id: molecular_id.calc(props_regular, n_frags),
         information_content: information_content.calc(
-            mol_hydrogens, props_hydrogens, kekulized_bond_types
+            mol_hydrogens, props_hydrogens, kekulized_bond_types_hydrogens
         ),
     }
 

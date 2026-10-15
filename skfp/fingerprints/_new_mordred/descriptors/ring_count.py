@@ -39,7 +39,8 @@ class RingProperties:
 
 class RingSets:
     """
-    SSSR rings of a molecule and their per-ring properties.
+    SSSR rings of a molecule, their per-ring properties, and which atoms lie in
+    a ring.
 
     Shared by the ring count, van der Waals volume, and extended topochemical
     atom descriptors, which would otherwise each re-run ``GetSymmSSSR`` and
@@ -58,6 +59,11 @@ class RingSets:
 
         self.simple_ring_atom_sets = [set(ring) for ring in Chem.GetSymmSSSR(mol)]
         self.num_rings = len(self.simple_ring_atom_sets)
+        # an atom lies in a ring when it belongs to at least one SSSR ring
+        self.is_in_ring = np.zeros(props.num_atoms, dtype=bool)
+        self.is_in_ring[
+            [atom for ring in self.simple_ring_atom_sets for atom in ring]
+        ] = True
         self.simple_rings = self._ring_properties(self.simple_ring_atom_sets)
         self.fused_rings = self._ring_properties(
             _fused_ring_atom_sets(self.simple_ring_atom_sets)

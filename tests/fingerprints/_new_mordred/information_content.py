@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs
 from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors.information_content import (
@@ -39,17 +38,18 @@ _FEATURE_NAMES = _REFERENCE["feature_names"]
 def computed_values(mordred_test_mols):
     computed = {}
     for name in _MOLECULES:
-        mol_regular = preprocess_mol(mordred_test_mols[name])
-        mol_hydrogens = AddHs(mol_regular)
-        mol_kekulized = preprocess_mol(mordred_test_mols[name], kekulize=True)
-        kekulized_bond_types = bonds_apply_func(
-            Bond.GetBondType, mol_kekulized, np.intp
+        mol_hydrogens = preprocess_mol(mordred_test_mols[name], explicit_hydrogens=True)
+        mol_kekulized_hydrogens = preprocess_mol(
+            mol_hydrogens, kekulize=True, sanitize=False
+        )
+        kekulized_bond_types_hydrogens = bonds_apply_func(
+            Bond.GetBondType, mol_kekulized_hydrogens, np.intp
         )
 
         values = calc(
             mol_hydrogens,
             AtomicProperties.from_mol(mol_hydrogens),
-            kekulized_bond_types,
+            kekulized_bond_types_hydrogens,
         )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed

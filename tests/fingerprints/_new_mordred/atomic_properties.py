@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import AddHs, Atom, MolFromSmiles
@@ -228,3 +229,24 @@ def test_properties_with_hydrogens_added_match_recomputed_reference_mols(
             raise AssertionError(
                 f"{property_name} differs for molecule {name}"
             ) from err
+
+
+def test_sum_over_bonds_adds_each_end_to_its_own_atom():
+    # CCO: bond 0 joins atoms 0 and 1, bond 1 joins atoms 1 and 2
+    props = AtomicProperties.from_mol(MolFromSmiles("CCO"))
+    assert props.bond_begin_idxs.tolist() == [0, 1]
+    assert props.bond_end_idxs.tolist() == [1, 2]
+
+    totals = props.sum_over_bonds(
+        at_begin=np.array([1.0, 10.0]), at_end=np.array([100.0, 1000.0])
+    )
+
+    assert_allclose(totals, [1.0, 110.0, 1000.0])
+
+
+def test_sum_over_bonds_without_end_values_gives_both_ends_the_same():
+    props = AtomicProperties.from_mol(MolFromSmiles("CCO"))
+
+    totals = props.sum_over_bonds(np.array([1.0, 10.0]))
+
+    assert_allclose(totals, [1.0, 11.0, 10.0])

@@ -2,7 +2,6 @@ from collections import Counter
 
 import numpy as np
 from rdkit.Chem import Atom, Mol
-from rdkit.Chem.rdchem import BondType
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     BOND_ORDERS,
@@ -38,7 +37,7 @@ FEATURE_NAMES = [
 def calc(
     mol_hydrogens: Mol,
     atomic_props_hydrogens: AtomicProperties,
-    kekulized_bond_types: np.ndarray,
+    kekulized_bond_types_hydrogens: np.ndarray,
 ) -> np.ndarray:
     """
     Information content descriptors, of orders 0 to ``_MAX_ORDER``.
@@ -78,16 +77,9 @@ def calc(
     # RDKit masses, not the Mordred mass table used by the other descriptors
     masses = atoms_apply_func(Atom.GetMass, mol_hydrogens, np.float64)
 
-    # the kekulized types cover the bonds between heavy atoms only, as they were read
-    # off the molecule before hydrogens were added; adding those appends their bonds
-    # last, and every one of them is single
-    n_h_bonds = atomic_props_hydrogens.num_bonds - len(kekulized_bond_types)
-    bond_types = np.concatenate(
-        [kekulized_bond_types, np.full(n_h_bonds, int(BondType.SINGLE), np.intp)]
-    )
-    bond_order_sum = BOND_ORDERS[bond_types].sum()  # B
+    bond_order_sum = BOND_ORDERS[kekulized_bond_types_hydrogens].sum()  # B
 
-    codes = _neighborhood_codes(atomic_props_hydrogens, bond_types)
+    codes = _neighborhood_codes(atomic_props_hydrogens, kekulized_bond_types_hydrogens)
     class_size_per_atom = _class_size_per_atom(codes)
 
     ic = _shannon_entropy(class_size_per_atom)
