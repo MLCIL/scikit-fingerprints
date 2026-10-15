@@ -161,7 +161,7 @@ def calc(
         _alkane_hydrogens_mean_epsilon(alkane_degrees)
         if gamma_alkane is not None
         else np.nan,
-        _saturated_mean_epsilon(props, kekulized_bond_types_hydrogens),
+        _saturated_mean_epsilon(props_hydrogens, kekulized_bond_types_hydrogens),
     )
 
     # ETA delta beta

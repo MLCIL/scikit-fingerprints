@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, GetMolFrags, MolFromSmiles
+from rdkit.Chem import GetMolFrags, MolFromSmiles
 from rdkit.Chem.rdchem import Bond
 
 from skfp.fingerprints._new_mordred.descriptors.extended_topochemical_atom import (
@@ -42,19 +42,20 @@ def _compute(mol):
     props_regular = AtomicProperties.from_mol(mol_regular)
     rings_regular = RingSets(mol_regular, props_regular)
 
+    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True, sanitize=False)
     props_hydrogens = AtomicProperties.with_hydrogens_added(
-        AddHs(mol_regular), props_regular
+        mol_hydrogens, props_regular
     )
 
-    mol_kekulized = preprocess_mol(mol, kekulize=True)
+    mol_kekulized = preprocess_mol(mol_regular, kekulize=True, sanitize=False)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)
 
     mol_kekulized_hydrogens = preprocess_mol(
-        mol, kekulize=True, explicit_hydrogens=True
+        mol_hydrogens, kekulize=True, sanitize=False
     )
     kekulized_bond_types_hydrogens = bonds_apply_func(
         Bond.GetBondType, mol_kekulized_hydrogens, np.intp
-    )[: props_regular.num_bonds]
+    )
 
     values = calc(
         kekulized_bond_types,

@@ -215,7 +215,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     )
     kekulized_bond_types_hydrogens = bonds_apply_func(
         Bond.GetBondType, mol_kekulized_hydrogens, np.intp
-    )[: props_regular.num_bonds]  # AddHs appends, so heavy-atom bonds keep their order
+    )
 
     # graph radius and diameter from the hydrogen-suppressed distance matrix
     graph_radius = distance_matrix_regular.radius
@@ -289,7 +289,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         molecular_id: molecular_id.calc(props_regular, n_frags),
         information_content: information_content.calc(
-            mol_hydrogens, props_hydrogens, kekulized_bond_types
+            mol_hydrogens, props_hydrogens, kekulized_bond_types_hydrogens
         ),
     }
 
