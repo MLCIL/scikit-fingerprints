@@ -27,7 +27,7 @@ def calc(atomic_props_hydrogens: AtomicProperties) -> np.ndarray:
     contributions less a fixed correction per bond.
 
     Hydrogens contribute their own volume and their bonds count towards the
-    correction, so this must be the hydrogen-explicit molecule.
+    correction, so the atomic properties must come from the hydrogen-explicit molecule.
     """
     atom_volumes = MC_GOWAN_VOLUME.lookup(atomic_props_hydrogens.atomic_nums)
     volume = atom_volumes.sum() - atomic_props_hydrogens.num_bonds * _VOLUME_PER_BOND

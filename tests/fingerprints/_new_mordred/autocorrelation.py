@@ -10,6 +10,7 @@ from skfp.fingerprints._new_mordred.descriptors.autocorrelation import (
     FEATURE_NAMES,
     calc,
 )
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 """
@@ -34,7 +35,7 @@ def computed_values():
     for name, smiles in _REFERENCE["SMILES"].items():
         # Mordred uses explicit-hydrogen molecules
         mol = AddHs(MolFromSmiles(smiles))
-        values = calc(mol, DistanceMatrix.from_mol(mol))
+        values = calc(AtomicProperties.from_mol(mol), DistanceMatrix.from_mol(mol))
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=False))
     return computed
 
