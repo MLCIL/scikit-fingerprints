@@ -46,11 +46,13 @@ def _calc_moe_type_descriptors(mol: Mol) -> list[float]:
     E-State values.
     """
     return [
-        *[getattr(MolSurf, f"PEOE_VSA{idx}")(mol) for idx in range(1, 14)],
-        *[getattr(MolSurf, f"SMR_VSA{idx}")(mol) for idx in range(1, 10)],
-        *[getattr(MolSurf, f"SlogP_VSA{idx}")(mol) for idx in range(1, 12)],
-        *[getattr(EState_VSA, f"EState_VSA{idx}")(mol) for idx in range(1, 11)],
-        *[getattr(EState_VSA, f"VSA_EState{idx}")(mol) for idx in range(1, 10)],
+        *rdMolDescriptors.PEOE_VSA_(mol)[:13],
+        *rdMolDescriptors.SMR_VSA_(mol)[:9],
+        *rdMolDescriptors.SlogP_VSA_(mol)[:11],
+        # force=False reuses the E-state indices that the EState descriptors
+        # already computed and RDKit cached on the molecule
+        *EState_VSA.EState_VSA_(mol, force=False)[:10],
+        *EState_VSA.VSA_EState_(mol, force=False)[:9],
     ]
 
 
