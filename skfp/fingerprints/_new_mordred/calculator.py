@@ -48,10 +48,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     wiener_index,
     zagreb_index,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    AtomicProperties,
-    gasteiger_charges,
-)
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -207,8 +204,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     )
     gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
 
-    # 2D CPSA only (RNCG, RPCG), from the sanitized hydrogen-explicit molecule.
-    # The 3D block recomputes these ratios from the conformer charges.
+    # cpsa_3d reuses cpsa_2d values
     cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
 
     # kekulized molecule (aromatic -> single/double bonds)
@@ -310,13 +306,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
 
-        # MoRSE weights by atomic number, CPSA pairs charges with per-atom
-        # surface areas. Both arrays follow this conformer's atom order.
-        # The other 3D descriptors still take the molecule itself.
+        # MoRSE weights by atomic number, in this conformer's atom order
         atomic_nums_conformer = atoms_apply_func(
             Atom.GetAtomicNum, mol_hydrogens_conformer, np.intp
         )
-        charges_conformer = gasteiger_charges(mol_hydrogens_conformer)
 
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
         # coordinates), so it is the heavy-atom 3D molecule
@@ -326,9 +319,9 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         descriptors_3d: dict[ModuleType, np.ndarray] = {
             morse: morse.calc(atomic_nums_conformer, distance_matrix_3d),
             rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
-            # the charges must come from conformer, since CPSA pairs them
-            # atom by atom with surface areas computed from that same molecule
-            cpsa: cpsa.calc_3d(mol_hydrogens_conformer, charges_conformer),
+            cpsa: cpsa.calc_3d(
+                mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens
+            ),
             gravitational_index: gravitational_index.calc(
                 mol_regular,
                 mol_hydrogens_conformer,

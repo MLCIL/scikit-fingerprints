@@ -5,6 +5,7 @@ from rdkit.Chem.rdchem import Atom
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     PROPERTY_FUNCS,
 )
+from skfp.fingerprints._new_mordred.utils.periodic_table import NUM_ELEMENTS
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -32,14 +33,12 @@ FEATURE_NAMES = [
     "Mi",
 ]
 
-_NUM_ELEMENTS = 119
-
 
 def _get_normalized_property_table() -> np.ndarray:
     """
     Precompute each atomic property divided by its value for carbon.
     """
-    atoms = tuple(Atom(atomic_num) for atomic_num in range(_NUM_ELEMENTS))
+    atoms = tuple(Atom(atomic_num) for atomic_num in range(NUM_ELEMENTS))
     property_values = np.asarray(
         [
             [property_func(atom) for atom in atoms]

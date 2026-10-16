@@ -72,6 +72,9 @@ class PeriodicTable:
         return PeriodicTable([func(value) for value in self._data])
 
 
+# atomic numbers 0 to 118, as RDKit reports them
+NUM_ELEMENTS = 119
+
 ALLRED_ROCHOW_ELECTRONEGATIVITY = PeriodicTable.from_file(
     "allred_rocow_electron_negativity.txt"
 )
@@ -87,7 +90,9 @@ SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
 VAN_DER_WAALS_RADII = PeriodicTable.from_file("van_der_waals_radii.txt")
 
 # derived tables, so that every element property can be read the same way
-ATOMIC_NUMBER = PeriodicTable([float(atomic_num) for atomic_num in range(1, 119)])
+ATOMIC_NUMBER = PeriodicTable(
+    [float(atomic_num) for atomic_num in range(1, NUM_ELEMENTS)]
+)
 VAN_DER_WAALS_VOLUME = VAN_DER_WAALS_RADII.map(
     lambda radius: 4.0 / 3.0 * np.pi * radius**3
 )

@@ -28,6 +28,7 @@ FEATURE_NAMES = [
 ]
 
 
+@np.errstate(divide="ignore", invalid="ignore")
 def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
     """
     MoRSE descriptors.
