@@ -1,10 +1,12 @@
 import numpy as np
+from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     CARBON_PROPERTY_VALUES,
     ELEMENT_PROPERTY_TABLES,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -29,7 +31,9 @@ FEATURE_NAMES = [
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
+def calc(
+    mol_hydrogens_conformer: Mol, distance_matrix_3d: DistanceMatrix3D
+) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -41,6 +45,7 @@ def calc(atomic_nums: np.ndarray, distance_matrix_3d: DistanceMatrix3D) -> np.nd
     pairs, for one atom weighting ``w`` and one scale ``s``. Only distinct pairs
     contribute, so we can sum over them, rather than using a symmetric matrix.
     """
+    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol_hydrogens_conformer, np.intp)
     num_atoms = len(atomic_nums)
 
     if num_atoms < 2:
