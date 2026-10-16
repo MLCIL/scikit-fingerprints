@@ -3,7 +3,10 @@ from math import sqrt
 import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
-from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
+from skfp.fingerprints._new_mordred.utils.periodic_table import (
+    HALOGEN_ATOMIC_NUMS,
+    NUM_ELEMENTS,
+)
 
 """
 Molecular ID descriptors.
@@ -35,8 +38,7 @@ FEATURE_NAMES = [
 _WEIGHT_PRODUCT_LIMIT = 10**20
 
 # halogen flag per atomic number, for a fast vectorized NumPy lookup
-_NUM_ATOMIC_NUMBERS = 119  # atomic numbers 0 to 118, as RDKit reports them
-_IS_HALOGEN = np.zeros(_NUM_ATOMIC_NUMBERS, dtype=bool)
+_IS_HALOGEN = np.zeros(NUM_ELEMENTS, dtype=bool)
 _IS_HALOGEN[sorted(HALOGEN_ATOMIC_NUMS)] = True
 
 

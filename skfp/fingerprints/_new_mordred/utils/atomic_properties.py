@@ -16,6 +16,7 @@ from .periodic_table import (
     ELEMENT_PERIOD,
     IONIZATION_POTENTIAL,
     MASS,
+    NUM_ELEMENTS,
     PAULING_ELECTRONEGATIVITY,
     POLARIZABILITY_94,
     SANDERSON_ELECTRONEGATIVITY,
@@ -43,8 +44,13 @@ BOND_ORDERS[[int(BondType.TRIPLE), int(BondType.AROMATIC)]] = [3.0, 1.5]
 
 # number of outer (valence) electrons per atomic number
 _N_OUTER_ELECS = np.array(
-    [0] + [_RDKIT_PERIODIC_TABLE.GetNOuterElecs(num) for num in range(1, 119)],
+    [0] + [_RDKIT_PERIODIC_TABLE.GetNOuterElecs(num) for num in range(1, NUM_ELEMENTS)],
     dtype=np.intp,
+)
+
+# van der Waals radius used by RDKit, defined for every element
+VAN_DER_WAALS_RADII_RDKIT = PeriodicTable(
+    [_RDKIT_PERIODIC_TABLE.GetRvdw(num) for num in range(1, NUM_ELEMENTS)]
 )
 
 # element properties are based only on atomic number and can be read from tables
@@ -66,14 +72,12 @@ CARBON_PROPERTY_VALUES: dict[str, float] = {
     name: table[6] for name, table in ELEMENT_PROPERTY_TABLES.items()
 }
 
-_NUM_ELEMENTS = 119
-
 # every element property of every element, as one (n_element_props, n_elements) table,
 # so that a molecule reads all of its property values with a single indexing operation
 # instead of one table lookup per property
 ELEMENT_PROPERTY_MATRIX = np.vstack(
     [
-        table.lookup(np.arange(_NUM_ELEMENTS))
+        table.lookup(np.arange(NUM_ELEMENTS))
         for table in ELEMENT_PROPERTY_TABLES.values()
     ]
 )
@@ -97,11 +101,6 @@ def get_atomic_number(atom: Atom) -> int:
 def get_mass(atom: Atom) -> float:
     # element mass from Mordred data tables, different from RDKit ones
     return MASS[atom.GetAtomicNum()]
-
-
-def get_van_der_waals_radius_rdkit(atom: Atom) -> float:
-    # radius used by RDKit
-    return _RDKIT_PERIODIC_TABLE.GetRvdw(atom.GetAtomicNum())
 
 
 def get_van_der_waals_radius(atom: Atom) -> float:

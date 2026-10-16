@@ -7,6 +7,7 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     AtomicProperties,
     get_atomic_number_from_symbol,
 )
+from skfp.fingerprints._new_mordred.utils.periodic_table import NUM_ELEMENTS
 
 """
 van der Waals volume (ABC) descriptor.
@@ -38,7 +39,7 @@ _BONDI_RADII = {
 
 # Per-atom van der Waals volume contribution, i.e. sphere volume 4/3 * pi * r^3.
 # Bondi sphere volume per atomic number, NaN where the element has no Bondi radius
-_ATOM_VOLUMES = np.full(119, np.nan)
+_ATOM_VOLUMES = np.full(NUM_ELEMENTS, np.nan)
 for _symbol, _radius in _BONDI_RADII.items():
     _ATOM_VOLUMES[get_atomic_number_from_symbol(_symbol)] = 4.0 / 3.0 * pi * _radius**3
 
