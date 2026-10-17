@@ -23,8 +23,8 @@ def calc(
     the degrees at both ends of every bond. Their modified variants sum the same
     quantities inverted, which is undefined when something has no degree to invert.
 
-    Computes the same values as :func:`skfp.descriptors.zagreb_index_m1` and
-    :func:`skfp.descriptors.zagreb_index_m2`, which sum over the bonds in Python.
+    ``Zagreb1`` and ``Zagreb2`` match :func:`skfp.descriptors.zagreb_index_m1` and
+    :func:`skfp.descriptors.zagreb_index_m2`, which sum over atoms and bonds in Python.
     """
     degrees = adjacency_matrix_regular.degree
     bond_degrees = degrees[props.bond_begin_idxs] * degrees[props.bond_end_idxs]
