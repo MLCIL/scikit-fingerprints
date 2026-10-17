@@ -611,11 +611,7 @@ def wiener_index(mol: Mol, distance_matrix: np.ndarray | None = None) -> int:
     return int(np.sum(distance_matrix) // 2)
 
 
-def zagreb_index_m1(
-    mol: Mol,
-    degree_vector: np.ndarray[np.floating] | None = None,
-    modified: bool = False,
-) -> float:
+def zagreb_index_m1(mol: Mol) -> int:
     """
     First Zagreb Index.
 
@@ -627,19 +623,6 @@ def zagreb_index_m1(
     ----------
     mol : RDKit ``Mol`` object
         The molecule for which the first Zagreb index is to be calculated.
-
-    degree_vector : np.ndarray, default=None
-        Precomputed degrees of all atoms in the molecule. If not provided, it will be calculated.
-
-    modified : bool, default=False
-        Whether to use the modified Zagreb index. If True, the modified Zagreb index
-        is calculated. Returns ``np.nan`` when True and the molecule contains at
-        least one atom with degree 0.
-
-    Returns
-    -------
-    float
-        Descriptor value.
 
     References
     ----------
@@ -654,31 +637,12 @@ def zagreb_index_m1(
     >>> from skfp.descriptors import zagreb_index_m1
     >>> mol = MolFromSmiles("C1=CC=CC=C1")  # Benzene
     >>> zagreb_index_m1(mol)
-    24.0
+    24
     """
-    exponent = -2 if modified else 2
-
-    if degree_vector is None:
-        degree_vector = np.array(
-            [atom.GetDegree() for atom in mol.GetAtoms()], dtype=float
-        )
-
-    if modified and np.any(degree_vector == 0):
-        return np.nan
-
-    with np.errstate(divide="raise", invalid="raise"):
-        try:
-            return float((degree_vector**exponent).sum())
-        except (FloatingPointError, ZeroDivisionError):
-            return np.nan
+    return int(sum(atom.GetDegree() ** 2 for atom in mol.GetAtoms()))
 
 
-@np.errstate(divide="raise", invalid="raise")
-def zagreb_index_m2(
-    mol: Mol,
-    degree_vector: np.ndarray[np.floating] | None = None,
-    modified: bool = False,
-) -> float:
+def zagreb_index_m2(mol: Mol) -> int:
     r"""
     Second Zagreb Index.
 
@@ -702,19 +666,6 @@ def zagreb_index_m2(
     mol : RDKit ``Mol`` object
         The molecule for which the second Zagreb index is to be calculated.
 
-    degree_vector : np.ndarray, default=None
-        Precomputed degrees of all atoms in the molecule. If not provided, it will be calculated.
-
-    modified : bool, default=False
-        Whether to use the modified Zagreb index. If True, the modified Zagreb index
-        is calculated. Returns ``np.nan`` when True and the molecule contains at
-        least one atom with degree 0.
-
-    Returns
-    -------
-    float
-        Descriptor value.
-
     References
     ----------
     .. [1] `Gutman, Ivan.
@@ -728,27 +679,12 @@ def zagreb_index_m2(
     >>> from skfp.descriptors import zagreb_index_m2
     >>> mol = MolFromSmiles("C1=CC=CC=C1")  # Benzene
     >>> zagreb_index_m2(mol)
-    24.0
+    24
     """
-    exponent = -1 if modified else 1
-
-    if degree_vector is None:
-        degree_vector = np.array(
-            [atom.GetDegree() for atom in mol.GetAtoms()], dtype=float
+    return int(
+        sum(
+            mol.GetAtomWithIdx(bond.GetBeginAtomIdx()).GetDegree()
+            * mol.GetAtomWithIdx(bond.GetEndAtomIdx()).GetDegree()
+            for bond in mol.GetBonds()
         )
-
-    try:
-        return float(
-            sum(
-                (
-                    (
-                        degree_vector[bond.GetBeginAtomIdx()]
-                        * degree_vector[bond.GetEndAtomIdx()]
-                    )
-                    ** exponent
-                )
-                for bond in mol.GetBonds()
-            )
-        )
-    except (FloatingPointError, ZeroDivisionError):
-        return np.nan
+    )
