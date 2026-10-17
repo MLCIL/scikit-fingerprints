@@ -1,6 +1,7 @@
 import numpy as np
-from rdkit.Chem import Mol
 from rdkit.Chem.rdchem import BondType
+
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -22,7 +23,9 @@ FEATURE_NAMES = [
 ]
 
 
-def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> np.ndarray:
+def calc(
+    atomic_props_hydrogens: AtomicProperties, kekulized_bond_types_hydrogens: np.ndarray
+) -> np.ndarray:
     """
     Bond count descriptors.
 
@@ -35,35 +38,26 @@ def calc(mol_hydrogens: Mol, mol_kekulized_hydrogens: Mol) -> np.ndarray:
     hydrogen-explicit molecule, where aromatic bonds are expressed as alternating
     single and double bonds.
     """
-    n_bonds = mol_hydrogens.GetNumBonds()
-    n_bonds_o = 0
-    n_bonds_s = 0
-    n_bonds_d = 0
-    n_bonds_t = 0
-    n_bonds_a = 0
-    n_bonds_m = 0
+    bond_types = atomic_props_hydrogens.bond_types
+    is_heavy = ~atomic_props_hydrogens.is_hydrogen
+    is_single = bond_types == BondType.SINGLE
+    is_aromatic = atomic_props_hydrogens.bond_is_aromatic | (
+        bond_types == BondType.AROMATIC
+    )
 
-    for bond in mol_hydrogens.GetBonds():
-        bond_type = bond.GetBondType()
-        is_aromatic = bond.GetIsAromatic() or bond.GetBondType() == BondType.AROMATIC
-        is_heavy = (
-            bond.GetBeginAtom().GetAtomicNum() != 1
-            and bond.GetEndAtom().GetAtomicNum() != 1
-        )
+    n_bonds = atomic_props_hydrogens.num_bonds
+    n_bonds_o = np.count_nonzero(
+        is_heavy[atomic_props_hydrogens.bond_begin_idxs]
+        & is_heavy[atomic_props_hydrogens.bond_end_idxs]
+    )
+    n_bonds_s = np.count_nonzero(is_single)
+    n_bonds_d = np.count_nonzero(bond_types == BondType.DOUBLE)
+    n_bonds_t = np.count_nonzero(bond_types == BondType.TRIPLE)
+    n_bonds_a = np.count_nonzero(is_aromatic)
+    n_bonds_m = np.count_nonzero(is_aromatic | ~is_single)
 
-        n_bonds_o += is_heavy
-        n_bonds_s += bond_type == BondType.SINGLE
-        n_bonds_d += bond_type == BondType.DOUBLE
-        n_bonds_t += bond_type == BondType.TRIPLE
-        n_bonds_a += is_aromatic
-        n_bonds_m += is_aromatic or bond_type != BondType.SINGLE
-
-    n_bonds_ks = 0
-    n_bonds_kd = 0
-    for bond in mol_kekulized_hydrogens.GetBonds():
-        bond_type = bond.GetBondType()
-        n_bonds_ks += bond_type == BondType.SINGLE
-        n_bonds_kd += bond_type == BondType.DOUBLE
+    n_bonds_ks = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.SINGLE)
+    n_bonds_kd = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.DOUBLE)
 
     return np.asarray(
         [
