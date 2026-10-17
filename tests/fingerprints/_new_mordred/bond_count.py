@@ -28,9 +28,7 @@ def _calc(smiles: str) -> np.ndarray:
     kekulized_bond_types_hydrogens = bonds_apply_func(
         Bond.GetBondType, mol_kekulized_hydrogens, np.intp
     )
-    values = calc(
-        AtomicProperties.from_mol(mol_hydrogens), kekulized_bond_types_hydrogens
-    )
+    values = calc(AtomicProperties(mol_hydrogens), kekulized_bond_types_hydrogens)
     return values
 
 

@@ -60,9 +60,16 @@ class DistanceMatrix:
         Atoms of different fragments are not connected by any path, and RDKit reports
         a fixed placeholder distance for such a pair, which those added bonds must
         not grow.
+
+        The hydrogens may also have been added to another molecule ``mol`` was
+        derived from, which numbers its atoms differently when it holds explicit
+        hydrogens. The distances are then computed from ``props_hydrogens.mol``.
         """
         heavy_distances = distances.matrix
         num_heavy = len(heavy_distances)
+        if not _has_terminal_atoms_appended(heavy_distances, props_hydrogens):
+            return cls.from_mol(props_hydrogens.mol)
+
         num_atoms = props_hydrogens.num_atoms
         parents = _hydrogen_parents(props_hydrogens, num_heavy)
 
@@ -78,6 +85,41 @@ class DistanceMatrix:
         np.minimum(matrix, _rdkit_disconnected_distance, out=matrix)
         np.fill_diagonal(matrix, 0.0)
         return cls(matrix)
+
+
+def _has_terminal_atoms_appended(
+    heavy_distances: np.ndarray, props_hydrogens: AtomicProperties
+) -> bool:
+    """
+    Whether the molecule of ``props_hydrogens`` is the one ``heavy_distances`` were
+    computed for, with only terminal atoms appended: its first atoms are bonded
+    exactly as the pairs one bond apart in ``heavy_distances``, and every other atom
+    has a single bond, to one of those first atoms.
+    """
+    num_heavy = len(heavy_distances)
+    num_added = props_hydrogens.num_atoms - num_heavy
+    begins, ends = props_hydrogens.bond_begin_idxs, props_hydrogens.bond_end_idxs
+    lower, upper = np.minimum(begins, ends), np.maximum(begins, ends)
+
+    # every appended atom ends exactly one bond, which starts among the first atoms
+    to_added = upper >= num_heavy
+    if (
+        num_added < 0
+        or (lower[to_added] >= num_heavy).any()
+        or not np.array_equal(
+            np.bincount(upper[to_added] - num_heavy, minlength=num_added),
+            np.ones(num_added, dtype=np.intp),
+        )
+    ):
+        return False
+
+    # the bonds among the first atoms are the pairs one bond apart, no more, no less;
+    # the matrix is symmetric, so each such pair appears in it twice
+    lower, upper = lower[~to_added], upper[~to_added]
+    num_adjacent_pairs = np.count_nonzero(heavy_distances == 1.0) // 2
+    return len(lower) == num_adjacent_pairs and bool(
+        (heavy_distances[lower, upper] == 1.0).all()
+    )
 
 
 def _hydrogen_parents(props_hydrogens: AtomicProperties, num_heavy: int) -> np.ndarray:

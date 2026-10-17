@@ -1,6 +1,6 @@
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, MolFromSmiles
+from rdkit.Chem import Mol, MolFromSmiles, RenumberAtoms
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
@@ -41,9 +41,42 @@ def test_distances_with_hydrogens_added_match_recomputed_reference_mols(
             raise AssertionError(f"distances differ for molecule {name}") from err
 
 
+def _hydrogens_reordered(smiles: str, hydrogen_position: int) -> Mol:
+    # explicit hydrogens, with the last one moved to the given position
+    mol = preprocess_mol(MolFromSmiles(smiles), explicit_hydrogens=True)
+    order = list(range(mol.GetNumAtoms() - 1))
+    order.insert(hydrogen_position, mol.GetNumAtoms() - 1)
+    return RenumberAtoms(mol, order)
+
+
+@pytest.mark.parametrize(
+    ("smiles", "hydrogen_position"),
+    [
+        ("CC(=O)Oc1ccccc1C(=O)O", 0),
+        ("c1ccc2[nH]ccc2c1", 4),
+        # after every heavy atom, but not in the order AddHs appends them
+        ("OCC(O)CO", 6),
+        ("CC(=O)[O-].[Na+]", 1),
+    ],
+)
+def test_distances_with_hydrogens_added_to_the_input_match_recomputed(
+    smiles, hydrogen_position
+):
+    # the calculator adds hydrogens to the input, not to the RemoveHs molecule
+    mol = _hydrogens_reordered(smiles, hydrogen_position)
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+
+    derived = DistanceMatrix.with_hydrogens_added(
+        DistanceMatrix.from_mol(preprocess_mol(mol)),
+        AtomicProperties(mol_hydrogens),
+    )
+    expected = DistanceMatrix.from_mol(mol_hydrogens)
+    _assert_matrices_equal(derived, expected)
+
+
 def _derived_and_recomputed(mol) -> tuple[DistanceMatrix, DistanceMatrix]:
-    mol_hydrogens = AddHs(mol)
-    props_hydrogens = AtomicProperties.from_mol(mol_hydrogens)
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    props_hydrogens = AtomicProperties(mol_hydrogens)
 
     derived = DistanceMatrix.with_hydrogens_added(
         DistanceMatrix.from_mol(mol), props_hydrogens

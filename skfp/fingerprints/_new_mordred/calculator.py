@@ -184,20 +184,19 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     adjacency_eigendecomposition = np.linalg.eigh(adjacency_matrix_regular.matrix)
 
     # per-atom property arrays and rings, read from the molecule once and shared
-    props_regular = AtomicProperties.from_mol(mol_regular)
+    props_regular = AtomicProperties(mol_regular)
     rings_regular = ring_count.RingSets(mol_regular, props_regular)
     subgraphs_regular = Subgraphs(props_regular)
 
     # whole-molecule RDKit values, shared by the RDKit wrappers and the rule filters
     mol_properties = MolecularProperties(mol_regular)
 
-    # hydrogen-explicit molecule
-    # added hydrogens have no coordinates, so for 3D we build this separately
-    # note that atom numberings are different for those molecules
-    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True, sanitize=False)
-    props_hydrogens = AtomicProperties.with_hydrogens_added(
-        mol_hydrogens, props_regular
-    )
+    # hydrogen-explicit molecule, built from the input as Mordred builds it, so it
+    # keeps the bond types, the atom order and the conformers of the input; its
+    # atoms are therefore numbered as in mol_regular only for inputs without
+    # explicit hydrogens, which the derived distances check for
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    props_hydrogens = AtomicProperties(mol_hydrogens)
     distance_matrix_hydrogens = DistanceMatrix.with_hydrogens_added(
         distance_matrix_regular, props_hydrogens
     )
@@ -299,30 +298,26 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
     # 3D descriptors
     if use_3D:
-        mol_hydrogens_conformer = preprocess_mol(
-            mol, explicit_hydrogens=True, sanitize=False
-        )
-        conf_id = mol_hydrogens_conformer.GetIntProp("conf_id")
-        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens_conformer, conf_id)
+        # the hydrogen-explicit molecule keeps the conformers of the input
+        conf_id = mol_hydrogens.GetIntProp("conf_id")
+        distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
 
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
         # coordinates), so it is the heavy-atom 3D molecule
         distance_matrix_3d_regular = DistanceMatrix3D(mol_regular, conf_id)
-        adjacency_matrix_hydrogens_conformer = AdjacencyMatrix(mol_hydrogens_conformer)
+        adjacency_matrix_hydrogens = AdjacencyMatrix(mol_hydrogens)
 
         descriptors_3d: dict[ModuleType, np.ndarray] = {
-            morse: morse.calc(mol_hydrogens_conformer, distance_matrix_3d),
-            rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens_conformer),
-            cpsa: cpsa.calc_3d(
-                mol_hydrogens_conformer, cpsa_2d, gasteiger_charges_hydrogens
-            ),
+            morse: morse.calc(mol_hydrogens, distance_matrix_3d),
+            rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
+            cpsa: cpsa.calc_3d(mol_hydrogens, cpsa_2d, gasteiger_charges_hydrogens),
             gravitational_index: gravitational_index.calc(
                 mol_regular,
-                mol_hydrogens_conformer,
+                mol_hydrogens,
                 distance_matrix_3d_regular,
                 distance_matrix_3d,
                 adjacency_matrix_regular,
-                adjacency_matrix_hydrogens_conformer,
+                adjacency_matrix_hydrogens,
             ),
             geometric_index: geometric_index.calc(distance_matrix_3d),
         }

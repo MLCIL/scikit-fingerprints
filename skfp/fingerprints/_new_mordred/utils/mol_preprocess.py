@@ -51,12 +51,14 @@ def preprocess_mol(
     sanitize: bool = True,
 ) -> Mol:
     """
-    Preprocess an RDKit molecule before descriptor calculation.
+    Preprocess an RDKit molecule before descriptor calculation, building one of the
+    molecule variants that Mordred computes its descriptors from.
 
-    By default (``sanitize=True``), starts with ``RemoveHs``, which re-runs
-    ``SanitizeMol`` and resets aromaticity perception to a canonical state.
-    This ensures consistent bond types regardless of prior operations such as
-    conformer embedding, which can leave the molecule in a kekulized state.
+    Mordred builds every variant from the input molecule: the hydrogen-explicit one
+    with ``AddHs``, and the hydrogen-suppressed one with ``RemoveHs``, which also
+    re-sanitizes it, resetting aromaticity perception to a canonical state. Either
+    one is kekulized last. The hydrogen-explicit molecule is never re-sanitized, so
+    it keeps the bond types, aromaticity, atom order and conformers of the input.
 
     Parameters
     ----------
@@ -65,35 +67,34 @@ def preprocess_mol(
 
     explicit_hydrogens : bool, default=False
         If ``True``, add explicit hydrogens via ``AddHs``, before any kekulization.
+        Otherwise, remove them via ``RemoveHs``, unless ``sanitize=False``.
 
     kekulize : bool, default=False
         If ``True``, kekulize the molecule as the last step, converting aromatic
         bonds to alternating single and double bonds.
 
     sanitize : bool, default=True
-        If ``True`` (default), start by removing hydrogens via ``RemoveHs``,
-        which re-sanitizes the molecule and resets aromaticity perception.
-        Set to ``False`` to skip this step and preserve the current molecule
-        state, e.g. when 3D conformer coordinates must not be discarded.
+        Only used with ``explicit_hydrogens=False``. If ``True`` (default), remove
+        hydrogens via ``RemoveHs``, which re-sanitizes the molecule. Set to ``False``
+        for a molecule that already is one of the variants, e.g. to kekulize it,
+        which then only copies it first.
 
     Returns
     -------
     mol : rdkit.Chem.Mol
-        The preprocessed molecule.
+        The preprocessed molecule, always a new one.
     """
-    if sanitize:
-        mol = Chem.RemoveHs(mol, updateExplicitCount=True)
-
     # hydrogens first, as Mordred does: a ring with more than one valid Kekule
     # structure resolves differently once they are explicit
     if explicit_hydrogens:
         mol = Chem.AddHs(mol)
+    elif sanitize:
+        mol = Chem.RemoveHs(mol, updateExplicitCount=True)
+    else:
+        # Kekulize works in place, so the caller's molecule keeps its aromatic bonds
+        mol = Chem.Mol(mol)
 
     if kekulize:
-        # Kekulize works in place; RemoveHs/AddHs already return a new molecule,
-        # otherwise copy so the caller's molecule keeps its aromatic bonds
-        if not (sanitize or explicit_hydrogens):
-            mol = Chem.Mol(mol)
         Chem.Kekulize(mol)
 
     return mol

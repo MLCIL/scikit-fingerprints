@@ -48,7 +48,7 @@ def computed_values(mordred_test_mols):
 
         values = calc(
             mol_hydrogens,
-            AtomicProperties.from_mol(mol_hydrogens),
+            AtomicProperties(mol_hydrogens),
             kekulized_bond_types_hydrogens,
         )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))

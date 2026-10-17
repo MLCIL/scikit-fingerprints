@@ -39,13 +39,11 @@ def _compute(mol):
 
     mol_regular = preprocess_mol(mol)
     distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
-    props_regular = AtomicProperties.from_mol(mol_regular)
+    props_regular = AtomicProperties(mol_regular)
     rings_regular = RingSets(mol_regular, props_regular)
 
-    mol_hydrogens = preprocess_mol(mol_regular, explicit_hydrogens=True, sanitize=False)
-    props_hydrogens = AtomicProperties.with_hydrogens_added(
-        mol_hydrogens, props_regular
-    )
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    props_hydrogens = AtomicProperties(mol_hydrogens)
 
     mol_kekulized = preprocess_mol(mol_regular, kekulize=True, sanitize=False)
     kekulized_bond_types = bonds_apply_func(Bond.GetBondType, mol_kekulized, np.intp)

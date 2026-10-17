@@ -36,7 +36,7 @@ _SMILES = [
 
 def _subgraphs_of(smiles: str) -> Subgraphs:
     mol = preprocess_mol(MolFromSmiles(smiles))
-    return Subgraphs(AtomicProperties.from_mol(mol))
+    return Subgraphs(AtomicProperties(mol))
 
 
 def _paths_to_order(subgraphs: Subgraphs, order: int):
