@@ -243,7 +243,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         mol_filters: mol_filters.calc(mol_properties),
         atom_count: atom_count.calc(mol_regular, props_regular),
-        bond_count: bond_count.calc(props_hydrogens, kekulized_bond_types),
+        bond_count: bond_count.calc(props_hydrogens, kekulized_bond_types_hydrogens),
         carbon_types: carbon_types.calc(mol_kekulized),
         constitutional: constitutional.calc(props_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),

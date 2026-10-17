@@ -24,7 +24,7 @@ FEATURE_NAMES = [
 
 
 def calc(
-    atomic_props_hydrogens: AtomicProperties, kekulized_bond_types: np.ndarray
+    atomic_props_hydrogens: AtomicProperties, kekulized_bond_types_hydrogens: np.ndarray
 ) -> np.ndarray:
     """
     Bond count descriptors.
@@ -35,9 +35,8 @@ def calc(
     Following the original Mordred implementation, nBonds (any) and nBondsS (single)
     are computed on the hydrogen-explicit molecule, while nBondsO (heavy) counts only
     bonds between non-hydrogen atoms. nBondsKS and nBondsKD use the kekulized
-    molecule, where aromatic bonds are expressed as alternating single and double
-    bonds. The hydrogen bonds it would have are all single, so they are counted
-    without building a hydrogen-explicit copy of it.
+    hydrogen-explicit molecule, where aromatic bonds are expressed as alternating
+    single and double bonds.
     """
     bond_types = atomic_props_hydrogens.bond_types
     is_heavy = ~atomic_props_hydrogens.is_hydrogen
@@ -57,11 +56,8 @@ def calc(
     n_bonds_a = np.count_nonzero(is_aromatic)
     n_bonds_m = np.count_nonzero(is_aromatic | ~is_single)
 
-    num_hydrogen_bonds = n_bonds - len(kekulized_bond_types)
-    n_bonds_ks = (
-        np.count_nonzero(kekulized_bond_types == BondType.SINGLE) + num_hydrogen_bonds
-    )
-    n_bonds_kd = np.count_nonzero(kekulized_bond_types == BondType.DOUBLE)
+    n_bonds_ks = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.SINGLE)
+    n_bonds_kd = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.DOUBLE)
 
     return np.asarray(
         [
