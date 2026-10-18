@@ -109,7 +109,9 @@ def calc(
     core_count_mean = core_count / num_atoms
 
     # ETA_shape_{p,y,x}: fraction of total core count from atoms of degree 1/3/4
-    shape = np.array([core_counts[degrees == d].sum() / core_count for d in (1, 3, 4)])
+    shape = np.array(
+        [core_counts[degrees == d].sum() / (core_count or np.nan) for d in (1, 3, 4)]
+    )
 
     # ETA VEM counts (sums and averages of beta / beta_s / beta_ns / beta_ns_d)
     vem_beta_s = beta_sigma.sum() / 2.0
@@ -488,7 +490,7 @@ def _saturated_mean_epsilon(props: AtomicProperties, bond_types: np.ndarray) -> 
 
     epsilons = _core_counts_and_epsilons(atomic_nums)[1]
     total = epsilons.sum() + num_hydrogens * _HYDROGEN_EPSILON
-    return float(total / (len(atomic_nums) + num_hydrogens))
+    return float(total / ((len(atomic_nums) + num_hydrogens) or np.nan))
 
 
 def _implicit_hydrogen_count(

@@ -141,8 +141,9 @@ def test_eta_epsilon_3_undefined_for_more_than_four_neighbors_with_hydrogens(smi
 
 
 # without any heavy atom the alkane reference is empty, as in Mordred: its sums are
-# zero, while averaging over its atoms is undefined; expected values are from
-# mordred-community
+# zero, while averaging over its atoms is undefined, and so are the shape and the
+# saturated variant, which divide by zero; expected values are from mordred-community
+@pytest.mark.filterwarnings("error::RuntimeWarning")
 @pytest.mark.parametrize("smiles", ["[H][H]", "[2H][2H]"])
 def test_eta_reference_without_heavy_atoms_is_empty(smiles):
     computed = _compute(MolFromSmiles(smiles))
@@ -158,5 +159,9 @@ def test_eta_reference_without_heavy_atoms_is_empty(smiles):
         "ETA_dAlpha_A": 0.0,
         "ETA_dAlpha_B": 0.0,
         "ETA_epsilon_3": np.nan,
+        "ETA_shape_p": np.nan,
+        "ETA_shape_y": np.nan,
+        "ETA_shape_x": np.nan,
+        "ETA_epsilon_4": np.nan,
     }
     assert_allclose([computed[name] for name in expected], list(expected.values()))
