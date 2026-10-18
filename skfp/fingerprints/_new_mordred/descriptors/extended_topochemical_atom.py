@@ -155,11 +155,18 @@ def calc(
         d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
         eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
 
+    # Mordred builds the alkane reference of epsilon 3 from the hydrogen-explicit
+    # molecule, so it gives up when some atom has more than four neighbors there,
+    # hydrogens included, e.g. a phosphine [PH] bonded to four carbons
+    has_alkane_hydrogens_reference = (
+        gamma_alkane is not None
+        and props_hydrogens.degrees.max(initial=0) <= _MAX_CARBON_DEGREE
+    )
     eta_epsilon_values = _epsilon_values(
         epsilons,
         props_hydrogens,
         _alkane_hydrogens_mean_epsilon(alkane_degrees)
-        if gamma_alkane is not None
+        if has_alkane_hydrogens_reference
         else np.nan,
         _saturated_mean_epsilon(props_hydrogens, kekulized_bond_types_hydrogens),
     )
@@ -314,10 +321,12 @@ def _composite_and_functionality(
         alkane_non_local = alkane_non_local_avg = np.nan
         alkane_local = alkane_local_avg = np.nan
     else:
-        num_atoms_alkane = gamma_alkane.shape[0]
         alkane_non_local, alkane_local = _composite_index_pair(
             gamma_alkane, distance_matrix_alkane
         )
+        # an empty reference, as for a hydrogen molecule, has no atoms to average
+        # over, which leaves Mordred's averages undefined too
+        num_atoms_alkane = gamma_alkane.shape[0] or np.nan
         alkane_non_local_avg = alkane_non_local / num_atoms_alkane
         alkane_local_avg = alkane_local / num_atoms_alkane
 
@@ -431,11 +440,11 @@ def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
 
     All of its atoms have the same core count and the same epsilon, so every bond
     contributes half a beta unit to both of its atoms and gamma comes out as the
-    reciprocal of the degree. ``None`` when the reference does not exist: either
-    some atom has more bonds than a carbon can have, or, as for a lone hydrogen
-    molecule, there is no heavy atom to put in it.
+    reciprocal of the degree. ``None`` when the reference does not exist, as some
+    atom has more bonds than a carbon can have. Without any heavy atom, as in a
+    hydrogen molecule, the reference exists, but is empty, as in Mordred.
     """
-    if len(degrees) == 0 or degrees.max(initial=0) > _MAX_CARBON_DEGREE:
+    if degrees.max(initial=0) > _MAX_CARBON_DEGREE:
         return None
 
     with np.errstate(divide="ignore"):
@@ -535,9 +544,12 @@ def _alkane_hydrogens_mean_epsilon(degrees: np.ndarray) -> float:
     Mean epsilon over the hydrogen-explicit alkane reference.
 
     Its carbons fill their remaining bonds with hydrogens, so only how many atoms of
-    either element there are matters, not how they are arranged.
+    either element there are matters, not how they are arranged. An empty reference,
+    as for a hydrogen molecule, has no atoms to average over.
     """
     num_carbons = len(degrees)
+    if num_carbons == 0:
+        return np.nan
     num_hydrogens = num_carbons * _MAX_CARBON_DEGREE - degrees.sum()
     total = num_carbons * _CARBON_EPSILON + num_hydrogens * _HYDROGEN_EPSILON
     return float(total / (num_carbons + num_hydrogens))

@@ -112,3 +112,51 @@ def test_disconnected_mol_all_nan():
 def test_eta_epsilon_4_saturated_variant_hydrogens(smiles, expected):
     computed = _compute(MolFromSmiles(smiles))
     assert_allclose(computed["ETA_epsilon_4"], expected, rtol=1e-5)
+
+
+# Mordred builds the alkane reference of ETA_epsilon_3 on the hydrogen-explicit
+# molecule and gives up when an atom there has more than four neighbors, hydrogens
+# included, e.g. a phosphorus with four carbons and a hydrogen; the hydrogen-free
+# alkane reference of the other ETA descriptors still exists. Expected values are
+# from mordred-community.
+@pytest.mark.parametrize(
+    "smiles",
+    [
+        "O=C1O[IH2](C#Cc2ccccc2)c2ccccc21",
+        (
+            "C1=C(c2cnc3ccccc3n2)[SH+][Pd-2]2([SH+]1)[PH](c1ccccc1)(c1ccccc1)CC[PH]2"
+            "(c1ccccc1)c1ccccc1"
+        ),
+        "N#CCC[PH](c1ccccc1)(c1ccccc1)c1ccccc1",
+        "Cc1ccccc1[PH](Cc1ccccc1)(c1ccccc1)c1ccccc1",
+        "C=CC[PH](CC=C)(c1ccccc1)c1ccccc1",
+    ],
+)
+def test_eta_epsilon_3_undefined_for_more_than_four_neighbors_with_hydrogens(smiles):
+    computed = _compute(MolFromSmiles(smiles))
+    values = [
+        computed[f] for f in ("ETA_epsilon_3", "ETA_dEpsilon_A", "ETA_dEpsilon_C")
+    ]
+    assert_allclose(values, np.nan)
+
+
+# without any heavy atom the alkane reference is empty, as in Mordred: its sums are
+# zero, while averaging over its atoms is undefined; expected values are from
+# mordred-community
+@pytest.mark.parametrize("smiles", ["[H][H]", "[2H][2H]"])
+def test_eta_reference_without_heavy_atoms_is_empty(smiles):
+    computed = _compute(MolFromSmiles(smiles))
+    expected = {
+        "ETA_eta_R": 0.0,
+        "AETA_eta_R": np.nan,
+        "ETA_eta_RL": 0.0,
+        "AETA_eta_RL": np.nan,
+        "ETA_eta_B": 1.0,
+        "AETA_eta_B": 0.5,
+        "ETA_eta_BR": 1.0,
+        "AETA_eta_BR": 0.5,
+        "ETA_dAlpha_A": 0.0,
+        "ETA_dAlpha_B": 0.0,
+        "ETA_epsilon_3": np.nan,
+    }
+    assert_allclose([computed[name] for name in expected], list(expected.values()))
