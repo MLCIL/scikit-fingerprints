@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import Atom, MolFromSmiles
+from rdkit import rdBase
+from rdkit.Chem import Atom, BondType, MolFromSmiles, RWMol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    BOND_ORDERS,
     AtomicProperties,
     get_intrinsic_state,
     get_sigma_electrons,
@@ -177,3 +179,18 @@ def test_sum_over_bonds_without_end_values_gives_both_ends_the_same():
     totals = props.sum_over_bonds(np.array([1.0, 10.0]))
 
     assert_allclose(totals, [1.0, 11.0, 10.0])
+
+
+@pytest.mark.parametrize("bond_type", list(BondType.values.values()), ids=str)
+def test_bond_orders_match_rdkit(bond_type):
+    # Mordred reads bond orders with GetBondTypeAsDouble, which raises for the
+    # types it has no order for; those stay NaN
+    bond = RWMol(MolFromSmiles("CC")).GetBondWithIdx(0)
+    bond.SetBondType(bond_type)
+    try:
+        with rdBase.BlockLogs():
+            expected = bond.GetBondTypeAsDouble()
+    except RuntimeError:
+        expected = np.nan
+
+    assert_allclose(BOND_ORDERS[int(bond_type)], expected)

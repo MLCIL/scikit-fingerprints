@@ -272,10 +272,13 @@ def _beta_delta(
     Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that is
     adjacent to an aromatic neighbor, otherwise 0.
     """
-    # RDKit's total valence: the bonds an atom has, plus its hydrogens. A NaN order
-    # (a dative bond, which adds nothing to its donor) would read below as False
-    bond_orders = np.nan_to_num(BOND_ORDERS[bond_types], nan=0.0)
-    valences = props.total_num_hs + props.sum_over_bonds(bond_orders)
+    # RDKit's total valence: the bonds an atom has, plus its hydrogens; a dative
+    # bond counts toward the atom it points to only
+    bond_orders = BOND_ORDERS[bond_types]
+    is_dative = bond_types == int(BondType.DATIVE)
+    valences = props.total_num_hs + props.sum_over_bonds(
+        np.where(is_dative, 0.0, bond_orders), bond_orders
+    )
     has_lone_pairs = props.outer_electrons - valences > 0
 
     aromatic_neighbors = props.count_neighbors(props.is_aromatic)

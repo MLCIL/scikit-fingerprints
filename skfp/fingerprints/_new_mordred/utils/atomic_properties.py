@@ -33,12 +33,19 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 _RDKIT_PERIODIC_TABLE = Chem.GetPeriodicTable()
 
-# bond order per bond type, as RDKit's GetBondTypeAsDouble reports it; molecules
-# only ever carry these four types, and any other one stays NaN so that it shows up
-# in the descriptors that use bond orders rather than passing as some other order
+# bond order per bond type, as RDKit's GetBondTypeAsDouble reports it, where a dative
+# bond counts as single; the types RDKit has no order for (THREECENTER, DATIVEL,
+# DATIVER, OTHER) stay NaN, as Mordred fails on them
 BOND_ORDERS = np.full(max(int(bond_type) for bond_type in BondType.values) + 1, np.nan)
+BOND_ORDERS[[int(BondType.UNSPECIFIED), int(BondType.ZERO)]] = [0.0, 0.0]
+BOND_ORDERS[[int(BondType.IONIC), int(BondType.HYDROGEN)]] = [0.0, 0.0]
 BOND_ORDERS[[int(BondType.SINGLE), int(BondType.DOUBLE)]] = [1.0, 2.0]
-BOND_ORDERS[[int(BondType.TRIPLE), int(BondType.AROMATIC)]] = [3.0, 1.5]
+BOND_ORDERS[[int(BondType.TRIPLE), int(BondType.QUADRUPLE)]] = [3.0, 4.0]
+BOND_ORDERS[[int(BondType.QUINTUPLE), int(BondType.HEXTUPLE)]] = [5.0, 6.0]
+BOND_ORDERS[[int(BondType.ONEANDAHALF), int(BondType.TWOANDAHALF)]] = [1.5, 2.5]
+BOND_ORDERS[[int(BondType.THREEANDAHALF), int(BondType.FOURANDAHALF)]] = [3.5, 4.5]
+BOND_ORDERS[[int(BondType.FIVEANDAHALF), int(BondType.AROMATIC)]] = [5.5, 1.5]
+BOND_ORDERS[[int(BondType.DATIVEONE), int(BondType.DATIVE)]] = [1.0, 1.0]
 
 # number of outer (valence) electrons per atomic number
 _N_OUTER_ELECS = np.array(

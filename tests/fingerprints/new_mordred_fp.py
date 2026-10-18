@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_equal
+from rdkit.Chem import MolFromSmiles
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
 from tests.fingerprints._new_mordred.utils import _MORDRED_NAMES
@@ -105,6 +106,46 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_l
     )
     assert_equal(X_new.shape, (len(mols_conformers_list), 1826))
     assert X_new.dtype == np.float32
+
+
+def test_new_mordred_dative_bonds():
+    # Mordred counts a dative bond as single wherever it needs bond orders, and
+    # toward the valence of the atom it points to only
+    mols = [
+        MolFromSmiles(smiles)
+        for smiles in [
+            "C[NH2]->[Cu]c1ccccc1",
+            "CC(=O)->[Fe]",
+            "N->[Pt](<-N)(Cl)Cl",
+            "O=C1O->[Zn]<-OC(=O)C1",
+            "c1ccncc1->[Ru](Cl)(Cl)<-n1ccccc1",
+            "C[B](c1ccccc1)<-N",
+            # donors next to an aromatic ring, whose ETA lone pairs depend on the
+            # dative bond not adding to their valence
+            "c1ccccc1[CH2]->[Cu]",
+            "c1ccccc1[C](=O)->[Fe]",
+        ]
+    ]
+    new_mordred_fp = NewMordredFingerprint()
+    X_new = new_mordred_fp.transform(mols)
+
+    mordred_fp = MordredFingerprint()
+    X_old = mordred_fp.transform(mols)
+
+    df_new, df_old = _arrays_to_dataframes(
+        X_new,
+        new_mordred_fp.get_feature_names_out(),
+        X_old,
+        mordred_fp.get_feature_names_out(),
+    )
+    features = _get_features_to_compare(df_new, df_old)
+    assert_allclose(
+        df_new[features],
+        df_old[features],
+        equal_nan=True,
+        atol=1e-3,
+        err_msg=_mismatched_features_msg(df_new[features], df_old[features], atol=1e-3),
+    )
 
 
 @pytest.mark.xfail(
