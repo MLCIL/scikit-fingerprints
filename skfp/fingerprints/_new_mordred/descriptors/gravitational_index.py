@@ -19,7 +19,7 @@ FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
 
 def calc(
     mol_regular: Mol,
-    mol_hydrogens_conformer: Mol,
+    mol_hydrogens: Mol,
     distance_matrix_3d_regular: DistanceMatrix3D,
     distance_matrix_3d_hydrogens: DistanceMatrix3D,
     adjacency_matrix_regular: AdjacencyMatrix,
@@ -35,7 +35,7 @@ def calc(
     The four variants are the 2x2 product of two flags:
 
     - ``H`` suffix: use the hydrogen-explicit molecule
-      (``mol_hydrogens_conformer``) instead of the heavy-atom-only molecule
+      (``mol_hydrogens``) instead of the heavy-atom-only molecule
       (``mol_regular``, with hydrogens suppressed).
     - ``p`` suffix: sum only over bonded pairs (adjacency matrix) instead of
       over all atom pairs.
@@ -48,7 +48,7 @@ def calc(
         mol_regular, distance_matrix_3d_regular, adjacency_matrix_regular
     )
     grav_h, grav_h_pair = _variant_values(
-        mol_hydrogens_conformer,
+        mol_hydrogens,
         distance_matrix_3d_hydrogens,
         adjacency_matrix_hydrogens,
     )

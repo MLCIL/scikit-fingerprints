@@ -63,7 +63,8 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> np.ndarray:
 
 
 def calc_3d(
-    mol_hydrogens_conformer: Mol,
+    mol_hydrogens: Mol,
+    conf_id: int,
     cpsa_2d: np.ndarray,
     gasteiger_charges_hydrogens: np.ndarray,
 ):
@@ -71,8 +72,8 @@ def calc_3d(
     Charged partial surface area (CPSA) descriptors.
 
     Combine per-atom solvent-accessible surface areas with Gasteiger partial
-    charges to describe polar interactions on the molecular surface. All values
-    are ``nan`` for an empty molecule.
+    charges to describe polar interactions on the molecular surface, using the
+    conformer ``conf_id``. All values are ``nan`` for an empty molecule.
 
     PNSA{v}/PPSA{v} (partial negative/positive surface area) sum the surface
     area of the negatively/positively charged atoms, weighted by a
@@ -109,13 +110,13 @@ def calc_3d(
     quantitative structure-property relationship studies. Analytical Chemistry,
     62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
     """
-    num_atoms = mol_hydrogens_conformer.GetNumAtoms()
+    num_atoms = mol_hydrogens.GetNumAtoms()
     if num_atoms == 0 or np.isnan(gasteiger_charges_hydrogens).any():
         values = np.full(len(FEATURE_NAMES_3D), np.nan, dtype=np.float32)
         return values
 
     rncg, rpcg = cpsa_2d
-    surface_area = solvent_accessible_surface_area(mol_hydrogens_conformer)
+    surface_area = solvent_accessible_surface_area(mol_hydrogens, conf_id)
     surface_area_sum = surface_area.sum()
     masks = [
         gasteiger_charges_hydrogens < 0.0,  # negative

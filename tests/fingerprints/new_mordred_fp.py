@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from rdkit.Chem import Mol, MolFromSmiles, RenumberAtoms
-from rdkit.Chem.AllChem import EmbedMolecule
+from rdkit.Chem import Conformer, Mol, MolFromSmiles, RenumberAtoms
+from rdkit.Chem.AllChem import EmbedMolecule, EmbedMultipleConfs
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
@@ -164,6 +164,36 @@ def test_new_mordred_does_not_depend_on_hydrogen_numbering(smiles, use_3D):
     assert_allclose(X_renumbered, X, rtol=1e-4, atol=1e-4, equal_nan=True)
 
 
+def test_new_mordred_conformer_without_conf_id_property():
+    # like the other 3D fingerprints, use the first conformer when conf_id is unset
+    mol = _embedded("CC(C)Cc1ccc(cc1)C(C)C(=O)O")
+    mol_without_property = Mol(mol)
+    mol_without_property.ClearProp("conf_id")
+    new_mordred_fp = NewMordredFingerprint(use_3D=True)
+
+    X = new_mordred_fp.transform([mol])
+    X_without_property = new_mordred_fp.transform([mol_without_property])
+
+    assert_allclose(X_without_property, X, equal_nan=True)
+
+
+def test_new_mordred_3D_uses_the_conf_id_conformer():
+    mol = preprocess_mol(
+        MolFromSmiles("CC(C)Cc1ccc(cc1)C(C)C(=O)O"), explicit_hydrogens=True
+    )
+    EmbedMultipleConfs(mol, numConfs=2, randomSeed=42)
+    mol.SetIntProp("conf_id", 1)
+    new_mordred_fp = NewMordredFingerprint(use_3D=True)
+
+    X = new_mordred_fp.transform([mol])
+    X_second = new_mordred_fp.transform([_only_conformer(mol, 1)])
+    X_first = new_mordred_fp.transform([_only_conformer(mol, 0)])
+
+    # every 3D descriptor comes from the conformer conf_id points to
+    assert_allclose(X, X_second, rtol=1e-5, equal_nan=True)
+    assert not np.allclose(X, X_first, rtol=1e-5, equal_nan=True)
+
+
 @pytest.mark.xfail(
     strict=False,
     reason="LogEE fixed in skfp, mordred-community reference is buggy "
@@ -272,3 +302,14 @@ def _hydrogens_moved_to_front(mol: Mol) -> Mol:
     renumbered = RenumberAtoms(mol, hydrogens + heavy)
     renumbered.SetIntProp("conf_id", mol.GetIntProp("conf_id"))
     return renumbered
+
+
+def _only_conformer(mol: Mol, conf_id: int) -> Mol:
+    # a copy holding just the given conformer, as conformer 0
+    single = Mol(mol)
+    single.RemoveAllConformers()
+    conformer = Conformer(mol.GetConformer(conf_id))
+    conformer.SetId(0)
+    single.AddConformer(conformer, assignId=False)
+    single.SetIntProp("conf_id", 0)
+    return single

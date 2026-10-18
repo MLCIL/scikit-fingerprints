@@ -15,6 +15,7 @@ from skfp.fingerprints._new_mordred.descriptors.cpsa import (
 )
 from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.utils import get_conf_id
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -61,7 +62,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol = mordred_test_mols_hydrogens_3d[name]
         charges = gasteiger_charges(mol)
         cpsa_2d = calc_2d(charges)
-        values_3d = calc_3d(mol, cpsa_2d, charges)
+        values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
         computed[name] = dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
             zip(FEATURE_NAMES_3D, values_3d, strict=True)
         )
@@ -85,7 +86,7 @@ def _embedded(smiles: str) -> Mol:
 def _compute(mol: Mol) -> dict[str, float]:
     charges = gasteiger_charges(mol)
     cpsa_2d = calc_2d(charges)
-    values_3d = calc_3d(mol, cpsa_2d, charges)
+    values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
     return dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
         zip(FEATURE_NAMES_3D, values_3d, strict=True)
     )

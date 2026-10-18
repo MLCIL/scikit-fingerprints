@@ -66,6 +66,7 @@ from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
 )
 from skfp.fingerprints._new_mordred.utils.subgraphs import Subgraphs
+from skfp.utils import get_conf_id
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -304,7 +305,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
     # 3D descriptors
     if use_3D:
         # the hydrogen-explicit molecule keeps the conformers of the input
-        conf_id = mol_hydrogens.GetIntProp("conf_id")
+        conf_id = get_conf_id(mol_hydrogens)
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
 
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
@@ -314,8 +315,10 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
 
         descriptors_3d: dict[ModuleType, np.ndarray] = {
             morse: morse.calc(mol_hydrogens, distance_matrix_3d),
-            rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens),
-            cpsa: cpsa.calc_3d(mol_hydrogens, cpsa_2d, gasteiger_charges_hydrogens),
+            rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens, conf_id),
+            cpsa: cpsa.calc_3d(
+                mol_hydrogens, conf_id, cpsa_2d, gasteiger_charges_hydrogens
+            ),
             gravitational_index: gravitational_index.calc(
                 mol_regular,
                 mol_hydrogens,

@@ -101,15 +101,16 @@ def calc_rdkit_2d(
     return np.asarray(values, dtype=np.float32)
 
 
-def calc_rdkit_3d(mol_with_3d_conformer: Mol) -> np.ndarray:
+def calc_rdkit_3d(mol_hydrogens: Mol, conf_id: int) -> np.ndarray:
     """
-    Compute 3D descriptors that map directly to RDKit descriptor functions.
+    Compute 3D descriptors that map directly to RDKit descriptor functions, on
+    the conformer ``conf_id``.
     """
     values = [
-        safe_value(rdMolDescriptors.CalcPMI1, mol_with_3d_conformer),
-        safe_value(rdMolDescriptors.CalcPMI2, mol_with_3d_conformer),
-        safe_value(rdMolDescriptors.CalcPMI3, mol_with_3d_conformer),
-        safe_value(rdMolDescriptors.CalcPBF, mol_with_3d_conformer),
+        safe_value(rdMolDescriptors.CalcPMI1, mol_hydrogens, confId=conf_id),
+        safe_value(rdMolDescriptors.CalcPMI2, mol_hydrogens, confId=conf_id),
+        safe_value(rdMolDescriptors.CalcPMI3, mol_hydrogens, confId=conf_id),
+        safe_value(rdMolDescriptors.CalcPBF, mol_hydrogens, confId=conf_id),
     ]
 
     return np.asarray(values, dtype=np.float32)
