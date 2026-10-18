@@ -51,6 +51,12 @@ VAN_DER_WAALS_RADII_RDKIT = PeriodicTable(
     [_RDKIT_PERIODIC_TABLE.GetRvdw(num) for num in range(1, NUM_ELEMENTS)]
 )
 
+# atomic weight used by RDKit, the mass of an atom without an isotope label, which
+# differs from the Mordred mass table for some elements
+ATOMIC_WEIGHTS_RDKIT = PeriodicTable(
+    [_RDKIT_PERIODIC_TABLE.GetAtomicWeight(num) for num in range(1, NUM_ELEMENTS)]
+)
+
 # element properties are based only on atomic number and can be read from tables
 
 # name -> table, in the order the descriptors expose these properties as features
