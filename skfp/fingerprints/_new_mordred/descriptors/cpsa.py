@@ -32,13 +32,18 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> np.ndarray:
 
     Each is the most extreme partial charge of a given sign divided by the
     total charge of that sign; ``0.0`` when no atom of that sign is present.
-    Charge-only, so no 3D conformer is required.
+    Charge-only, so no 3D conformer is required. As in Mordred, both are ``nan``
+    when some atom has no Gasteiger charge, e.g. one of an element that the
+    Gasteiger parameters do not cover.
 
     Based on Stanton, D. T., & Jurs, P. C. (1990). Development and use of
     charged partial surface area structural descriptors in computer-assisted
     quantitative structure-property relationship studies. Analytical Chemistry,
     62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
     """
+    if np.isnan(gasteiger_charges_hydrogens).any():
+        return np.full(len(FEATURE_NAMES_2D), np.nan, dtype=np.float32)
+
     masks = [
         gasteiger_charges_hydrogens < 0.0,  # RNCG
         gasteiger_charges_hydrogens > 0.0,  # RPCG
@@ -49,7 +54,7 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> np.ndarray:
     for mask in masks:
         charges = gasteiger_charges_hydrogens[mask]
         if charges.size == 0:
-            values.append(np.nan)
+            values.append(0.0)
         else:
             q_max = charges[np.argmax(np.abs(charges))]
             values.append(q_max / np.sum(charges))
@@ -94,13 +99,18 @@ def calc_3d(
         * RASA/RPSA (relative hydrophobic/polar surface area): TASA/TPSA divided
           by the total surface area
 
+    As in Mordred, a descriptor over atoms that the molecule does not have, such as
+    negatively charged ones, sums over no atoms and is ``0.0``, except for version
+    5, which divides by their number and is ``nan``. All values are ``nan`` when
+    some atom has no Gasteiger charge.
+
     Based on Stanton, D. T., & Jurs, P. C. (1990). Development and use of
     charged partial surface area structural descriptors in computer-assisted
     quantitative structure-property relationship studies. Analytical Chemistry,
     62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
     """
     num_atoms = mol_hydrogens_conformer.GetNumAtoms()
-    if num_atoms == 0:
+    if num_atoms == 0 or np.isnan(gasteiger_charges_hydrogens).any():
         values = np.full(len(FEATURE_NAMES_3D), np.nan, dtype=np.float32)
         return values
 
@@ -142,8 +152,9 @@ def _pnsa_ppsa(
     Partial negative and positive surface area descriptors (PNSA{v}, PPSA{v}).
 
     For each sign, sums the surface area of the charged atoms weighted by a
-    version-dependent factor ``f`` (see :func:`calc_3d`); ``nan`` for all five
-    versions when no atom of that sign is present.
+    version-dependent factor ``f`` (see :func:`calc_3d`). When no atom of that sign
+    is present, versions 1-4 sum over no atoms and are ``0.0``, while version 5
+    divides by their number and is ``nan``.
     """
     pnsa: list[float] = []
     ppsa: list[float] = []
@@ -151,7 +162,7 @@ def _pnsa_ppsa(
     for mask, desc in zip(masks, [pnsa, ppsa], strict=True):
         charges = gasteiger_charges_hydrogens[mask]
         if charges.size == 0:
-            desc.extend([np.nan] * 5)
+            desc.extend([0.0, 0.0, 0.0, 0.0, np.nan])
         else:
             sa = surface_area[mask]
             charges_sum = np.sum(charges)
@@ -179,7 +190,7 @@ def _rncs_rpcs(
     Relative negative and positive charge surface area descriptors (RNCS, RPCS).
 
     Surface area of the atom carrying the most extreme charge of a given sign,
-    divided by the relative charge of that sign (RNCG/RPCG); ``nan`` when no
+    divided by the relative charge of that sign (RNCG/RPCG); ``0.0`` when no
     atom of that sign is present.
     """
     values = []
@@ -187,7 +198,7 @@ def _rncs_rpcs(
     for mask, desc in zip(masks, [rncg, rpcg], strict=True):
         charges = gasteiger_charges_hydrogens[mask]
         if charges.size == 0:
-            values.append(np.nan)
+            values.append(0.0)
         else:
             sa_max = surface_area[mask][np.argmax(np.abs(charges))]
             values.append(sa_max / desc)
@@ -202,14 +213,11 @@ def _tasa_tpsa(
     Total hydrophobic and polar surface area descriptors (TASA, TPSA).
 
     TASA sums the surface area of hydrophobic atoms (|charge| < 0.2) and TPSA
-    the surface area of polar atoms (|charge| >= 0.2); each is ``nan`` when no
+    the surface area of polar atoms (|charge| >= 0.2); each is ``0.0`` when no
     atom meets its condition.
     """
     abs_charges = np.abs(gasteiger_charges_hydrogens)
-    tasa_mask = abs_charges < 0.2
-    tpsa_mask = abs_charges >= 0.2
-
-    tasa = np.sum(surface_area[tasa_mask]) if tasa_mask.any() else np.nan
-    tpsa = np.sum(surface_area[tpsa_mask]) if tpsa_mask.any() else np.nan
+    tasa = np.sum(surface_area[abs_charges < 0.2])
+    tpsa = np.sum(surface_area[abs_charges >= 0.2])
 
     return tasa, tpsa
