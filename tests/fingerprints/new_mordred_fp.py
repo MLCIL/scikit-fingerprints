@@ -150,6 +150,36 @@ def test_new_mordred_dative_bonds():
     )
 
 
+def test_new_mordred_dummy_atoms():
+    # Mordred weights a dummy atom by its atomic number, 0. Every feature is
+    # compared, as the ones this concerns would otherwise be skipped as not computed
+    # had they been NaN
+    mols = [
+        MolFromSmiles(smiles)
+        for smiles in ["*c1ccccc1", "*CC(=O)O", "C[Si](*)(C)C", "[*:1]CC[*:2]"]
+    ]
+    new_mordred_fp = NewMordredFingerprint()
+    X_new = new_mordred_fp.transform(mols)
+
+    mordred_fp = MordredFingerprint()
+    X_old = mordred_fp.transform(mols)
+
+    df_new, df_old = _arrays_to_dataframes(
+        X_new,
+        new_mordred_fp.get_feature_names_out(),
+        X_old,
+        mordred_fp.get_feature_names_out(),
+    )
+    features = [name for name in df_new.columns if "LogEE" not in name]
+    assert_allclose(
+        df_new[features],
+        df_old[features],
+        equal_nan=True,
+        atol=1e-3,
+        err_msg=_mismatched_features_msg(df_new[features], df_old[features], atol=1e-3),
+    )
+
+
 @pytest.mark.parametrize("use_3D", [False, True])
 @pytest.mark.parametrize(
     "smiles", ["CC(C)Cc1ccc(cc1)C(C)C(=O)O", "OC(=O)c1ccncc1", "CN1CCC[C@H]1c1cccnc1"]

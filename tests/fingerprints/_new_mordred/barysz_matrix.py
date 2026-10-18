@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from rdkit.Chem import MolFromSmiles
@@ -71,3 +72,19 @@ def test_barysz_matrix_reference_values(feature_name, molecule, computed_values)
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]
     assert_allclose(actual, expected, atol=1e-3, equal_nan=True)
+
+
+def test_barysz_matrix_atomic_number_undefined_for_lone_dummy_atom():
+    # the Barysz matrix divides by the atomic number, which is 0 for a dummy atom.
+    # Mordred then returns infinite or arbitrary values, while every descriptor is
+    # undefined here
+    mol = preprocess_mol(MolFromSmiles("*"))
+    computed = dict(
+        zip(FEATURE_NAMES, calc(AtomicProperties(mol), n_frags=1), strict=False)
+    )
+
+    values = [
+        value for name, value in computed.items() if name.endswith("_Dzatomic_number")
+    ]
+    assert values
+    assert_allclose(values, np.nan)

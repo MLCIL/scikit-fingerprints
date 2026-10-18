@@ -23,14 +23,17 @@ class PeriodicTable:
     :meth:`lookup`, which indexes a padded array with an atomic number vector.
     """
 
-    __slots__ = ("_data", "_padded")
+    __slots__ = ("_data", "_dummy_value", "_padded")
     _datadir = Path(__file__).parent / "data"
 
-    def __init__(self, data: list[float]):
+    def __init__(self, data: list[float], dummy_value: float = np.nan):
         self._data = data
-        # index 0 and any atomic number past the end of the table read as NaN, so
-        # that lookup() can index without bounds checks and match __getitem__
+        # value for atomic number 0, i.e. a dummy atom
+        self._dummy_value = dummy_value
+        # any atomic number past the end of the table reads as NaN, so that lookup()
+        # can index without bounds checks and match __getitem__
         self._padded = np.full(len(data) + 2, np.nan, dtype=np.float64)
+        self._padded[0] = dummy_value
         self._padded[1 : len(data) + 1] = data
 
     @classmethod
@@ -50,6 +53,8 @@ class PeriodicTable:
         return cls(values)
 
     def __getitem__(self, atomic_num: int) -> float:
+        if atomic_num == 0:
+            return self._dummy_value
         if atomic_num < 1:
             return np.nan
         try:
@@ -90,8 +95,9 @@ SANDERSON_ELECTRONEGATIVITY = PeriodicTable.from_file(
 VAN_DER_WAALS_RADII = PeriodicTable.from_file("van_der_waals_radii.txt")
 
 # derived tables, so that every element property can be read the same way
+# a dummy atom has atomic number 0, which Mordred uses as is
 ATOMIC_NUMBER = PeriodicTable(
-    [float(atomic_num) for atomic_num in range(1, NUM_ELEMENTS)]
+    [float(atomic_num) for atomic_num in range(1, NUM_ELEMENTS)], dummy_value=0.0
 )
 VAN_DER_WAALS_VOLUME = VAN_DER_WAALS_RADII.map(
     lambda radius: 4.0 / 3.0 * np.pi * radius**3
