@@ -134,7 +134,7 @@ def calc(
 
     # composite + functionality indices, which compare the molecule with its alkane
     # reference: the same skeleton with every atom a carbon and every bond single
-    gamma_alkane = _alkane_gamma(alkane_degrees)
+    gamma_alkane = _alkane_gamma(alkane_degrees, degrees)
     eta_composite = _composite_and_functionality(
         gamma,
         distance_matrix.matrix,
@@ -438,7 +438,7 @@ _CARBON_CORE_COUNT, _CARBON_EPSILON = (
 _HYDROGEN_EPSILON = _core_counts_and_epsilons(np.array([1]))[1].item()
 
 
-def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
+def _alkane_gamma(alkane_degrees: np.ndarray, degrees: np.ndarray) -> np.ndarray | None:
     """
     Gamma of every atom of the alkane reference: the same skeleton with every atom
     a carbon and every bond single.
@@ -446,15 +446,19 @@ def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
     All of its atoms have the same core count and the same epsilon, so every bond
     contributes half a beta unit to both of its atoms and gamma comes out as the
     reciprocal of the degree. ``None`` when the reference does not exist, as some
-    atom has more bonds than a carbon can have. Without any heavy atom, as in a
-    hydrogen molecule, the reference exists, but is empty, as in Mordred.
+    atom has more bonds than a carbon can have; as in Mordred, that counts the
+    hydrogens the molecule still holds, which the reference itself drops. Without
+    any heavy atom, as in a hydrogen molecule, the reference exists, but is empty,
+    as in Mordred.
     """
     if degrees.max(initial=0) > _MAX_CARBON_DEGREE:
         return None
 
     with np.errstate(divide="ignore"):
         # a lone atom has no bonds and therefore no beta to divide by
-        return np.where(degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * degrees))
+        return np.where(
+            alkane_degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * alkane_degrees)
+        )
 
 
 def _saturated_mean_epsilon(props: AtomicProperties, bond_types: np.ndarray) -> float:

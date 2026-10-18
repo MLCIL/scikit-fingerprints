@@ -165,3 +165,30 @@ def test_eta_reference_without_heavy_atoms_is_empty(smiles):
         "ETA_epsilon_4": np.nan,
     }
     assert_allclose([computed[name] for name in expected], list(expected.values()))
+
+
+# Mordred gives up on the hydrogen-free alkane reference of the other ETA descriptors
+# when an atom there has more than four neighbors, counting the hydrogens that
+# RemoveHs keeps, such as a deuterium on a phosphorus with four fluorines, even though
+# the reference itself drops them. Expected values are from mordred-community.
+@pytest.mark.parametrize(
+    "smiles",
+    [
+        "[2H]P(F)(F)(F)F",
+        "[3H]P(F)(F)(F)F",
+        "[2H]P([2H])(F)(F)F",
+        "C[As](C)(C)(C)[2H]",
+        "[2H][Sb](C)(C)(C)C",
+        "[2H]I(F)(F)(F)F",
+    ],
+)
+def test_eta_reference_undefined_for_more_than_four_neighbors_with_kept_hydrogens(
+    smiles,
+):
+    computed = _compute(MolFromSmiles(smiles))
+    names = [
+        f"{prefix}ETA_{name}"
+        for name in ("eta_R", "eta_RL", "eta_F", "eta_FL", "eta_B", "eta_BR")
+        for prefix in ("", "A")
+    ] + ["ETA_dAlpha_A", "ETA_dAlpha_B"]
+    assert_allclose([computed[name] for name in names], np.nan)
