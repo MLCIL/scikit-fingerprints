@@ -33,8 +33,32 @@ FEATURE_NAMES = [
     ],
 )
 def test_carbon_type_values(smiles, expected):
-    mol = Chem.MolFromSmiles(smiles)
-    mol_kekulized = preprocess_mol(mol, explicit_hydrogens=False, kekulize=True)
-
-    values = carbon_types.calc(mol_kekulized)
+    values = _calc(Chem.MolFromSmiles(smiles))
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)
+
+
+def _kekulized_without_aromatic_flags(smiles: str) -> Chem.Mol:
+    mol = Chem.MolFromSmiles(smiles)
+    Chem.Kekulize(mol, clearAromaticFlags=True)
+    return mol
+
+
+@pytest.mark.parametrize(
+    ("mol", "expected_fraction"),
+    [
+        # carbons with four neighbors, hydrogens included, not SP3-hybridized ones
+        (Chem.MolFromSmiles("C[CH2-]"), 0.5),
+        (Chem.MolFromSmiles("[CH2-][Tl]"), 0.0),
+        (_kekulized_without_aromatic_flags("Cc1ccncc1"), 1 / 6),
+        (Chem.MolFromSmiles("O"), 0.0),
+    ],
+)
+def test_fraction_csp3_values(mol, expected_fraction):
+    values = _calc(mol)
+    assert_allclose(values[FEATURE_NAMES.index("FCSP3")], expected_fraction, rtol=1e-6)
+
+
+def _calc(mol: Chem.Mol) -> np.ndarray:
+    mol_kekulized = preprocess_mol(mol, explicit_hydrogens=False, kekulize=True)
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    return carbon_types.calc(mol_kekulized, mol_hydrogens)

@@ -68,6 +68,7 @@ def _average_exact_mol_wt(mol_properties: MolecularProperties) -> float:
 
 def calc_rdkit_2d(
     mol_regular: Mol,
+    mol_hydrogens: Mol,
     distance_matrix_regular: DistanceMatrix,
     mol_properties: MolecularProperties,
 ) -> np.ndarray:
@@ -91,8 +92,8 @@ def calc_rdkit_2d(
         *_calc_moe_type_descriptors(mol_regular),
         mol_properties.log_p,
         mol_properties.molar_refractivity,
-        rdMolDescriptors.CalcTPSA(mol_regular),
-        rdMolDescriptors.CalcTPSA(mol_regular, includeSandP=True),
+        rdMolDescriptors.CalcTPSA(mol_hydrogens),
+        rdMolDescriptors.CalcTPSA(mol_hydrogens, includeSandP=True),
         mol_properties.exact_mol_wt,
         safe_value(_average_exact_mol_wt, mol_properties),
     ]

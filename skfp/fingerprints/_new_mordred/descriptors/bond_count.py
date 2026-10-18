@@ -24,7 +24,10 @@ FEATURE_NAMES = [
 
 
 def calc(
-    atomic_props_hydrogens: AtomicProperties, kekulized_bond_types_hydrogens: np.ndarray
+    props_regular: AtomicProperties,
+    props_hydrogens: AtomicProperties,
+    kekulized_bond_types: np.ndarray,
+    kekulized_bond_types_hydrogens: np.ndarray,
 ) -> np.ndarray:
     """
     Bond count descriptors.
@@ -32,32 +35,26 @@ def calc(
     Counts bonds by type: all bonds, heavy-atom-only bonds, single, double, triple,
     aromatic, multiple, and kekulized single/double bonds.
 
-    Following the original Mordred implementation, nBonds (any) and nBondsS (single)
-    are computed on the hydrogen-explicit molecule, while nBondsO (heavy) counts only
-    bonds between non-hydrogen atoms. nBondsKS and nBondsKD use the kekulized
-    hydrogen-explicit molecule, where aromatic bonds are expressed as alternating
-    single and double bonds.
+    Each count uses the molecule the original Mordred implementation uses for it:
+    nBonds (any), nBondsS (single) and nBondsKS (kekulized single) the
+    hydrogen-explicit one, and every other count the hydrogen-suppressed one, where
+    nBondsO (heavy) counts all of its bonds. nBondsKS and nBondsKD use the kekulized
+    molecules, where aromatic bonds are expressed as alternating single and double
+    bonds.
     """
-    bond_types = atomic_props_hydrogens.bond_types
-    is_heavy = ~atomic_props_hydrogens.is_hydrogen
-    is_single = bond_types == BondType.SINGLE
-    is_aromatic = atomic_props_hydrogens.bond_is_aromatic | (
-        bond_types == BondType.AROMATIC
-    )
+    bond_types = props_regular.bond_types
+    is_aromatic = props_regular.bond_is_aromatic | (bond_types == BondType.AROMATIC)
 
-    n_bonds = atomic_props_hydrogens.num_bonds
-    n_bonds_o = np.count_nonzero(
-        is_heavy[atomic_props_hydrogens.bond_begin_idxs]
-        & is_heavy[atomic_props_hydrogens.bond_end_idxs]
-    )
-    n_bonds_s = np.count_nonzero(is_single)
+    n_bonds = props_hydrogens.num_bonds
+    n_bonds_o = props_regular.num_bonds
+    n_bonds_s = np.count_nonzero(props_hydrogens.bond_types == BondType.SINGLE)
     n_bonds_d = np.count_nonzero(bond_types == BondType.DOUBLE)
     n_bonds_t = np.count_nonzero(bond_types == BondType.TRIPLE)
     n_bonds_a = np.count_nonzero(is_aromatic)
-    n_bonds_m = np.count_nonzero(is_aromatic | ~is_single)
+    n_bonds_m = np.count_nonzero(is_aromatic | (bond_types != BondType.SINGLE))
 
     n_bonds_ks = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.SINGLE)
-    n_bonds_kd = np.count_nonzero(kekulized_bond_types_hydrogens == BondType.DOUBLE)
+    n_bonds_kd = np.count_nonzero(kekulized_bond_types == BondType.DOUBLE)
 
     return np.asarray(
         [

@@ -232,18 +232,23 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
         zagreb_index: zagreb_index.calc(props_regular, adjacency_matrix_regular),
-        acid_base: acid_base.calc(mol_regular),
+        acid_base: acid_base.calc(mol_hydrogens),
         autocorrelation: autocorrelation.calc(
             props_hydrogens, distance_matrix_hydrogens
         ),
         estate: estate.calc(mol_regular),
         rdkit_descriptors: rdkit_descriptors.calc_rdkit_2d(
-            mol_regular, distance_matrix_regular, mol_properties
+            mol_regular, mol_hydrogens, distance_matrix_regular, mol_properties
         ),
         mol_filters: mol_filters.calc(mol_properties),
         atom_count: atom_count.calc(mol_regular, props_regular),
-        bond_count: bond_count.calc(props_hydrogens, kekulized_bond_types_hydrogens),
-        carbon_types: carbon_types.calc(mol_kekulized),
+        bond_count: bond_count.calc(
+            props_regular,
+            props_hydrogens,
+            kekulized_bond_types,
+            kekulized_bond_types_hydrogens,
+        ),
+        carbon_types: carbon_types.calc(mol_kekulized, mol_hydrogens),
         constitutional: constitutional.calc(props_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
         log_s: log_s.calc(mol_regular),
@@ -266,7 +271,7 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
         ),
         barysz_matrix: barysz_matrix.calc(props_regular, n_frags),
         bcut: bcut.calc(props_regular, n_frags),
-        aromatic: aromatic.calc(props_regular),
+        aromatic: aromatic.calc(props_hydrogens),
         topological_charge: topological_charge.calc(
             adjacency_matrix_regular, distance_matrix_regular
         ),
