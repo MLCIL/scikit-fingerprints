@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from rdkit.Chem import Conformer, MolFromSmiles
 
 from skfp.fingerprints._new_mordred.descriptors.gravitational_index import (
     FEATURE_NAMES,
@@ -61,3 +63,22 @@ def test_gravitational_index_reference_values(descriptor, molecule, computed_val
     expected = _REFERENCE[molecule][descriptor]
     actual = computed_values[molecule][descriptor]
     assert_allclose(actual, expected, atol=1e-3)
+
+
+def test_atoms_in_the_same_place_make_all_values_nan():
+    # conformer generation can stack the ions of a salt; Mordred divides by every
+    # squared distance, so it leaves the gravitational indices undefined
+    mol = MolFromSmiles("[Na+].[Cl-]")
+    conformer = Conformer(mol.GetNumAtoms())
+    conformer.Set3D(True)
+    conf_id = mol.AddConformer(conformer, assignId=True)
+
+    values = calc(
+        mol,
+        mol,
+        DistanceMatrix3D(mol, conf_id),
+        DistanceMatrix3D(mol, conf_id),
+        AdjacencyMatrix(mol),
+        AdjacencyMatrix(mol),
+    )
+    assert np.isnan(values).all()

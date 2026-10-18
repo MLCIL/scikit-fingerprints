@@ -75,7 +75,11 @@ def _variant_values(
     # keep them in double precision. Diagonal distances are 0, so set them to 1
     # to avoid division by zero (the mass diagonal is 0, so these terms vanish).
     distances = distance_matrix_3d.matrix.astype(np.float64)
+    # Mordred divides by every squared distance, so two atoms in the same place,
+    # e.g. ions that conformer generation stacked, leave both indices undefined
     np.fill_diagonal(distances, 1.0)
+    if (distances == 0.0).any():
+        return np.float32(np.nan), np.float32(np.nan)
     inverse_squared_distances = distances**-2
 
     weighted = mass_products * inverse_squared_distances
