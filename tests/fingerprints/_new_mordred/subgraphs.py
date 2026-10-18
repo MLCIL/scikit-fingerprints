@@ -31,6 +31,11 @@ _SMILES = [
     "OC[C@H]1O[C@@H](O)[C@H](O)[C@@H](O)[C@@H]1O",
     "CN1C=NC2=C1C(=O)N(C)C(=O)N2C",
     "C1CC1CC1CC1",
+    # hydrogens that RemoveHs keeps as atoms, whose bonds RDKit leaves out
+    "[2H]c1ccccc1C",
+    "[2H]C([2H])([2H])O",
+    "[3H]OC",
+    "[H][H]",
 ]
 
 
