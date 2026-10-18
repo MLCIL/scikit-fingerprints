@@ -6,8 +6,14 @@ from rdkit.Chem import Conformer, Mol, MolFromSmiles, RenumberAtoms
 from rdkit.Chem.AllChem import EmbedMolecule, EmbedMultipleConfs
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
+from skfp.fingerprints._new_mordred.descriptors.cpsa import FEATURE_NAMES_3D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from tests.fingerprints._new_mordred.utils import _MORDRED_NAMES
+
+# surface areas come from RDKit, with its atomic radii, instead of Mordred's own
+# algorithm and radii, and differ by several percent, so the charged partial surface
+# area descriptors built on them are compared in tests/fingerprints/_new_mordred/cpsa.py
+_SURFACE_AREA_FEATURES = frozenset(FEATURE_NAMES_3D)
 
 
 def test_new_mordred_fingerprint(smallest_mols_list):
@@ -60,12 +66,12 @@ def test_new_mordred_sparse_fingerprint(smallest_mols_list):
     assert X_new.dtype == np.float32
 
 
-def test_new_mordred_3D_fingerprint(mols_conformers_list, smallest_mols_list):
+def test_new_mordred_3D_fingerprint(mols_conformers_list):
     new_mordred_fp = NewMordredFingerprint(use_3D=True, n_jobs=-1)
     X_new = new_mordred_fp.transform(mols_conformers_list)
 
     mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
-    X_old = mordred_fp.transform(smallest_mols_list)
+    X_old = mordred_fp.transform(mols_conformers_list)
 
     df_new, df_old = _arrays_to_dataframes(
         X_new,
@@ -73,7 +79,12 @@ def test_new_mordred_3D_fingerprint(mols_conformers_list, smallest_mols_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old)
+    features = _get_features_to_compare(df_new, df_old, _SURFACE_AREA_FEATURES)
+    # every other 3D feature must be compared, rather than skipped as not computed
+    features_3D = set(df_new.columns) - set(
+        NewMordredFingerprint().get_feature_names_out()
+    )
+    assert features_3D - _SURFACE_AREA_FEATURES <= set(features)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -85,12 +96,12 @@ def test_new_mordred_3D_fingerprint(mols_conformers_list, smallest_mols_list):
     assert X_new.dtype == np.float32
 
 
-def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_list):
+def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list):
     new_mordred_fp = NewMordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
     X_new = new_mordred_fp.transform(mols_conformers_list).toarray()
 
     mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
-    X_old = mordred_fp.transform(smallest_mols_list).toarray()
+    X_old = mordred_fp.transform(mols_conformers_list).toarray()
 
     df_new, df_old = _arrays_to_dataframes(
         X_new,
@@ -98,7 +109,12 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list, smallest_mols_l
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old)
+    features = _get_features_to_compare(df_new, df_old, _SURFACE_AREA_FEATURES)
+    # every other 3D feature must be compared, rather than skipped as not computed
+    features_3D = set(df_new.columns) - set(
+        NewMordredFingerprint().get_feature_names_out()
+    )
+    assert features_3D - _SURFACE_AREA_FEATURES <= set(features)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -298,12 +314,14 @@ def _arrays_to_dataframes(
     return df_new, df_old[df_new.columns]
 
 
-def _get_features_to_compare(df_new: pd.DataFrame, df_old: pd.DataFrame) -> list[str]:
+def _get_features_to_compare(
+    df_new: pd.DataFrame, df_old: pd.DataFrame, excluded: frozenset[str] = frozenset()
+) -> list[str]:
     not_computed = (df_new.isna() | df_old.isna()).all()
     return [
         name
         for name in df_new.columns
-        if not not_computed[name] and "LogEE" not in name
+        if not not_computed[name] and "LogEE" not in name and name not in excluded
     ]
 
 
