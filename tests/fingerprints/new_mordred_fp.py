@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from rdkit.Chem import MolFromSmiles
+from rdkit.Chem import Mol, MolFromSmiles, RenumberAtoms
+from rdkit.Chem.AllChem import EmbedMolecule
 
 from skfp.fingerprints import MordredFingerprint, NewMordredFingerprint
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from tests.fingerprints._new_mordred.utils import _MORDRED_NAMES
 
 
@@ -148,6 +150,20 @@ def test_new_mordred_dative_bonds():
     )
 
 
+@pytest.mark.parametrize("use_3D", [False, True])
+@pytest.mark.parametrize(
+    "smiles", ["CC(C)Cc1ccc(cc1)C(C)C(=O)O", "OC(=O)c1ccncc1", "CN1CCC[C@H]1c1cccnc1"]
+)
+def test_new_mordred_does_not_depend_on_hydrogen_numbering(smiles, use_3D):
+    mol = _embedded(smiles)
+    new_mordred_fp = NewMordredFingerprint(use_3D=use_3D)
+
+    X = new_mordred_fp.transform([mol])
+    X_renumbered = new_mordred_fp.transform([_hydrogens_moved_to_front(mol)])
+
+    assert_allclose(X_renumbered, X, rtol=1e-4, atol=1e-4, equal_nan=True)
+
+
 @pytest.mark.xfail(
     strict=False,
     reason="LogEE fixed in skfp, mordred-community reference is buggy "
@@ -241,3 +257,18 @@ def _mismatched_features_msg(
     if mismatched_names.empty:
         return ""
     return "Mismatched feature names:\n" + "\n".join(mismatched_names)
+
+
+def _embedded(smiles: str) -> Mol:
+    mol = preprocess_mol(MolFromSmiles(smiles), explicit_hydrogens=True)
+    mol.SetIntProp("conf_id", EmbedMolecule(mol, randomSeed=0))
+    return mol
+
+
+def _hydrogens_moved_to_front(mol: Mol) -> Mol:
+    # the same molecule and conformer, with every hydrogen numbered first
+    hydrogens = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() == 1]
+    heavy = [a.GetIdx() for a in mol.GetAtoms() if a.GetAtomicNum() != 1]
+    renumbered = RenumberAtoms(mol, hydrogens + heavy)
+    renumbered.SetIntProp("conf_id", mol.GetIntProp("conf_id"))
+    return renumbered
