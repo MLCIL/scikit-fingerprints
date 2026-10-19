@@ -129,7 +129,6 @@ def calc(
             vem_beta_ns_d,
             vem_beta_ns_d / num_atoms,
         ],
-        dtype=np.float32,
     )
 
     # composite + functionality indices, which compare the molecule with its alkane
@@ -150,12 +149,12 @@ def calc(
 
     # ETA delta alpha
     if gamma_alkane is None:
-        eta_delta_alpha = np.array([np.nan, np.nan], dtype=np.float32)
+        eta_delta_alpha = np.array([np.nan, np.nan])
     else:
         core_count_alkane = len(alkane_degrees) * _CARBON_CORE_COUNT
         d_a = max((core_count - core_count_alkane) / num_atoms, 0.0)
         d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
-        eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
+        eta_delta_alpha = np.array([d_a, d_b])
 
     # Mordred builds the alkane reference of epsilon 3 from the hydrogen-explicit
     # molecule, so it gives up when some atom has more than four neighbors there,
@@ -175,13 +174,11 @@ def calc(
 
     # ETA delta beta
     delta_beta = vem_beta_ns - vem_beta_s
-    eta_delta_beta = np.array([delta_beta, delta_beta / num_atoms], dtype=np.float32)
+    eta_delta_beta = np.array([delta_beta, delta_beta / num_atoms])
 
     # ETA psi
     psi = core_count / (num_atoms * eta_epsilon_values[1])
-    eta_psi = np.array(
-        [psi, max(0.714 - psi, 0.0), max(psi - 0.714, 0.0)], dtype=np.float32
-    )
+    eta_psi = np.array([psi, max(0.714 - psi, 0.0), max(psi - 0.714, 0.0)])
 
     values = np.concatenate(
         [
@@ -216,7 +213,9 @@ def _core_counts_and_epsilons(atomic_nums: np.ndarray) -> tuple[np.ndarray, np.n
     core_counts = np.where(atomic_nums == 1, 0.0, alphas)
     epsilons = 0.3 * outer_elecs - core_counts
 
-    return core_counts.astype(np.float32), epsilons.astype(np.float32)
+    # kept in double precision: the sigma beta rule compares the gap between two
+    # epsilons against 0.3, and a bond can sit exactly on it, as an N-Cr one does
+    return core_counts, epsilons
 
 
 def _beta_and_gamma(
@@ -287,7 +286,7 @@ def _beta_delta(
     eligible = (
         ~props.is_aromatic & ~is_in_ring & has_lone_pairs & (aromatic_neighbors > 0)
     )
-    return np.where(eligible, 0.5, 0.0).astype(np.float32)
+    return np.where(eligible, 0.5, 0.0)
 
 
 def _composite_index_pair(gamma: np.ndarray, dists: np.ndarray) -> tuple[float, float]:
@@ -353,7 +352,6 @@ def _composite_and_functionality(
             functionality_local,
             functionality_local / num_atoms,
         ],
-        dtype=np.float32,
     )
 
 
@@ -364,7 +362,7 @@ def _branching_indices(
     ETA branching index descriptors.
     """
     if num_atoms <= 1:
-        return np.full(4, np.nan, dtype=np.float32)
+        return np.full(4, np.nan)
 
     if num_atoms == 2:
         reference_alkane_branching = 1.0
@@ -374,9 +372,7 @@ def _branching_indices(
     non_ring = reference_alkane_branching - composite_index_alkane_local
     ring = non_ring + 0.086 * ring_count
 
-    return np.array(
-        [non_ring, non_ring / num_atoms, ring, ring / num_atoms], dtype=np.float32
-    )
+    return np.array([non_ring, non_ring / num_atoms, ring, ring / num_atoms])
 
 
 def _epsilon_values(
@@ -424,7 +420,6 @@ def _epsilon_values(
             eps_3 - eps_4,
             eps_2 - eps_5,
         ],
-        dtype=np.float32,
     )
 
 
