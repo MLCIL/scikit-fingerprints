@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from rdkit import Chem
-from rdkit.Chem import AddHs
 
 from skfp.fingerprints._new_mordred.descriptors import vdw_volume_abc
 from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
@@ -27,12 +26,10 @@ def test_vdw_volume_abc_values(smiles, expected):
     mol = Chem.MolFromSmiles(smiles)
 
     mol_regular = preprocess_mol(mol)
-    props_regular = AtomicProperties.from_mol(mol_regular)
+    props_regular = AtomicProperties(mol_regular)
 
-    mol_hydrogens = AddHs(mol_regular)
-    props_hydrogens = AtomicProperties.with_hydrogens_added(
-        mol_hydrogens, props_regular
-    )
+    mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
+    props_hydrogens = AtomicProperties(mol_hydrogens)
 
     rings = RingSets(mol_regular, props_regular)
     values = vdw_volume_abc.calc(rings, props_hydrogens)

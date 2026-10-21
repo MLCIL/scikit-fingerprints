@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from rdkit.Chem import Mol, MolFromSmiles
+from rdkit.Chem.AllChem import EmbedMolecule
 
 from skfp.fingerprints._new_mordred.descriptors.cpsa import (
     FEATURE_NAMES_2D,
@@ -11,6 +14,8 @@ from skfp.fingerprints._new_mordred.descriptors.cpsa import (
     calc_3d,
 )
 from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.utils import get_conf_id
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -57,7 +62,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol = mordred_test_mols_hydrogens_3d[name]
         charges = gasteiger_charges(mol)
         cpsa_2d = calc_2d(charges)
-        values_3d = calc_3d(mol, cpsa_2d, charges)
+        values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
         computed[name] = dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
             zip(FEATURE_NAMES_3D, values_3d, strict=True)
         )
@@ -70,3 +75,47 @@ def test_cpsa_reference_values(feature_name, molecule, computed_values):
     expected = _REFERENCE[molecule][feature_name]
     actual = computed_values[molecule][feature_name]
     assert_allclose(actual, expected, rtol=0.05, equal_nan=True)
+
+
+def _embedded(smiles: str) -> Mol:
+    mol = preprocess_mol(MolFromSmiles(smiles), explicit_hydrogens=True)
+    EmbedMolecule(mol, randomSeed=0)
+    return mol
+
+
+def _compute(mol: Mol) -> dict[str, float]:
+    charges = gasteiger_charges(mol)
+    cpsa_2d = calc_2d(charges)
+    values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
+    return dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
+        zip(FEATURE_NAMES_3D, values_3d, strict=True)
+    )
+
+
+def test_relative_charges_without_atoms_of_a_sign_are_zero():
+    # as in Mordred, a sign without atoms gives 0.0 rather than an undefined value
+    assert_allclose(calc_2d(np.array([0.3, 0.1, 0.0])), [0.0, 0.75])
+    assert_allclose(calc_2d(np.array([-0.2, -0.2])), [0.5, 0.0])
+
+
+def test_descriptors_without_charged_atoms_follow_mordred():
+    # the Gasteiger charges of dioxygen are all zero, so it has no charged atoms
+    values = _compute(_embedded("O=O"))
+
+    for name in ["RNCG", "RPCG", "RNCS", "RPCS", "TPSA", "RPSA"]:
+        assert values[name] == 0.0, name
+    for prefix in ["PNSA", "PPSA", "DPSA", "FNSA", "FPSA", "WNSA", "WPSA"]:
+        # sums over no atoms, but version 5 divides by their number
+        assert_allclose([values[f"{prefix}{v}"] for v in range(1, 5)], 0.0)
+        assert np.isnan(values[f"{prefix}5"]), prefix
+    assert values["TASA"] > 0.0
+    assert_allclose(values["RASA"], 1.0, rtol=1e-6)
+
+
+def test_missing_gasteiger_charge_makes_all_values_nan():
+    # Gasteiger has no parameters for sodium, so like Mordred nothing is defined
+    mol = _embedded("CC(=O)O.[NaH]")
+    assert np.isnan(gasteiger_charges(mol)).any()
+
+    values = _compute(mol)
+    assert_allclose(list(values.values()), np.nan)

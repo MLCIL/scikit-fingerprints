@@ -25,7 +25,7 @@ def solvent_accessible_surface_area(
 
     conformer : int, default=-1
         Conformer ID passed to RDKit. The default value of ``-1`` selects
-        the most recently added conformer.
+        the first conformer.
 
     solvent_radius : float, default=1.4
         Solvent probe radius, in angstroms, added to each atomic van der

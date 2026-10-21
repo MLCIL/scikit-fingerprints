@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import AddHs, Atom, MolFromSmiles
+from rdkit import rdBase
+from rdkit.Chem import Atom, BondType, MolFromSmiles, RWMol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    BOND_ORDERS,
     AtomicProperties,
     get_intrinsic_state,
     get_sigma_electrons,
@@ -51,7 +53,7 @@ _SMILES = {
 def build_atom(label: str, explicit_hs: bool) -> Atom:
     mol = MolFromSmiles(_SMILES[label])
     if explicit_hs:
-        mol = AddHs(mol)
+        mol = preprocess_mol(mol, explicit_hydrogens=True)
     return mol.GetAtomWithIdx(1)
 
 
@@ -158,82 +160,9 @@ def test_intrinsic_state(label, expected_value, explicit_hs):
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
-# properties that the derived constructors below are expected to fill in
-_DERIVED_PROPERTY_NAMES = [
-    "num_atoms",
-    "num_bonds",
-    "atomic_nums",
-    "is_hydrogen",
-    "is_aromatic",
-    "degrees",
-    "formal_charges",
-    "total_num_hs",
-    "num_hydrogens",
-    "outer_electrons",
-    "sigma_electrons",
-    "valence_electrons",
-    "intrinsic_state",
-    "bond_begin_idxs",
-    "bond_end_idxs",
-    "bond_types",
-    "bond_orders",
-    "bond_is_aromatic",
-    "gasteiger_charges",
-    "element_properties",
-    "weighting_properties",
-]
-
-_VARIANT_SMILES = [
-    "C",
-    "CCO",
-    "c1ccccc1",
-    "CC(=O)Oc1ccccc1C(=O)O",
-    "[NH4+]",
-    "[2H]OC",
-    "F[B-](F)(F)F",
-    "CO[13CH3]",
-    "c1ccc2[nH]ccc2c1",
-    "CC(=O)[O-].[Na+]",
-    "[H][H]",
-    "O=S(=O)(O)O",
-]
-
-
-def _assert_properties_equal(mol, property_name: str) -> None:
-    mol_hydrogens = AddHs(mol)
-
-    derived = AtomicProperties.with_hydrogens_added(
-        mol_hydrogens, AtomicProperties.from_mol(mol)
-    )
-    expected = AtomicProperties.from_mol(mol_hydrogens)
-
-    assert_allclose(
-        getattr(derived, property_name), getattr(expected, property_name), rtol=1e-6
-    )
-
-
-@pytest.mark.parametrize("smiles", _VARIANT_SMILES)
-@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
-def test_properties_with_hydrogens_added_match_recomputed(smiles, property_name):
-    _assert_properties_equal(preprocess_mol(MolFromSmiles(smiles)), property_name)
-
-
-@pytest.mark.parametrize("property_name", _DERIVED_PROPERTY_NAMES)
-def test_properties_with_hydrogens_added_match_recomputed_reference_mols(
-    property_name, mordred_test_mols
-):
-    for name, mol in mordred_test_mols.items():
-        try:
-            _assert_properties_equal(preprocess_mol(mol), property_name)
-        except AssertionError as err:
-            raise AssertionError(
-                f"{property_name} differs for molecule {name}"
-            ) from err
-
-
 def test_sum_over_bonds_adds_each_end_to_its_own_atom():
     # CCO: bond 0 joins atoms 0 and 1, bond 1 joins atoms 1 and 2
-    props = AtomicProperties.from_mol(MolFromSmiles("CCO"))
+    props = AtomicProperties(MolFromSmiles("CCO"))
     assert props.bond_begin_idxs.tolist() == [0, 1]
     assert props.bond_end_idxs.tolist() == [1, 2]
 
@@ -245,8 +174,23 @@ def test_sum_over_bonds_adds_each_end_to_its_own_atom():
 
 
 def test_sum_over_bonds_without_end_values_gives_both_ends_the_same():
-    props = AtomicProperties.from_mol(MolFromSmiles("CCO"))
+    props = AtomicProperties(MolFromSmiles("CCO"))
 
     totals = props.sum_over_bonds(np.array([1.0, 10.0]))
 
     assert_allclose(totals, [1.0, 11.0, 10.0])
+
+
+@pytest.mark.parametrize("bond_type", list(BondType.values.values()), ids=str)
+def test_bond_orders_match_rdkit(bond_type):
+    # Mordred reads bond orders with GetBondTypeAsDouble, which raises for the
+    # types it has no order for; those stay NaN
+    bond = RWMol(MolFromSmiles("CC")).GetBondWithIdx(0)
+    bond.SetBondType(bond_type)
+    try:
+        with rdBase.BlockLogs():
+            expected = bond.GetBondTypeAsDouble()
+    except RuntimeError:
+        expected = np.nan
+
+    assert_allclose(BOND_ORDERS[int(bond_type)], expected)

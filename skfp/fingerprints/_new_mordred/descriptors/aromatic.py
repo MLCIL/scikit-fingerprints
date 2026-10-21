@@ -12,12 +12,12 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["nAromAtom", "nAromBond"]
 
 
-def calc(props: AtomicProperties) -> np.ndarray:
+def calc(props_hydrogens: AtomicProperties) -> np.ndarray:
     """
     Compute the Mordred aromatic count descriptors.
 
     `nAromAtom` is the number of aromatic atoms and `nAromBond` is the number of
     aromatic bonds, both taken directly from RDKit's perceived aromaticity flags.
     """
-    values = [props.is_aromatic.sum(), props.bond_is_aromatic.sum()]
+    values = [props_hydrogens.is_aromatic.sum(), props_hydrogens.bond_is_aromatic.sum()]
     return np.asarray(values, dtype=np.float32)

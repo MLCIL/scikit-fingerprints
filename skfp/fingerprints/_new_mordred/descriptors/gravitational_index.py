@@ -19,7 +19,7 @@ FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
 
 def calc(
     mol_regular: Mol,
-    mol_hydrogens_conformer: Mol,
+    mol_hydrogens: Mol,
     distance_matrix_3d_regular: DistanceMatrix3D,
     distance_matrix_3d_hydrogens: DistanceMatrix3D,
     adjacency_matrix_regular: AdjacencyMatrix,
@@ -35,7 +35,7 @@ def calc(
     The four variants are the 2x2 product of two flags:
 
     - ``H`` suffix: use the hydrogen-explicit molecule
-      (``mol_hydrogens_conformer``) instead of the heavy-atom-only molecule
+      (``mol_hydrogens``) instead of the heavy-atom-only molecule
       (``mol_regular``, with hydrogens suppressed).
     - ``p`` suffix: sum only over bonded pairs (adjacency matrix) instead of
       over all atom pairs.
@@ -48,7 +48,7 @@ def calc(
         mol_regular, distance_matrix_3d_regular, adjacency_matrix_regular
     )
     grav_h, grav_h_pair = _variant_values(
-        mol_hydrogens_conformer,
+        mol_hydrogens,
         distance_matrix_3d_hydrogens,
         adjacency_matrix_hydrogens,
     )
@@ -75,7 +75,11 @@ def _variant_values(
     # keep them in double precision. Diagonal distances are 0, so set them to 1
     # to avoid division by zero (the mass diagonal is 0, so these terms vanish).
     distances = distance_matrix_3d.matrix.astype(np.float64)
+    # Mordred divides by every squared distance, so two atoms in the same place,
+    # e.g. ions that conformer generation stacked, leave both indices undefined
     np.fill_diagonal(distances, 1.0)
+    if (distances == 0.0).any():
+        return np.float32(np.nan), np.float32(np.nan)
     inverse_squared_distances = distances**-2
 
     weighted = mass_products * inverse_squared_distances
