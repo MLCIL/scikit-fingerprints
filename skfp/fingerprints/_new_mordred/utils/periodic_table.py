@@ -23,7 +23,6 @@ class PeriodicTable:
     :meth:`lookup`, which indexes a padded array with an atomic number vector.
     """
 
-    __slots__ = ("_data", "_dummy_value", "_padded")
     _datadir = Path(__file__).parent / "data"
 
     def __init__(self, data: list[float], dummy_value: float = np.nan):
