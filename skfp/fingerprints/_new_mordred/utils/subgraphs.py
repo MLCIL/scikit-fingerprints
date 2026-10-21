@@ -104,9 +104,10 @@ class Subgraphs:
         self.bond_atoms = np.stack([props.bond_begin_idxs, props.bond_end_idxs], axis=1)
         self._num_atoms = props.num_atoms
 
-        # the bonds subgraphs are made of: as in RDKit, which Mordred enumerates them
-        # with, none to a hydrogen atom, such as an isotope that RemoveHs keeps. They
-        # keep their indices, so that per-bond arrays such as bond orders still apply
+        # subgraphs are built only from bonds between heavy atoms, as Mordred
+        # enumerates them with RDKit, which skips bonds to hydrogen atoms (e.g. an
+        # isotope that RemoveHs keeps); bonds keep their original indices, so
+        # per-bond arrays such as bond orders can be indexed with them directly
         has_hydrogen = props.is_hydrogen[self.bond_atoms].any(axis=1)
         self._bonds = np.flatnonzero(~has_hydrogen)
 

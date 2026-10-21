@@ -1,7 +1,8 @@
 from collections import defaultdict
 
 import numpy as np
-from rdkit.Chem import HybridizationType, Mol, rdMolDescriptors
+from rdkit.Chem import HybridizationType, Mol
+from rdkit.Chem.rdMolDescriptors import CalcFractionCSP3
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -75,6 +76,6 @@ def calc(mol_kekulized: Mol, mol_hydrogens: Mol) -> np.ndarray:
     values.append(
         np.nan if num_sp2 == 0 and num_sp3 == 0 else num_sp3 / (num_sp2 + num_sp3)
     )
-    values.append(rdMolDescriptors.CalcFractionCSP3(mol_hydrogens))
+    values.append(CalcFractionCSP3(mol_hydrogens))
 
     return np.asarray(values, dtype=np.float32)

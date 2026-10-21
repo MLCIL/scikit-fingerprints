@@ -113,7 +113,7 @@ def _has_terminal_atoms_appended(
     ):
         return False
 
-    # the bonds among the first atoms are the pairs one bond apart, no more, no less;
+    # the bonds among the first atoms are the pairs exactly one bond apart
     # the matrix is symmetric, so each such pair appears in it twice
     lower, upper = lower[~to_added], upper[~to_added]
     num_adjacent_pairs = np.count_nonzero(heavy_distances == 1.0) // 2
