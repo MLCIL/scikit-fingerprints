@@ -186,7 +186,7 @@ def test_new_mordred_dummy_atoms():
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = [name for name in df_new.columns if "Estrada-like index" not in name]
+    features = [name for name in df_new.columns if "LogEE" not in name]
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -260,7 +260,7 @@ def test_new_mordred_logee_diverges(smallest_mols_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    logee = [name for name in df_new.columns if "Estrada-like index" in name]
+    logee = [name for name in df_new.columns if "LogEE" in name]
     assert logee
 
     assert_allclose(df_new[logee], df_old[logee], equal_nan=True, atol=1e-3)
@@ -325,9 +325,7 @@ def _get_features_to_compare(
     return [
         name
         for name in df_new.columns
-        if not not_computed[name]
-        and "Estrada-like index" not in name
-        and name not in excluded
+        if not not_computed[name] and "LogEE" not in name and name not in excluded
     ]
 
 

@@ -17,7 +17,7 @@ ATTRIBUTE_FEATURE_NAMES: dict[str, str] = {
     "spectral_diameter": "spectral diameter",
     "sp_ad": "spectral absolute deviation",
     "sp_mad": "spectral mean absolute deviation",
-    "log_ee": "Estrada-like index",
+    "log_ee": "LogEE",
     "sm1": "spectral moment 1",
     "ve1": "leading eigenvector coefficient sum",
     "ve2": "leading eigenvector average coefficient",
