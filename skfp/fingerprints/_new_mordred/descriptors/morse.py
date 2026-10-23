@@ -23,10 +23,15 @@ _PROPS = [
     "Sanderson_electronegativity",
     "polarizability",
 ]
-_DISTANCES = np.arange(1, 33)
+# MoRSE signals 1..32, signal k uses scattering parameter s = k - 1
+_SIGNALS = np.arange(1, 33)
 
 FEATURE_NAMES = [
-    f"MoRSE_{prop_name}_dist_{dist}" for prop_name in _PROPS for dist in _DISTANCES
+    f"MoRSE signal {signal} unweighted"
+    if prop_name == "unweighted"
+    else f"MoRSE signal {signal} weighted by {prop_name.replace('_', ' ')}"
+    for prop_name in _PROPS
+    for signal in _SIGNALS
 ]
 
 
@@ -53,12 +58,12 @@ def calc(mol_hydrogens: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray
     pair_distances = distance_matrix_3d.matrix[first, second]
 
     # sin(s * r) / (s * r) for every scale, shape (32, n_pairs).
-    # Feature dist_k uses frequency s = k - 1, so _DISTANCES is 1..32
+    # Signal k uses scattering parameter s = k - 1, so _SIGNALS is 1..32
     # and the divisors below are 0..31. The s = 0 kernel is the limit 1.
-    kernels = np.empty((len(_DISTANCES), len(pair_distances)), dtype=np.float64)
+    kernels = np.empty((len(_SIGNALS), len(pair_distances)), dtype=np.float64)
     kernels[0] = 1.0
-    kernels[1:] = _sines_of_multiples(pair_distances, len(_DISTANCES) - 1) / (
-        np.multiply.outer(_DISTANCES[1:] - 1, pair_distances)
+    kernels[1:] = _sines_of_multiples(pair_distances, len(_SIGNALS) - 1) / (
+        np.multiply.outer(_SIGNALS[1:] - 1, pair_distances)
     )
 
     # carbon-normalized atom weights, shape (n_props, n_atoms)

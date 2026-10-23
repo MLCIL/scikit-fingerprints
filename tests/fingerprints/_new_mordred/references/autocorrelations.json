@@ -14,7 +14,7 @@
     "Astaxanthin": "CC1=C(/C=C/C(C)=C/C=C/C(C)=C/C=C/C=C(C)/C=C/C=C(C)/C=C/C2=C(C)C(=O)[C@@H](O)CC2(C)C)C(C)(C)C[C@H](O)C1=O"
   },
   "expected": {
-    "autocorr": {
+    "Moreau-Broto autocorrelation": {
       "mass": {
         "Hexane": [
           879.809622,
@@ -820,7 +820,7 @@
         ]
       }
     },
-    "autocorr_avg": {
+    "average Moreau-Broto autocorrelation": {
       "mass": {
         "Hexane": [
           43.9904811,
@@ -1626,7 +1626,7 @@
         ]
       }
     },
-    "autocorr_centered": {
+    "centered Moreau-Broto autocorrelation": {
       "mass": {
         "Hexane": [
           508.4772378,
@@ -2432,7 +2432,7 @@
         ]
       }
     },
-    "autocorr_avg_centered": {
+    "average centered Moreau-Broto autocorrelation": {
       "mass": {
         "Hexane": [
           25.42386189,
@@ -3238,7 +3238,7 @@
         ]
       }
     },
-    "Moreau_autocorr": {
+    "Moran autocorrelation": {
       "mass": {
         "Hexane": [
           -0.122807018,
@@ -3972,7 +3972,7 @@
         ]
       }
     },
-    "Geary_autocorr": {
+    "Geary autocorrelation": {
       "mass": {
         "Hexane": [
           1.666666667,

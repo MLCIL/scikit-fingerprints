@@ -186,7 +186,7 @@ def test_new_mordred_dummy_atoms():
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = [name for name in df_new.columns if "LogEE" not in name]
+    features = [name for name in df_new.columns if "Estrada-like index" not in name]
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -260,7 +260,7 @@ def test_new_mordred_logee_diverges(smallest_mols_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    logee = [name for name in df_new.columns if "LogEE" in name]
+    logee = [name for name in df_new.columns if "Estrada-like index" in name]
     assert logee
 
     assert_allclose(df_new[logee], df_old[logee], equal_nan=True, atol=1e-3)
@@ -276,11 +276,10 @@ def test_new_mordred_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
-    # sets, since the order does not matter; translated, since some families are
-    # exposed under names spelling out what mordred abbreviates
+    # sets, since the order does not matter; translated, since skfp exposes most
+    # features under readable names instead of mordred's codes
     feature_names_new = {_MORDRED_NAMES.get(name, name) for name in feature_names_new}
-    diff_names = feature_names_new - set(feature_names_old)
-    assert not diff_names
+    assert feature_names_new == set(feature_names_old)
 
 
 def test_new_mordred_3D_feature_names():
@@ -293,11 +292,16 @@ def test_new_mordred_3D_feature_names():
     assert_equal(len(feature_names_new), new_mordred_fp.n_features_out)
     assert_equal(len(feature_names_new), len(set(feature_names_new)))
 
-    # sets, since the order does not matter; translated, since some families are
-    # exposed under names spelling out what mordred abbreviates
+    # sets, since the order does not matter; translated, since skfp exposes most
+    # features under readable names instead of mordred's codes
     feature_names_new = {_MORDRED_NAMES.get(name, name) for name in feature_names_new}
-    diff_names = feature_names_new - set(feature_names_old)
-    assert not diff_names
+    assert feature_names_new == set(feature_names_old)
+
+
+def test_mordred_names_mapping_is_one_to_one():
+    # the value tests invert the mapping, so two skfp names sharing one mordred name
+    # would silently drop a column from the comparison
+    assert len(set(_MORDRED_NAMES.values())) == len(_MORDRED_NAMES)
 
 
 def _arrays_to_dataframes(
@@ -321,7 +325,9 @@ def _get_features_to_compare(
     return [
         name
         for name in df_new.columns
-        if not not_computed[name] and "LogEE" not in name and name not in excluded
+        if not not_computed[name]
+        and "Estrada-like index" not in name
+        and name not in excluded
     ]
 
 

@@ -19,11 +19,11 @@ RDKIT_2D_FEATURE_NAMES = [
     "nHBAcc",
     "nHBDon",
     "LabuteASA",
-    *[f"PEOE_VSA{i}" for i in range(1, 14)],
-    *[f"SMR_VSA{i}" for i in range(1, 10)],
-    *[f"SlogP_VSA{i}" for i in range(1, 12)],
-    *[f"EState_VSA{i}" for i in range(1, 11)],
-    *[f"VSA_EState{i}" for i in range(1, 10)],
+    *[f"PEOE VSA {i}" for i in range(1, 14)],
+    *[f"SMR VSA {i}" for i in range(1, 10)],
+    *[f"SlogP VSA {i}" for i in range(1, 12)],
+    *[f"EState VSA {i}" for i in range(1, 11)],
+    *[f"VSA EState {i}" for i in range(1, 10)],
     "SLogP",
     "SMR",
     "TopoPSA(NO)",
@@ -32,7 +32,12 @@ RDKIT_2D_FEATURE_NAMES = [
     "AMW",
 ]
 
-RDKIT_3D_FEATURE_NAMES = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
+RDKIT_3D_FEATURE_NAMES = [
+    "principal moment of inertia Z",
+    "principal moment of inertia Y",
+    "principal moment of inertia X",
+    "PBF",
+]
 
 
 def test_rdkit_descriptors_avoid_lambda_wrappers():

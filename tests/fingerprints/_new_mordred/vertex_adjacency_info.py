@@ -7,7 +7,7 @@ from skfp.fingerprints._new_mordred.descriptors import vertex_adjacency_info
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
-FEATURE_NAMES = ["VAdjMat"]
+FEATURE_NAMES = ["vertex adjacency information"]
 
 
 @pytest.mark.parametrize(
