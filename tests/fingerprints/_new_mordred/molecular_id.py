@@ -53,26 +53,26 @@ def test_molecular_id_reference_values(molecule, mordred_test_mols):
     [
         # a lone heavy atom has no paths, so its atomic id stays at 1
         ("N", "MID", 1.0),
-        ("N", "MID_N", 1.0),
-        ("CCO", "MID_C", 3.310660),
-        ("CCO", "MID_O", 1.603553),
-        ("CCO", "MID_h", 1.603553),
-        ("CCO", "MID_N", 0.0),
-        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID_N", 8.359750),
-        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID_O", 3.521046),
-        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID_h", 11.880796),
-        ("CS(=O)(=O)N", "MID_N", 1.625),
-        ("CS(=O)(=O)N", "MID_O", 3.25),
+        ("N", "MID nitrogens", 1.0),
+        ("CCO", "MID carbons", 3.310660),
+        ("CCO", "MID oxygens", 1.603553),
+        ("CCO", "MID heteroatoms", 1.603553),
+        ("CCO", "MID nitrogens", 0.0),
+        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID nitrogens", 8.359750),
+        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID oxygens", 3.521046),
+        ("CN1C=NC2=C1C(=O)N(C)C(=O)N2C", "MID heteroatoms", 11.880796),
+        ("CS(=O)(=O)N", "MID nitrogens", 1.625),
+        ("CS(=O)(=O)N", "MID oxygens", 3.25),
         # every halogen is also a heteroatom, and nothing here is carbon but one atom
-        ("FC(F)(Cl)Br", "MID_X", 6.5),
-        ("FC(F)(Cl)Br", "MID_h", 6.5),
-        ("FC(F)(Cl)Br", "MID_C", 2.0),
-        ("Clc1ccccc1", "MID_X", 1.745348),
+        ("FC(F)(Cl)Br", "MID halogens", 6.5),
+        ("FC(F)(Cl)Br", "MID heteroatoms", 6.5),
+        ("FC(F)(Cl)Br", "MID carbons", 2.0),
+        ("Clc1ccccc1", "MID halogens", 1.745348),
         # hydrogens that RemoveHs keeps are not heteroatoms, unlike every other
         # non-carbon atom
         ("[H][H]", "MID", 3.0),
-        ("[H][H]", "MID_h", 0.0),
-        ("[2H]C([2H])([2H])O", "MID_h", 1.625),
+        ("[H][H]", "MID heteroatoms", 0.0),
+        ("[2H]C([2H])([2H])O", "MID heteroatoms", 1.625),
     ],
 )
 def test_element_filtered_ids(smiles, feature, expected):
@@ -82,12 +82,12 @@ def test_element_filtered_ids(smiles, feature, expected):
 
 
 def test_averaged_ids_divide_by_every_heavy_atom():
-    # AMID_C averages the carbon-only sum over all three heavy atoms, not over
+    # AMID carbons averages the carbon-only sum over all three heavy atoms, not over
     # the two carbons
     values = _calc_from_smiles("CCO")
 
-    assert_allclose(values["AMID_C"], values["MID_C"] / 3, rtol=1e-6)
-    assert_allclose(values["AMID_O"], values["MID_O"] / 3, rtol=1e-6)
+    assert_allclose(values["AMID carbons"], values["MID carbons"] / 3, rtol=1e-6)
+    assert_allclose(values["AMID oxygens"], values["MID oxygens"] / 3, rtol=1e-6)
 
 
 def test_disconnected_molecule_is_nan():

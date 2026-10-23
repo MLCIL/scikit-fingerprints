@@ -7,59 +7,80 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicPropert
 FEATURE_NAMES = ring_count.FEATURE_NAMES
 GENERAL_RING_FEATURE_NAMES = [
     "nRing",
-    "nHRing",
-    "naRing",
-    "naHRing",
-    "nARing",
-    "nAHRing",
+    "number of heterocycles",
+    "number of aromatic rings",
+    "number of aromatic heterocycles",
+    "number of non-aromatic rings",
+    "number of non-aromatic heterocycles",
 ]
 
 
 @pytest.mark.parametrize(
     "smiles, expected",
     [
-        ("C1CC1", {"nRing": 1, "nARing": 1, "n3Ring": 1}),
+        (
+            "C1CC1",
+            {
+                "nRing": 1,
+                "number of non-aromatic rings": 1,
+                "number of 3-membered rings": 1,
+            },
+        ),
         (
             "c1ccncc1",
             {
                 "nRing": 1,
-                "nHRing": 1,
-                "naRing": 1,
-                "naHRing": 1,
-                "n6Ring": 1,
-                "n6HRing": 1,
-                "n6aRing": 1,
-                "n6aHRing": 1,
+                "number of heterocycles": 1,
+                "number of aromatic rings": 1,
+                "number of aromatic heterocycles": 1,
+                "number of 6-membered rings": 1,
+                "number of 6-membered heterocycles": 1,
+                "number of 6-membered aromatic rings": 1,
+                "number of 6-membered aromatic heterocycles": 1,
             },
         ),
         (
             "C1CCC2CCCCC2C1",
             {
                 "nRing": 2,
-                "nARing": 2,
-                "n6Ring": 2,
-                "n6ARing": 2,
-                "nFRing": 1,
-                "n10FRing": 1,
-                "nFARing": 1,
-                "n10FARing": 1,
+                "number of non-aromatic rings": 2,
+                "number of 6-membered rings": 2,
+                "number of 6-membered non-aromatic rings": 2,
+                "number of fused ring systems": 1,
+                "number of 10-atom fused ring systems": 1,
+                "number of fused non-aromatic ring systems": 1,
+                "number of 10-atom fused non-aromatic ring systems": 1,
             },
         ),
         (
             "c1ccc2ccccc2c1",
             {
                 "nRing": 2,
-                "naRing": 2,
-                "n6Ring": 2,
-                "n6aRing": 2,
-                "nFRing": 1,
-                "n10FRing": 1,
-                "nFaRing": 1,
-                "n10FaRing": 1,
+                "number of aromatic rings": 2,
+                "number of 6-membered rings": 2,
+                "number of 6-membered aromatic rings": 2,
+                "number of fused ring systems": 1,
+                "number of 10-atom fused ring systems": 1,
+                "number of fused aromatic ring systems": 1,
+                "number of 10-atom fused aromatic ring systems": 1,
             },
         ),
-        ("C1CCC2(CC1)CCCC2", {"nRing": 2, "n5Ring": 1, "n6Ring": 1}),
-        ("C1CCCCCCCCCCCC1", {"nRing": 1, "nARing": 1, "nG12Ring": 1}),
+        (
+            "C1CCC2(CC1)CCCC2",
+            {
+                "nRing": 2,
+                "number of 5-membered rings": 1,
+                "number of 6-membered rings": 1,
+            },
+        ),
+        (
+            "C1CCCCCCCCCCCC1",
+            {
+                "nRing": 1,
+                "number of non-aromatic rings": 1,
+                "number of 12-or-more-membered rings": 1,
+            },
+        ),
     ],
 )
 def test_ring_count_values(smiles, expected):

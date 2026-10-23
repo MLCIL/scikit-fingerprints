@@ -12,14 +12,14 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 FEATURE_NAMES = [
     "nBonds",
-    "nBondsO",
-    "nBondsS",
-    "nBondsD",
-    "nBondsT",
-    "nBondsA",
-    "nBondsM",
-    "nBondsKS",
-    "nBondsKD",
+    "nBonds non-H",
+    "nBonds single",
+    "nBonds double",
+    "nBonds triple",
+    "nBonds aromatic",
+    "nBonds multiple",
+    "nBonds Kekule single",
+    "nBonds Kekule double",
 ]
 
 
@@ -36,11 +36,10 @@ def calc(
     aromatic, multiple, and kekulized single/double bonds.
 
     Each count uses the molecule the original Mordred implementation uses for it:
-    nBonds (any), nBondsS (single) and nBondsKS (kekulized single) the
-    hydrogen-explicit one, and every other count the hydrogen-suppressed one, where
-    nBondsO (heavy) counts all of its bonds. nBondsKS and nBondsKD use the kekulized
-    molecules, where aromatic bonds are expressed as alternating single and double
-    bonds.
+    all bonds, single and Kekule single bonds the hydrogen-explicit one, and every
+    other count the hydrogen-suppressed one, where the non-H bond count takes all of
+    its bonds. The Kekule single and double counts use the kekulized molecules,
+    where aromatic bonds are expressed as alternating single and double bonds.
     """
     bond_types = props_regular.bond_types
     is_aromatic = props_regular.bond_is_aromatic | (bond_types == BondType.AROMATIC)

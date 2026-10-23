@@ -40,7 +40,7 @@ def _feature_param(feature_name):
     # adds a spurious exp(-a) term and computes log(1 + sum(exp(lambda_i)))
     # instead of the documented log(sum(exp(lambda_i))).
     # See https://github.com/JacksonBurns/mordred-community/issues/24.
-    if feature_name.startswith("LogEE"):
+    if "Estrada-like index" in feature_name:
         return pytest.param(
             feature_name,
             marks=pytest.mark.xfail(
@@ -84,7 +84,9 @@ def test_barysz_matrix_atomic_number_undefined_for_lone_dummy_atom():
     )
 
     values = [
-        value for name, value in computed.items() if name.endswith("_Dzatomic_number")
+        value
+        for name, value in computed.items()
+        if name.endswith(" weighted by atomic number")
     ]
     assert values
     assert_allclose(values, np.nan)

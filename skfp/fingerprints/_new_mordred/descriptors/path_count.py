@@ -18,30 +18,30 @@ MAX_ORDER = 10
 
 FEATURE_NAMES = [
     # molecular path count, orders 2-10
-    "MPC2",
-    "MPC3",
-    "MPC4",
-    "MPC5",
-    "MPC6",
-    "MPC7",
-    "MPC8",
-    "MPC9",
-    "MPC10",
-    # total MPC (orders 0-10)
-    "TMPC10",
-    # pi-weighted path count (log scale), orders 1-10
-    "piPC1",
-    "piPC2",
-    "piPC3",
-    "piPC4",
-    "piPC5",
-    "piPC6",
-    "piPC7",
-    "piPC8",
-    "piPC9",
-    "piPC10",
-    # total pi-weighted path count (log scale), orders 0-10
-    "TpiPC10",
+    "path count order 2",
+    "path count order 3",
+    "path count order 4",
+    "path count order 5",
+    "path count order 6",
+    "path count order 7",
+    "path count order 8",
+    "path count order 9",
+    "path count order 10",
+    # total molecular path count, orders 0-10
+    "total path count",
+    # multiple (bond-order weighted) path count, log scale, orders 1-10
+    "log multiple path count order 1",
+    "log multiple path count order 2",
+    "log multiple path count order 3",
+    "log multiple path count order 4",
+    "log multiple path count order 5",
+    "log multiple path count order 6",
+    "log multiple path count order 7",
+    "log multiple path count order 8",
+    "log multiple path count order 9",
+    "log multiple path count order 10",
+    # total multiple path count, log scale, orders 0-10
+    "log total multiple path count",
 ]
 
 

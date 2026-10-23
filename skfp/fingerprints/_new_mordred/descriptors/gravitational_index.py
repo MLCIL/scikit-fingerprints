@@ -14,7 +14,12 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["GRAV", "GRAVH", "GRAVp", "GRAVHp"]
+FEATURE_NAMES = [
+    "GRAV",
+    "GRAV with hydrogens",
+    "bond-restricted GRAV",
+    "bond-restricted GRAV with hydrogens",
+]
 
 
 def calc(

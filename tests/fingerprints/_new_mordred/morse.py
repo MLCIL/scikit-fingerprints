@@ -29,8 +29,8 @@ def test_morse_unweighted_reference_values(
     values = calc(mol, dists)
     values = dict(zip(FEATURE_NAMES, values, strict=True))
     values = [
-        values[f"MoRSE_unweighted_dist_{dist}"]
-        for dist in range(1, len(expected_values) + 1)
+        values[f"MoRSE signal {signal} unweighted"]
+        for signal in range(1, len(expected_values) + 1)
     ]
 
     assert_allclose(values, expected_values, atol=1e-2)

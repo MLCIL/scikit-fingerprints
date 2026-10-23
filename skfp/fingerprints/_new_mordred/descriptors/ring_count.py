@@ -88,11 +88,13 @@ class RingSets:
 _GENERAL_RING_FEATURES = [
     # name, size, match size or larger, use fused rings, required aromatic, required hetero
     RingCountFeature("nRing", None, False, False, None, None),
-    RingCountFeature("nHRing", None, False, False, None, True),
-    RingCountFeature("naRing", None, False, False, True, None),
-    RingCountFeature("naHRing", None, False, False, True, True),
-    RingCountFeature("nARing", None, False, False, False, None),
-    RingCountFeature("nAHRing", None, False, False, False, True),
+    RingCountFeature("number of heterocycles", None, False, False, None, True),
+    RingCountFeature("number of aromatic rings", None, False, False, True, None),
+    RingCountFeature("number of aromatic heterocycles", None, False, False, True, True),
+    RingCountFeature("number of non-aromatic rings", None, False, False, False, None),
+    RingCountFeature(
+        "number of non-aromatic heterocycles", None, False, False, False, True
+    ),
 ]
 _GENERAL_RING_NAMES = {feature.name for feature in _GENERAL_RING_FEATURES}
 
@@ -123,26 +125,31 @@ def _feature_name(
     """
     Build the descriptor name from the ring filters encoded in the feature.
 
-    `G` means "size greater than or equal to", `F` means fused ring system,
-    lowercase `a` means aromatic, uppercase `A` means non-aromatic, and `H`
-    means at least one heteroatom.
+    A simple ring is sized by its member count, a fused ring system by its atom
+    count. Aromatic means all ring atoms are aromatic, non-aromatic that some are
+    not, and a heterocycle contains at least one atom other than carbon.
     """
-    attrs = []
-    if match_size_or_larger:
-        attrs.append("G")
-    if size is not None:
-        attrs.append(str(size))
+    if size is None and not fused and aromatic is None and hetero is None:
+        return "nRing"
+
+    if size is None:
+        size_part = ""
+    else:
+        size_text = f"{size}-or-more" if match_size_or_larger else str(size)
+        size_part = f"{size_text}-atom " if fused else f"{size_text}-membered "
+
+    arom_part = {True: "aromatic ", False: "non-aromatic ", None: ""}[aromatic]
+
     if fused:
-        attrs.append("F")
-    if aromatic is True:
-        attrs.append("a")
-    elif aromatic is False:
-        attrs.append("A")
-    if hetero is True:
-        attrs.append("H")
-    elif hetero is False:
-        attrs.append("C")
-    return f"n{''.join(attrs)}Ring"
+        noun = {
+            True: "heterocyclic ring systems",
+            False: "carbocyclic ring systems",
+            None: "ring systems",
+        }[hetero]
+    else:
+        noun = {True: "heterocycles", False: "carbocycles", None: "rings"}[hetero]
+
+    return f"number of {size_part}{'fused ' if fused else ''}{arom_part}{noun}"
 
 
 def _ring_count_features() -> list[RingCountFeature]:

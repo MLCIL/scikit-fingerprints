@@ -97,10 +97,10 @@ _ATOM_TYPES = [
 FEATURE_NAMES = list(
     itertools.chain.from_iterable(
         (
-            f"N{atom_type}",  # count
-            f"S{atom_type}",  # sum
-            f"MAX{atom_type}",  # max
-            f"MIN{atom_type}",  # min
+            f"number of {atom_type} atoms",
+            f"sum of {atom_type} E-states",
+            f"max {atom_type} E-state",
+            f"min {atom_type} E-state",
         )
         for atom_type in _ATOM_TYPES
     )

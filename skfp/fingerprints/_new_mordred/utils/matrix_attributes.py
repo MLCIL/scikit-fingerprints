@@ -9,22 +9,24 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-# the attributes in the order the descriptors expose them
-ATTRIBUTE_NAMES = [
-    "graph_energy",
-    "leading_eigenvalue",
-    "spectral_diameter",
-    "sp_ad",
-    "sp_mad",
-    "log_ee",
-    "sm1",
-    "ve1",
-    "ve2",
-    "ve3",
-    "vr1",
-    "vr2",
-    "vr3",
-]
+# the attributes in the order the descriptors expose them, each with its readable
+# feature name, after the alvaDesc descriptor list
+ATTRIBUTE_FEATURE_NAMES: dict[str, str] = {
+    "graph_energy": "graph energy",
+    "leading_eigenvalue": "leading eigenvalue",
+    "spectral_diameter": "spectral diameter",
+    "sp_ad": "spectral absolute deviation",
+    "sp_mad": "spectral mean absolute deviation",
+    "log_ee": "Estrada-like index",
+    "sm1": "spectral moment 1",
+    "ve1": "leading eigenvector coefficient sum",
+    "ve2": "leading eigenvector average coefficient",
+    "ve3": "leading eigenvector log coefficient sum",
+    "vr1": "Randic-like eigenvector index",
+    "vr2": "normalized Randic-like eigenvector index",
+    "vr3": "log Randic-like eigenvector index",
+}
+ATTRIBUTE_NAMES = list(ATTRIBUTE_FEATURE_NAMES)
 
 
 def spectral_attributes(

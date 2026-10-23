@@ -15,7 +15,7 @@ _VERSIONS = range(1, 6)
 _SINGLE_2D = ("RNCG", "RPCG")
 
 _VERSIONED_3D = ("PNSA", "PPSA", "DPSA", "FNSA", "FPSA", "WNSA", "WPSA")
-_SINGLE_3D = ("RNCS", "RPCS", "TASA", "TPSA", "RASA", "RPSA")
+_SINGLE_3D = ("RNCS", "RPCS", "THSA", "TPSA", "RHSA", "RPSA")
 
 
 FEATURE_NAMES_2D = [*_SINGLE_2D]
@@ -95,9 +95,9 @@ def calc_3d(
         * RNCS/RPCS (relative negative/positive charge surface area): surface
           area of the most extreme negatively/positively charged atom divided
           by the relative charge (RNCG/RPCG)
-        * TASA/TPSA (total hydrophobic/polar surface area): sum of the surface
+        * THSA/TPSA (total hydrophobic/polar surface area): sum of the surface
           area of atoms with |charge| below / at or above 0.2
-        * RASA/RPSA (relative hydrophobic/polar surface area): TASA/TPSA divided
+        * RHSA/RPSA (relative hydrophobic/polar surface area): THSA/TPSA divided
           by the total surface area
 
     As in Mordred, a descriptor over atoms that the molecule does not have, such as
@@ -136,7 +136,7 @@ def calc_3d(
         ppsa * surface_area_sum / 1000.0,  # WPSA
         _rncs_rpcs(gasteiger_charges_hydrogens, masks, surface_area, rncg, rpcg),
         [tasa, tpsa],
-        [tasa / surface_area_sum],  # RASA
+        [tasa / surface_area_sum],  # RHSA
         [tpsa / surface_area_sum],  # RPSA
     ]
 
@@ -211,9 +211,9 @@ def _tasa_tpsa(
     gasteiger_charges_hydrogens: np.ndarray, surface_area: np.ndarray
 ) -> tuple[float, float]:
     """
-    Total hydrophobic and polar surface area descriptors (TASA, TPSA).
+    Total hydrophobic and polar surface area descriptors (THSA, TPSA).
 
-    TASA sums the surface area of hydrophobic atoms (|charge| < 0.2) and TPSA
+    THSA sums the surface area of hydrophobic atoms (|charge| < 0.2) and TPSA
     the surface area of polar atoms (|charge| >= 0.2); each is ``0.0`` when no
     atom meets its condition.
     """

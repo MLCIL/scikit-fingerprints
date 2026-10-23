@@ -20,26 +20,36 @@ PATH_CLUSTER = "path_cluster"  # acyclic and branched, some atom joining exactly
 CLUSTER = "cluster"  # acyclic and branched, no atom joining exactly two
 SUBGRAPH_TYPES = (CHAIN, PATH, PATH_CLUSTER, CLUSTER)
 
-# The chi families: each covers one subgraph class over a range of orders, and is
-# named by the prefix its features carry. An "A" prefix averages over the subgraphs
-# instead of only summing, so Xp and AXp read the same sums.
+# The chi families: each covers one subgraph class over a range of orders, and
+# whether it is exposed as a plain sum, an average over the subgraphs, or both.
+# The averaged variant reads the same sums as the plain one.
 _FAMILIES = (
-    (CHAIN, range(3, 8), ("Xch",)),
-    (CLUSTER, range(3, 7), ("Xc",)),
-    (PATH_CLUSTER, range(4, 7), ("Xpc",)),
-    (PATH, range(8), ("Xp", "AXp")),
+    (CHAIN, range(3, 8), (False,)),
+    (CLUSTER, range(3, 7), (False,)),
+    (PATH_CLUSTER, range(4, 7), (False,)),
+    (PATH, range(8), (False, True)),
 )
 
+# Kier-Hall names of the subgraph types
+_TYPE_LABELS = {
+    CHAIN: "chain",
+    CLUSTER: "cluster",
+    PATH_CLUSTER: "path-cluster",
+    PATH: "path",
+}
+
 # the atom weightings the chi indices use, in the order calc() stacks them:
-# "d" weights an atom by its sigma electrons, "dv" by its valence electrons
-_PROPS = ("d", "dv")
+# "simple" weights an atom by its vertex degree, "valence" by its valence vertex
+# degree
+_PROPS = ("simple", "valence")
 
 
 FEATURE_NAMES = [
-    f"{prefix}-{order}{prop}"
-    for _, orders, prefixes in _FAMILIES
+    f"{'average ' if averaged else ''}{prop} chi {_TYPE_LABELS[subgraph_type]} "
+    f"order {order}"
+    for subgraph_type, orders, averaged_flags in _FAMILIES
     for order in orders
-    for prefix in prefixes
+    for averaged in averaged_flags
     for prop in _PROPS
 ]
 
@@ -55,20 +65,21 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
     """
     # one row per weighting, in _PROPS order, so that a row of the sums below lines
     # up with the feature name that reads it
-    prop_vals = np.stack([props.sigma_electrons.astype(float), props.valence_electrons])
+    prop_vals = np.stack(
+        [props.vertex_degree.astype(float), props.valence_vertex_degree]
+    )
 
     values = []
     # properties with negative values end up as NaNs
     with np.errstate(divide="ignore", invalid="ignore"):
-        for subgraph_type, orders, prefixes in _FAMILIES:
+        for subgraph_type, orders, averaged_flags in _FAMILIES:
             for order in orders:
                 products = _subgraph_prop_products(
                     subgraphs, order, subgraph_type, prop_vals
                 )
                 totals, num_subgraphs = _chi_sums(products)
 
-                for prefix in prefixes:
-                    averaged = prefix.startswith("A")
+                for averaged in averaged_flags:
                     for total in totals:
                         if averaged:
                             total = total / num_subgraphs if num_subgraphs else np.nan

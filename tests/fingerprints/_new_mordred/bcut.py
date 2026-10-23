@@ -41,8 +41,8 @@ def test_bcut_mass_values(name, expected_smallest, expected_largest, mordred_tes
     mol = mordred_test_mols[name]
 
     values = _calc(mol)
-    actual_smallest = values["BCUT_mass_smallest_eigval"]
-    actual_largest = values["BCUT_mass_largest_eigval"]
+    actual_smallest = values["BCUT smallest eigenvalue weighted by mass"]
+    actual_largest = values["BCUT largest eigenvalue weighted by mass"]
 
     # Mordred tests also use such a large tolerance
     assert_allclose(actual_smallest, expected_smallest, atol=1)
