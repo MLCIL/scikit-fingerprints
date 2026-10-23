@@ -1,5 +1,6 @@
+import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
 from rdkit.Chem import Mol, MolFromSmiles
 
 from skfp.descriptors import constitutional as const
@@ -92,6 +93,54 @@ def test_element_atom_count(mol_name, atom_id, expected_value, input_mols):
     mol = input_mols[mol_name]
     result = const.element_atom_count(mol, atom_id)
     assert_equal(result, expected_value)
+
+
+@pytest.mark.parametrize(
+    "mol_name, expected_counts",
+    [
+        ("oxygen", {1: 2, 8: 1}),
+        ("benzene", {1: 6, 6: 6}),
+        ("ethanol", {1: 6, 6: 2, 8: 1}),
+        ("propane", {1: 8, 6: 3}),
+        ("butadiene", {1: 6, 6: 4}),
+        ("hydrogen_cyanide", {1: 1, 6: 1, 7: 1}),
+        ("cyclohexane", {1: 12, 6: 6}),
+    ],
+)
+def test_element_counts(mol_name, expected_counts, input_mols):
+    mol = input_mols[mol_name]
+    result = const.element_counts(mol)
+
+    expected = np.zeros(118, dtype=np.uint32)
+
+    for atomic_num, count in expected_counts.items():
+        expected[atomic_num - 1] = count
+
+    assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    "smiles, expected_counts",
+    [
+        ("[H][H]", {1: 2}),
+        ("[2H]O[2H]", {1: 2, 8: 1}),
+        ("[NH4+]", {1: 4, 7: 1}),
+        ("[Na+].[Cl-]", {11: 1, 17: 1}),
+        ("[Og]", {118: 1}),
+        ("*", {}),
+        ("", {}),
+    ],
+)
+def test_element_counts_special_cases(smiles, expected_counts):
+    mol = MolFromSmiles(smiles)
+    result = const.element_counts(mol)
+
+    expected = np.zeros(118, dtype=np.uint32)
+
+    for atomic_num, count in expected_counts.items():
+        expected[atomic_num - 1] = count
+
+    assert_array_equal(result, expected)
 
 
 @pytest.mark.parametrize(

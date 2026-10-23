@@ -1,3 +1,4 @@
+import numpy as np
 from rdkit.Chem import Mol
 from rdkit.Chem.Descriptors import MolWt
 from rdkit.Chem.rdMolDescriptors import CalcNumRings, CalcNumRotatableBonds
@@ -120,6 +121,45 @@ def element_atom_count(mol: Mol, atom_id: int | str) -> int:
             for atom in mol.GetAtoms()
             if atom.GetAtomicNum() == atom_id or atom.GetSymbol() == atom_id
         )
+
+
+def element_counts(mol: Mol) -> np.ndarray:
+    """
+    Counts atoms of all 118 chemical elements in an RDKit molecule.
+
+    Implicit and explicit hydrogens are included. Dummy atoms (atomic number 0)
+    are ignored.
+
+    Parameters
+    ----------
+    mol : RDKit ``Mol`` object
+        Molecule for which atomic composition is calculated.
+
+    Returns
+    -------
+    counts : ndarray of shape (118,), dtype=uint32
+        Number of atoms for elements H through Og.
+
+    Examples
+    --------
+    >>> from rdkit.Chem import MolFromSmiles
+    >>> from skfp.descriptors import element_counts
+    >>> counts = element_counts(MolFromSmiles("CCO"))
+    >>> int(counts[0]), int(counts[5]), int(counts[7])
+    (6, 2, 1)
+    """
+    counts = np.zeros(118, dtype=np.uint32)
+
+    for atom in mol.GetAtoms():
+        atomic_num = atom.GetAtomicNum()
+
+        if atomic_num > 0:
+            counts[atomic_num - 1] += 1
+
+        if atomic_num != 1:
+            counts[0] += atom.GetTotalNumHs(includeNeighbors=False)
+
+    return counts
 
 
 def heavy_atom_count(mol: Mol) -> int:
