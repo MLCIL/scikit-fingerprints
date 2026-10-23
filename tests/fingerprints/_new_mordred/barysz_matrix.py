@@ -40,7 +40,7 @@ def _feature_param(feature_name):
     # adds a spurious exp(-a) term and computes log(1 + sum(exp(lambda_i)))
     # instead of the documented log(sum(exp(lambda_i))).
     # See https://github.com/JacksonBurns/mordred-community/issues/24.
-    if "Estrada-like index" in feature_name:
+    if "LogEE" in feature_name:
         return pytest.param(
             feature_name,
             marks=pytest.mark.xfail(
