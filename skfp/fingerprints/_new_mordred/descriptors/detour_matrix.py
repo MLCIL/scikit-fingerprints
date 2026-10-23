@@ -7,7 +7,10 @@ from scipy.sparse.csgraph import connected_components
 from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import (
+    ATTRIBUTE_FEATURE_NAMES,
+    MatrixAttributes,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -17,19 +20,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
-    "SpAbs_Dt",
-    "SpMax_Dt",
-    "SpDiam_Dt",
-    "SpAD_Dt",
-    "SpMAD_Dt",
-    "LogEE_Dt",
-    "SM1_Dt",
-    "VE1_Dt",
-    "VE2_Dt",
-    "VE3_Dt",
-    "VR1_Dt",
-    "VR2_Dt",
-    "VR3_Dt",
+    *(f"detour matrix {name}" for name in ATTRIBUTE_FEATURE_NAMES.values()),
     "DetourIndex",
 ]
 

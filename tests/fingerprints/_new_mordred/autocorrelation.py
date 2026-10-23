@@ -54,13 +54,17 @@ def computed_values():
 )
 @pytest.mark.parametrize("descriptor", list(_REFERENCE["expected"]))
 def test_autocorrelation_reference_values(descriptor, prop, molecule, computed_values):
-    start_lag = 1 if descriptor in {"Moreau_autocorr", "Geary_autocorr"} else 0
+    start_lag = (
+        1 if descriptor in {"Moran autocorrelation", "Geary autocorrelation"} else 0
+    )
     vals_mordred = np.array(
         _REFERENCE["expected"][descriptor][prop][molecule], dtype=float
     )
     vals_skfp = np.array(
         [
-            computed_values[molecule][f"{descriptor}_{prop}_lag_{start_lag + i}"]
+            computed_values[molecule][
+                f"{descriptor} lag {start_lag + i} weighted by {prop.replace('_', ' ')}"
+            ]
             for i in range(len(vals_mordred))
         ]
     )

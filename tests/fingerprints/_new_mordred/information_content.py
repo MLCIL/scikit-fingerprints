@@ -66,7 +66,7 @@ def test_information_content_reference_values(feature_name, molecule, computed_v
 
     expected = _REFERENCE["expected"][molecule][feature_name]
     actual = computed_values[molecule][feature_name]
-    atol = 0.05 if feature_name.startswith("modified_information_content") else 1e-3
+    atol = 0.05 if feature_name.startswith("modified information content") else 1e-3
     assert_allclose(actual, expected, rtol=0, atol=atol, equal_nan=True)
 
 
@@ -89,7 +89,7 @@ def _calc(mol: Mol) -> dict[str, float]:
 
 def _modified_information_content(mol: Mol) -> list[float]:
     values = _calc(mol)
-    return [values[f"modified_information_content_order_{o}"] for o in range(6)]
+    return [values[f"modified information content order {o}"] for o in range(6)]
 
 
 def _parse_keeping_hydrogens(smiles: str) -> Mol:

@@ -79,9 +79,9 @@ def test_molecular_distance_edge_no_matching_atoms(mordred_test_mols):
     )
     result = dict(zip(FEATURE_NAMES, values, strict=True))
 
-    assert all(
-        np.isnan(result[name])
-        for name in FEATURE_NAMES
-        if name.startswith(("MDEN", "MDEO"))
-    )
-    assert np.isfinite(result["MDEC-11"])
+    nitrogen_oxygen = [
+        name for name in FEATURE_NAMES if name.endswith((" nitrogens", " oxygens"))
+    ]
+    assert nitrogen_oxygen
+    assert all(np.isnan(result[name]) for name in nitrogen_oxygen)
+    assert np.isfinite(result["molecular distance edge between primary carbons"])

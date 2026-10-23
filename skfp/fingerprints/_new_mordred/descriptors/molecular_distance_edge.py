@@ -11,28 +11,28 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
-    "MDEC-11",
-    "MDEC-12",
-    "MDEC-13",
-    "MDEC-14",
-    "MDEC-22",
-    "MDEC-23",
-    "MDEC-24",
-    "MDEC-33",
-    "MDEC-34",
-    "MDEC-44",
-    "MDEN-11",
-    "MDEN-12",
-    "MDEN-13",
-    "MDEN-22",
-    "MDEN-23",
-    "MDEN-33",
-    "MDEO-11",
-    "MDEO-12",
-    "MDEO-22",
+    "molecular distance edge between primary carbons",
+    "molecular distance edge between primary and secondary carbons",
+    "molecular distance edge between primary and tertiary carbons",
+    "molecular distance edge between primary and quaternary carbons",
+    "molecular distance edge between secondary carbons",
+    "molecular distance edge between secondary and tertiary carbons",
+    "molecular distance edge between secondary and quaternary carbons",
+    "molecular distance edge between tertiary carbons",
+    "molecular distance edge between tertiary and quaternary carbons",
+    "molecular distance edge between quaternary carbons",
+    "molecular distance edge between primary nitrogens",
+    "molecular distance edge between primary and secondary nitrogens",
+    "molecular distance edge between primary and tertiary nitrogens",
+    "molecular distance edge between secondary nitrogens",
+    "molecular distance edge between secondary and tertiary nitrogens",
+    "molecular distance edge between tertiary nitrogens",
+    "molecular distance edge between primary oxygens",
+    "molecular distance edge between primary and secondary oxygens",
+    "molecular distance edge between secondary oxygens",
 ]
 
-# elements (C, N, O) and valences from feature names
+# elements (C, N, O) and heavy-atom degree pairs, in feature order
 _ELEMENTS = [6, 7, 8]
 _BUCKETS = [
     (atomic_num, valence_1, valence_2)

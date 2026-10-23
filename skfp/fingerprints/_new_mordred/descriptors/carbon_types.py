@@ -11,43 +11,31 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = [
-    "C1SP1",
-    "C2SP1",
-    "C1SP2",
-    "C2SP2",
-    "C3SP2",
-    "C1SP3",
-    "C2SP3",
-    "C3SP3",
-    "C4SP3",
-    "HybRatio",
-    "FCSP3",
-]
-
 _SP3_HYBRIDIZATIONS = {
     HybridizationType.SP3,
     HybridizationType.SP3D,
     HybridizationType.SP3D2,
 }
 _FEATURE_TO_COUNTS = {
-    "C1SP1": (1, HybridizationType.SP),
-    "C2SP1": (2, HybridizationType.SP),
-    "C1SP2": (1, HybridizationType.SP2),
-    "C2SP2": (2, HybridizationType.SP2),
-    "C3SP2": (3, HybridizationType.SP2),
-    "C1SP3": (1, HybridizationType.SP3),
-    "C2SP3": (2, HybridizationType.SP3),
-    "C3SP3": (3, HybridizationType.SP3),
-    "C4SP3": (4, HybridizationType.SP3),
+    "sp carbons bonded to 1 carbon": (1, HybridizationType.SP),
+    "sp carbons bonded to 2 carbons": (2, HybridizationType.SP),
+    "sp2 carbons bonded to 1 carbon": (1, HybridizationType.SP2),
+    "sp2 carbons bonded to 2 carbons": (2, HybridizationType.SP2),
+    "sp2 carbons bonded to 3 carbons": (3, HybridizationType.SP2),
+    "sp3 carbons bonded to 1 carbon": (1, HybridizationType.SP3),
+    "sp3 carbons bonded to 2 carbons": (2, HybridizationType.SP3),
+    "sp3 carbons bonded to 3 carbons": (3, HybridizationType.SP3),
+    "sp3 carbons bonded to 4 carbons": (4, HybridizationType.SP3),
 }
+
+FEATURE_NAMES = [*_FEATURE_TO_COUNTS, "HybRatio", "Fsp3"]
 
 
 def calc(mol_kekulized: Mol, mol_hydrogens: Mol) -> np.ndarray:
     """
     Count carbon atoms by carbon-neighbor degree and hybridization.
 
-    ``FCSP3`` is RDKit's fraction of carbons with four neighbors, hydrogens
+    ``Fsp3`` is RDKit's fraction of carbons with four neighbors, hydrogens
     included, on the hydrogen-explicit molecule, as in Mordred. That differs from
     the share of SP3-hybridized carbons for charged carbons, e.g. ``[CH2-]``.
     """
@@ -69,7 +57,7 @@ def calc(mol_kekulized: Mol, mol_hydrogens: Mol) -> np.ndarray:
         hybridization_counts[hybridization] += 1
 
     # HybRatio uses aggregate hybridization counts, not neighbor counts.
-    values = [counts[_FEATURE_TO_COUNTS[name]] for name in FEATURE_NAMES[:-2]]
+    values = [counts[key] for key in _FEATURE_TO_COUNTS.values()]
 
     num_sp3 = hybridization_counts[HybridizationType.SP3]
     num_sp2 = hybridization_counts[HybridizationType.SP2]

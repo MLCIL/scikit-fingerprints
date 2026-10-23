@@ -14,7 +14,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 FEATURE_NAMES = [
-    f"BCUT_{prop}_{kind}_eigval"
+    f"BCUT {kind} eigenvalue weighted by {prop.replace('_', ' ')}"
     for prop in WEIGHTING_PROPERTY_NAMES
     for kind in ["smallest", "largest"]
 ]
