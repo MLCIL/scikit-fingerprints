@@ -109,7 +109,7 @@ def test_element_atom_count(mol_name, atom_id, expected_value, input_mols):
 )
 def test_element_counts(mol_name, expected_counts, input_mols):
     mol = input_mols[mol_name]
-    result = const.element_counts(mol)
+    result = const.element_counts(mol, include_hydrogens=True)
 
     expected = np.zeros(118, dtype=np.uint32)
 
@@ -133,10 +133,33 @@ def test_element_counts(mol_name, expected_counts, input_mols):
 )
 def test_element_counts_special_cases(smiles, expected_counts):
     mol = MolFromSmiles(smiles)
-    result = const.element_counts(mol)
+    result = const.element_counts(mol, include_hydrogens=True)
 
     expected = np.zeros(118, dtype=np.uint32)
 
+    for atomic_num, count in expected_counts.items():
+        expected[atomic_num - 1] = count
+
+    assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    "mol_name, expected_counts",
+    [
+        ("oxygen", {8: 1}),
+        ("benzene", {6: 6}),
+        ("ethanol", {6: 2, 8: 1}),
+        ("propane", {6: 3}),
+        ("butadiene", {6: 4}),
+        ("hydrogen_cyanide", {6: 1, 7: 1}),
+        ("cyclohexane", {6: 6}),
+    ],
+)
+def test_element_counts_without_hydrogens(mol_name, expected_counts, input_mols):
+    mol = input_mols[mol_name]
+    result = const.element_counts(mol)
+
+    expected = np.zeros(118, dtype=np.uint32)
     for atomic_num, count in expected_counts.items():
         expected[atomic_num - 1] = count
 

@@ -123,28 +123,31 @@ def element_atom_count(mol: Mol, atom_id: int | str) -> int:
         )
 
 
-def element_counts(mol: Mol) -> np.ndarray:
+def element_counts(mol: Mol, include_hydrogens: bool = False) -> np.ndarray:
     """
     Counts atoms of all 118 chemical elements in an RDKit molecule.
 
     Implicit and explicit hydrogens are included. Dummy atoms (atomic number 0)
-    are ignored.
+    are ignored. By default, hydrogens are excluded.
 
     Parameters
     ----------
     mol : RDKit ``Mol`` object
         Molecule for which atomic composition is calculated.
 
+    include_hydrogens : bool, default=False
+        Whether to include hydrogens in the counts.
+
     Returns
     -------
     counts : ndarray of shape (118,), dtype=uint32
-        Number of atoms for elements H through Og.
+        Number of atoms with each atomic number.
 
     Examples
     --------
     >>> from rdkit.Chem import MolFromSmiles
     >>> from skfp.descriptors import element_counts
-    >>> counts = element_counts(MolFromSmiles("CCO"))
+    >>> counts = element_counts(MolFromSmiles("CCO"), include_hydrogens=True)
     >>> int(counts[0]), int(counts[5]), int(counts[7])
     (6, 2, 1)
     """
@@ -153,10 +156,10 @@ def element_counts(mol: Mol) -> np.ndarray:
     for atom in mol.GetAtoms():
         atomic_num = atom.GetAtomicNum()
 
-        if atomic_num > 0:
+        if atomic_num > 0 and (atomic_num != 1 or include_hydrogens):
             counts[atomic_num - 1] += 1
 
-        if atomic_num != 1:
+        if include_hydrogens and atomic_num != 1:
             counts[0] += atom.GetTotalNumHs(includeNeighbors=False)
 
     return counts
