@@ -203,7 +203,7 @@ If you use scikit-fingerprints in your work, please cite both our publications:
 
 ```bibtex
 @article{scikit_fingerprints_2,
-   title = {Scikit-fingerprints: Python library for scikit-learn compatible molecular fingerprints and chemoinformatics},
+   title = {scikit-fingerprints: Python library for scikit-learn compatible molecular fingerprints and chemoinformatics},
    author = {Jakub Adamczyk and Adam Staniszewski},
    journal = {Journal of Chemical Information and Modeling},
    year = {2026},
