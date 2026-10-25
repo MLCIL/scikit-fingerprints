@@ -170,49 +170,57 @@ Step-by-step Jupyter notebooks, both for learning and deploying production-grade
 ## Publications and citing
 
 Publications using scikit-fingerprints:
-1. [J. Adamczyk, W. Czech "Molecular Topological Profile (MOLTOP) -- Simple and Strong Baseline for Molecular Graph Classification" ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
-2. [J. Adamczyk, P. Ludynia "Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python" SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
-3. [J. Adamczyk, P. Ludynia, W. Czech "Molecular Fingerprints Are Strong Models for Peptide Function Prediction" ArXiv preprint](https://arxiv.org/abs/2501.17901)
-4. [J. Adamczyk "Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology" CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
-5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski "MolPILE - large-scale, diverse dataset for molecular representation learning" ArXiv preprint](https://arxiv.org/abs/2509.18353)
-6. [J. Adamczyk, J. Poziemski, P. Siedlecki "Evaluating machine learning models for predicting pesticide toxicity to honey bees" Ecotoxicology and Environmental Safety 2026](https://www.sciencedirect.com/science/article/pii/S0147651326001983)
-7. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
-8. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
-9. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
-10. [J. Adamczyk, A.Staniszewski "scikit-fingerprints: A Python Library for Scikit-Learn-Compatible Molecular Fingerprints and Chemoinformatics", JCIM](https://pubs.acs.org/jcisd8/article/doi/10.1021/acs.jcim.6c02602/5451451)
+1. [J. Adamczyk, W. Czech *"Molecular Topological Profile (MOLTOP) - Simple and Strong Baseline for Molecular Graph Classification"* ECAI 2024](https://ebooks.iospress.nl/doi/10.3233/FAIA240663)
+2. [J. Adamczyk, P. Ludynia *"Scikit-fingerprints: easy and efficient computation of molecular fingerprints in Python"* SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
+3. [J. Adamczyk, P. Ludynia, W. Czech *"Molecular Fingerprints Are Strong Models for Peptide Function Prediction"* ArXiv preprint](https://arxiv.org/abs/2501.17901)
+4. [J. Adamczyk *"Towards Rational Pesticide Design with Graph Machine Learning Models for Ecotoxicology"* CIKM 2025](https://dl.acm.org/doi/abs/10.1145/3746252.3761660)
+5. [J. Adamczyk, J. Poziemski, F. Job, M. Król, M. Makowski *"MolPILE - large-scale, diverse dataset for molecular representation learning"* ArXiv preprint](https://arxiv.org/abs/2509.18353)
+6. [J. Adamczyk, J. Poziemski, P. Siedlecki *"Evaluating machine learning models for predicting pesticide toxicity to honey bees"* Ecotoxicology and Environmental Safety 2026](https://www.sciencedirect.com/science/article/pii/S0147651326001983)
+7. [J. Adamczyk, A. Staniszewski *"scikit-fingerprints: A Python Library for Scikit-Learn-Compatible Molecular Fingerprints and Chemoinformatics"* JCIM 2026](https://doi.org/10.1021/acs.jcim.6c02602)
+8. [M. Fitzner et al. *"BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime"* RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
+9. [J. Xiong et al. *"Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"* bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
+10. [S. Mavlonazarova et al. *"Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin"* Plant Direct 2026](https://doi.org/10.1002/pld3.70123)
+11. [Q. Qian et al. *"AutoMPP: Automated Task-Specific Multifingerprint Fusion for Property Prediction of Small Molecules and Macrocycles"* ChemMedChem 2026](https://doi.org/10.1002/cmdc.202600005)
+12. [B. Liu et al. *"Machine learning prediction of bile salt export pump inhibition with Boruta feature selection in imbalanced data"* Frontiers in Pharmacology 2026](https://doi.org/10.3389/fphar.2026.1911283)
+13. [P. Charoenkwan et al. *"Interpretable QSAR modelling for PPAR-γ agonist prediction by integrating a stacking strategy, docking, and MD simulations"* Molecular Diversity 2026](https://link.springer.com/article/10.1007/s11030-026-11700-5)
 
-If you use scikit-fingerprints in your work, please cite both our publications:
+If your publication should be on that list, please make an issue on GitHub.
 
-[SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145) (2024):
+If you use scikit-fingerprints in your work, please cite our two publications in
+[SoftwareX](https://www.sciencedirect.com/science/article/pii/S2352711024003145)
+and [Journal of Chemical Information and Modeling (JCIM)](https://doi.org/10.1021/acs.jcim.6c02602),
+both open access. If you have space to cite only one, we recommend citing the SoftwareX paper
+if you use only molecular fingerprints, or JCIM one if you use molecular filters or other functionalities.
 
 ```bibtex
 @article{scikit_fingerprints,
-   title = {Scikit-fingerprints: Easy and efficient computation of molecular fingerprints in Python},
-   author = {Jakub Adamczyk and Piotr Ludynia},
-   journal = {SoftwareX},
-   volume = {28},
-   pages = {101944},
-   year = {2024},
-   issn = {2352-7110},
-   doi = {https://doi.org/10.1016/j.softx.2024.101944},
-   url = {https://www.sciencedirect.com/science/article/pii/S2352711024003145},
+    author = {Adamczyk, Jakub and Ludynia, Piotr},
+    title = {Scikit-fingerprints: Easy and efficient computation of molecular fingerprints in Python},
+    journal = {SoftwareX},
+    volume = {28},
+    pages = {101944},
+    year = {2024},
+    issn = {2352-7110},
+    doi = {10.1016/j.softx.2024.101944},
+    url = {https://www.sciencedirect.com/science/article/pii/S2352711024003145},
 }
 ```
-
-[Journal of Chemical Information and Modeling](https://pubs.acs.org/doi/10.1021/acs.jcim.6c02602) (2026):
 
 ```bibtex
 @article{scikit_fingerprints_2,
-   title = {scikit-fingerprints: Python library for scikit-learn compatible molecular fingerprints and chemoinformatics},
-   author = {Jakub Adamczyk and Adam Staniszewski},
-   journal = {Journal of Chemical Information and Modeling},
-   year = {2026},
-   doi = {10.1021/acs.jcim.6c02602},
-   url = {https://pubs.acs.org/doi/10.1021/acs.jcim.6c02602},
+    author = {Adamczyk, Jakub and Staniszewski, Adam},
+    title = {scikit-fingerprints: A Python Library for Scikit-Learn-Compatible Molecular Fingerprints and Chemoinformatics},
+    journal = {Journal of Chemical Information and Modeling},
+    year = {2026},
+    month = {10},
+    issn = {1549-9596},
+    doi = {10.1021/acs.jcim.6c02602},
+    url = {https://doi.org/10.1021/acs.jcim.6c02602},
 }
 ```
 
-Both are also available as preprints on ArXiv: [2024](https://arxiv.org/abs/2407.13291), [2026](https://arxiv.org/abs/2608.02027).
+Both are also available as preprints on ArXiv:
+[SoftwareX paper](https://arxiv.org/abs/2407.13291) and [JCIM paper](https://arxiv.org/abs/2608.02027).
 
 ## Contributing
 
