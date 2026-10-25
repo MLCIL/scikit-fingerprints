@@ -8,15 +8,19 @@
 # See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 
 from collections.abc import Sequence
+from numbers import Integral, Real
 
 import numpy as np
 from rdkit.Chem import Mol
 from scipy.sparse import csr_array
+from sklearn.utils._param_validation import Interval
 
 from skfp.bases import BaseFingerprintTransformer
 from skfp.utils import ensure_mols
 
 from ._new_mordred.calculator import compute, get_feature_names
+from ._new_mordred.descriptors.detour_matrix import DEFAULT_MAX_RING_SYSTEM_RANK
+from ._new_mordred.utils.descriptor_evaluation import DEFAULT_TIMEOUT
 
 
 class NewMordredFingerprint(BaseFingerprintTransformer):
@@ -36,6 +40,19 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
     use_3D : bool, default=False
         Whether to include 3D (conformer-based) descriptors. Using this option results
         in longer computation time.
+
+    timeout : float, default=60.0
+        Seconds given to each of the two descriptors that have to enumerate the simple
+        paths of a molecule, ``DetourMatrix`` and ``MolecularId``. Both searches are
+        exponential in the number of independent cycles, and the ones that run over
+        their time are reported as NaN. The default matches Mordred's.
+
+    max_ring_system_rank : int, default=23
+        Number of independent cycles above which a ring system is reported as NaN by
+        ``DetourMatrix`` without being searched at all. Searching one costs roughly
+        2.2x more per cycle, and rank 23 already takes minutes, so going further only
+        burns the timeout without ever producing a value. Raise it to let very fused
+        molecules through at the cost of waiting out the timeout on them.
 
     sparse : bool, default=False
         Whether to return dense NumPy array, or sparse SciPy CSR array.
@@ -98,11 +115,15 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
     _parameter_constraints: dict = {
         **BaseFingerprintTransformer._parameter_constraints,
         "use_3D": ["boolean"],
+        "timeout": [Interval(Real, 0, None, closed="neither")],
+        "max_ring_system_rank": [Interval(Integral, 0, None, closed="left")],
     }
 
     def __init__(
         self,
         use_3D: bool = False,
+        timeout: float = DEFAULT_TIMEOUT,
+        max_ring_system_rank: int = DEFAULT_MAX_RING_SYSTEM_RANK,
         sparse: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
@@ -118,6 +139,8 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
             verbose=verbose,
         )
         self.use_3D = use_3D
+        self.timeout = timeout
+        self.max_ring_system_rank = max_ring_system_rank
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002
         """
@@ -160,7 +183,15 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
         X = ensure_mols(X)
 
-        X = [compute(mol=mol, use_3D=self.use_3D) for mol in X]
+        X = [
+            compute(
+                mol=mol,
+                use_3D=self.use_3D,
+                timeout=self.timeout,
+                max_ring_system_rank=self.max_ring_system_rank,
+            )
+            for mol in X
+        ]
 
         return (
             csr_array(X, dtype=np.float32)
