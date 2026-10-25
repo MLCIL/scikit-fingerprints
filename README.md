@@ -179,9 +179,11 @@ Publications using scikit-fingerprints:
 7. [M. Fitzner et al. "BayBE: a Bayesian Back End for experimental planning in the low-to-no-data regime" RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d5dd00050e)
 8. [J. Xiong et al. "Bridging 3D Molecular Structures and Artificial Intelligence by a Conformation Description Language"](https://www.biorxiv.org/content/10.1101/2025.05.07.652440v1.abstract)
 9. [S. Mavlonazarova et al. "Untargeted Metabolomics Reveals Organ-Specific and Extraction-Dependent Metabolite Profiles in Endemic Tajik Species Ferula violacea Korovin" bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2025.08.24.671964v1)
+10. [J. Adamczyk, A.Staniszewski "scikit-fingerprints: A Python Library for Scikit-Learn-Compatible Molecular Fingerprints and Chemoinformatics", JCIM](https://pubs.acs.org/jcisd8/article/doi/10.1021/acs.jcim.6c02602/5451451)
 
-If you use scikit-fingerprints in your work, please cite our publication in
-[SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145):
+If you use scikit-fingerprints in your work, please cite both our publications:
+
+[SoftwareX (open access)](https://www.sciencedirect.com/science/article/pii/S2352711024003145) (2024):
 
 ```bibtex
 @article{scikit_fingerprints,
@@ -197,7 +199,20 @@ If you use scikit-fingerprints in your work, please cite our publication in
 }
 ```
 
-Also available as a [preprint on ArXiv](https://arxiv.org/abs/2407.13291).
+[Journal of Chemical Information and Modeling](https://pubs.acs.org/doi/10.1021/acs.jcim.6c02602) (2026):
+
+```bibtex
+@article{scikit_fingerprints_2,
+   title = {scikit-fingerprints: Python library for scikit-learn compatible molecular fingerprints and chemoinformatics},
+   author = {Jakub Adamczyk and Adam Staniszewski},
+   journal = {Journal of Chemical Information and Modeling},
+   year = {2026},
+   doi = {10.1021/acs.jcim.6c02602},
+   url = {https://pubs.acs.org/doi/10.1021/acs.jcim.6c02602},
+}
+```
+
+Both are also available as preprints on ArXiv: [2024](https://arxiv.org/abs/2407.13291), [2026](https://arxiv.org/abs/2608.02027).
 
 ## Contributing
 
