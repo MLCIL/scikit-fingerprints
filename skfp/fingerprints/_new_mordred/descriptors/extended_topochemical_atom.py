@@ -109,7 +109,9 @@ def calc(
     core_count_mean = core_count / num_atoms
 
     # ETA_shape_{p,y,x}: fraction of total core count from atoms of degree 1/3/4
-    shape = np.array([core_counts[degrees == d].sum() / core_count for d in (1, 3, 4)])
+    shape = np.array(
+        [core_counts[degrees == d].sum() / (core_count or np.nan) for d in (1, 3, 4)]
+    )
 
     # ETA VEM counts (sums and averages of beta / beta_s / beta_ns / beta_ns_d)
     vem_beta_s = beta_sigma.sum() / 2.0
@@ -132,7 +134,7 @@ def calc(
 
     # composite + functionality indices, which compare the molecule with its alkane
     # reference: the same skeleton with every atom a carbon and every bond single
-    gamma_alkane = _alkane_gamma(alkane_degrees)
+    gamma_alkane = _alkane_gamma(alkane_degrees, degrees)
     eta_composite = _composite_and_functionality(
         gamma,
         distance_matrix.matrix,
@@ -155,11 +157,18 @@ def calc(
         d_b = max((core_count_alkane - core_count) / num_atoms, 0.0)
         eta_delta_alpha = np.array([d_a, d_b], dtype=np.float32)
 
+    # Mordred builds the alkane reference of epsilon 3 from the hydrogen-explicit
+    # molecule, so it gives up when some atom has more than four neighbors there,
+    # hydrogens included, e.g. a phosphine [PH] bonded to four carbons
+    has_alkane_hydrogens_reference = (
+        gamma_alkane is not None
+        and props_hydrogens.degrees.max(initial=0) <= _MAX_CARBON_DEGREE
+    )
     eta_epsilon_values = _epsilon_values(
         epsilons,
         props_hydrogens,
         _alkane_hydrogens_mean_epsilon(alkane_degrees)
-        if gamma_alkane is not None
+        if has_alkane_hydrogens_reference
         else np.nan,
         _saturated_mean_epsilon(props_hydrogens, kekulized_bond_types_hydrogens),
     )
@@ -265,10 +274,13 @@ def _beta_delta(
     Lone-pair (delta) contribution: 0.5 for an acyclic atom with lone pairs that is
     adjacent to an aromatic neighbor, otherwise 0.
     """
-    # RDKit's total valence: the bonds an atom has, plus its hydrogens. A NaN order
-    # (a dative bond, which adds nothing to its donor) would read below as False
-    bond_orders = np.nan_to_num(BOND_ORDERS[bond_types], nan=0.0)
-    valences = props.total_num_hs + props.sum_over_bonds(bond_orders)
+    # RDKit's total valence: the bonds an atom has, plus its hydrogens; a dative
+    # bond counts toward the atom it points to only
+    bond_orders = BOND_ORDERS[bond_types]
+    is_dative = bond_types == int(BondType.DATIVE)
+    valences = props.total_num_hs + props.sum_over_bonds(
+        np.where(is_dative, 0.0, bond_orders), bond_orders
+    )
     has_lone_pairs = props.outer_electrons - valences > 0
 
     aromatic_neighbors = props.count_neighbors(props.is_aromatic)
@@ -314,10 +326,12 @@ def _composite_and_functionality(
         alkane_non_local = alkane_non_local_avg = np.nan
         alkane_local = alkane_local_avg = np.nan
     else:
-        num_atoms_alkane = gamma_alkane.shape[0]
         alkane_non_local, alkane_local = _composite_index_pair(
             gamma_alkane, distance_matrix_alkane
         )
+        # an empty reference, as for a hydrogen molecule, has no atoms to average
+        # over, which leaves Mordred's averages undefined too
+        num_atoms_alkane = gamma_alkane.shape[0] or np.nan
         alkane_non_local_avg = alkane_non_local / num_atoms_alkane
         alkane_local_avg = alkane_local / num_atoms_alkane
 
@@ -424,23 +438,27 @@ _CARBON_CORE_COUNT, _CARBON_EPSILON = (
 _HYDROGEN_EPSILON = _core_counts_and_epsilons(np.array([1]))[1].item()
 
 
-def _alkane_gamma(degrees: np.ndarray) -> np.ndarray | None:
+def _alkane_gamma(alkane_degrees: np.ndarray, degrees: np.ndarray) -> np.ndarray | None:
     """
     Gamma of every atom of the alkane reference: the same skeleton with every atom
     a carbon and every bond single.
 
     All of its atoms have the same core count and the same epsilon, so every bond
     contributes half a beta unit to both of its atoms and gamma comes out as the
-    reciprocal of the degree. ``None`` when the reference does not exist: either
-    some atom has more bonds than a carbon can have, or, as for a lone hydrogen
-    molecule, there is no heavy atom to put in it.
+    reciprocal of the degree. ``None`` when the reference does not exist, as some
+    atom has more bonds than a carbon can have; as in Mordred, that counts the
+    hydrogens the molecule still holds, which the reference itself drops. Without
+    any heavy atom, as in a hydrogen molecule, the reference exists, but is empty,
+    as in Mordred.
     """
-    if len(degrees) == 0 or degrees.max(initial=0) > _MAX_CARBON_DEGREE:
+    if degrees.max(initial=0) > _MAX_CARBON_DEGREE:
         return None
 
     with np.errstate(divide="ignore"):
         # a lone atom has no bonds and therefore no beta to divide by
-        return np.where(degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * degrees))
+        return np.where(
+            alkane_degrees == 0, np.nan, _CARBON_CORE_COUNT / (0.5 * alkane_degrees)
+        )
 
 
 def _saturated_mean_epsilon(props: AtomicProperties, bond_types: np.ndarray) -> float:
@@ -476,7 +494,7 @@ def _saturated_mean_epsilon(props: AtomicProperties, bond_types: np.ndarray) -> 
 
     epsilons = _core_counts_and_epsilons(atomic_nums)[1]
     total = epsilons.sum() + num_hydrogens * _HYDROGEN_EPSILON
-    return float(total / (len(atomic_nums) + num_hydrogens))
+    return float(total / ((len(atomic_nums) + num_hydrogens) or np.nan))
 
 
 def _implicit_hydrogen_count(
@@ -535,9 +553,12 @@ def _alkane_hydrogens_mean_epsilon(degrees: np.ndarray) -> float:
     Mean epsilon over the hydrogen-explicit alkane reference.
 
     Its carbons fill their remaining bonds with hydrogens, so only how many atoms of
-    either element there are matters, not how they are arranged.
+    either element there are matters, not how they are arranged. An empty reference,
+    as for a hydrogen molecule, has no atoms to average over.
     """
     num_carbons = len(degrees)
+    if num_carbons == 0:
+        return np.nan
     num_hydrogens = num_carbons * _MAX_CARBON_DEGREE - degrees.sum()
     total = num_carbons * _CARBON_EPSILON + num_hydrogens * _HYDROGEN_EPSILON
     return float(total / (num_carbons + num_hydrogens))

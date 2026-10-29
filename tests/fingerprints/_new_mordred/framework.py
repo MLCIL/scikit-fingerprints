@@ -29,7 +29,7 @@ with open(Path(__file__).parent / "references" / "framework.json") as f:
 
 
 def _calc(mol: Mol) -> float:
-    props = AtomicProperties.from_mol(mol)
+    props = AtomicProperties(mol)
     values = calc(props, RingSets(mol, props), AddHs(mol).GetNumAtoms())
     return float(values[0])
 
@@ -84,8 +84,8 @@ def test_hydrogens_count_towards_the_denominator():
 
 def test_empty_molecule_is_nan():
     values = calc(
-        AtomicProperties.from_mol(MolFromSmiles("")),
-        RingSets(MolFromSmiles(""), AtomicProperties.from_mol(MolFromSmiles(""))),
+        AtomicProperties(MolFromSmiles("")),
+        RingSets(MolFromSmiles(""), AtomicProperties(MolFromSmiles(""))),
         0,
     )
 

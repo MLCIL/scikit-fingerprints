@@ -63,7 +63,7 @@ def computed_values(mordred_test_mols):
         mol = mordred_test_mols[name]
         n_frags = len(GetMolFrags(mol))
         mol_regular = preprocess_mol(mol)
-        props = AtomicProperties.from_mol(mol_regular)
+        props = AtomicProperties(mol_regular)
         values = calc(
             props,
             DistanceMatrix.from_mol(mol_regular),
@@ -89,7 +89,7 @@ def test_detour_index_cage_with_incomplete_ring_systems():
     # has to fall back to the bridgeless components; expected value from a brute
     # force over all simple paths (the rings alone would give 185)
     mol = preprocess_mol(MolFromSmiles("C1C2C34C1C21CC12C3C42"))
-    props = AtomicProperties.from_mol(mol)
+    props = AtomicProperties(mol)
     rings = RingSets(mol, props)
     ring_systems = _get_ring_systems(rings.simple_ring_atom_sets)
     assert not _are_ring_systems_complete(props, ring_systems)

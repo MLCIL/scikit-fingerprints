@@ -31,9 +31,7 @@ FEATURE_NAMES = [
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def calc(
-    mol_hydrogens_conformer: Mol, distance_matrix_3d: DistanceMatrix3D
-) -> np.ndarray:
+def calc(mol_hydrogens: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -45,7 +43,7 @@ def calc(
     pairs, for one atom weighting ``w`` and one scale ``s``. Only distinct pairs
     contribute, so we can sum over them, rather than using a symmetric matrix.
     """
-    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol_hydrogens_conformer, np.intp)
+    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol_hydrogens, np.intp)
     num_atoms = len(atomic_nums)
 
     if num_atoms < 2:

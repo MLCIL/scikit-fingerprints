@@ -104,7 +104,14 @@ class Subgraphs:
         self.bond_atoms = np.stack([props.bond_begin_idxs, props.bond_end_idxs], axis=1)
         self._num_atoms = props.num_atoms
 
-        # which bonds each atom takes part in
+        # subgraphs are built only from bonds between heavy atoms, as Mordred
+        # enumerates them with RDKit, which skips bonds to hydrogen atoms (e.g. an
+        # isotope that RemoveHs keeps); bonds keep their original indices, so
+        # per-bond arrays such as bond orders can be indexed with them directly
+        has_hydrogen = props.is_hydrogen[self.bond_atoms].any(axis=1)
+        self._bonds = np.flatnonzero(~has_hydrogen)
+
+        # which of those bonds each atom takes part in
         self.bonds_of_atom = self._build_atom_adjacency()
 
         # which bonds share an atom
@@ -115,7 +122,7 @@ class Subgraphs:
         # bond indexes of every subgraph, one entry per order
         # every order is enumerated in one pass, since each is grown from previous one
         self._subgraphs = self._enumerate_subgraphs(
-            bonds_share_atom, props.num_bonds, SUBGRAPH_MAX_NUM_BONDS
+            bonds_share_atom, self._bonds, SUBGRAPH_MAX_NUM_BONDS
         )
 
         # topology and paths of every subgraph, one tuple for each
@@ -150,17 +157,19 @@ class Subgraphs:
 
     def _build_atom_adjacency(self) -> np.ndarray:
         """
-        Bonds incident to each atom, array of shape (n_atoms, max_atom_degree).
+        Subgraph bonds incident to each atom, array of shape
+        (n_atoms, max_atom_degree).
 
         Unused cells for lower-degree atoms get value -1.
         """
-        degrees = np.bincount(self.bond_atoms.ravel(), minlength=self._num_atoms)
+        bond_atoms = self.bond_atoms[self._bonds]
+        degrees = np.bincount(bond_atoms.ravel(), minlength=self._num_atoms)
         max_degree = int(degrees.max()) if degrees.size else 0
         bonds_of_atom = np.full((self._num_atoms, max_degree), -1, dtype=np.intp)
 
         # filling row by row keeps each atom's bonds in ascending order
         next_slot = np.zeros(self._num_atoms, dtype=np.intp)
-        for bond, (begin, end) in enumerate(self.bond_atoms):
+        for bond, (begin, end) in zip(self._bonds.tolist(), bond_atoms, strict=True):
             for atom in (begin, end):
                 bonds_of_atom[atom, next_slot[atom]] = bond
                 next_slot[atom] += 1
@@ -191,10 +200,10 @@ class Subgraphs:
 
     @staticmethod
     def _enumerate_subgraphs(
-        neighbors: list[set[int]], num_bonds: int, max_order: int
+        neighbors: list[set[int]], bonds: np.ndarray, max_order: int
     ) -> tuple[np.ndarray, ...]:
         """
-        Enumerate connected subgraphs up to ``max_order`` bonds.
+        Enumerate connected subgraphs of ``bonds`` up to ``max_order`` bonds.
 
         Returns one entry per order, indexed by order - 1: the bond indices of each
         subgraph of that order, shape (n_subgraphs, order)
@@ -245,7 +254,7 @@ class Subgraphs:
                     root,
                 )
 
-        for root_bond in range(num_bonds):
+        for root_bond in bonds.tolist():
             above_root = {bond for bond in neighbors[root_bond] if bond > root_bond}
             grow([root_bond], above_root, neighbors[root_bond], root_bond)
 

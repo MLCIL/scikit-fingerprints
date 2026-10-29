@@ -28,7 +28,7 @@ with open(Path(__file__).parent / "references" / "molecular_id.json") as f:
 
 
 def _calc(mol: Mol) -> dict[str, float]:
-    values = calc(AtomicProperties.from_mol(mol), len(GetMolFrags(mol)))
+    values = calc(AtomicProperties(mol), len(GetMolFrags(mol)))
     return dict(zip(FEATURE_NAMES, values, strict=True))
 
 

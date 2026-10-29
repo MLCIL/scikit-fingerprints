@@ -49,7 +49,7 @@ NAN = float("nan")
 def test_kappa_shape_index_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
-    props = AtomicProperties.from_mol(mol_regular)
+    props = AtomicProperties(mol_regular)
     values = calc(props, Subgraphs(props))
 
     assert_allclose(

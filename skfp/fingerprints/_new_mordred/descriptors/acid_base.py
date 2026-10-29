@@ -34,7 +34,7 @@ _BASE_PATTERN = Chem.MolFromSmarts(
 )
 
 
-def calc(mol: Mol) -> np.ndarray:
+def calc(mol_hydrogens: Mol) -> np.ndarray:
     """
     Acidic/basic group count descriptors.
 
@@ -43,8 +43,8 @@ def calc(mol: Mol) -> np.ndarray:
     https://cdk.github.io/cdk/1.5/docs/api/org/openscience/cdk/qsar/descriptors/molecular/BasicGroupCountDescriptor.html
     """
     values = [
-        len(mol.GetSubstructMatches(_ACID_PATTERN)),
-        len(mol.GetSubstructMatches(_BASE_PATTERN)),
+        len(mol_hydrogens.GetSubstructMatches(_ACID_PATTERN)),
+        len(mol_hydrogens.GetSubstructMatches(_BASE_PATTERN)),
     ]
 
     return np.asarray(values, dtype=np.float32)

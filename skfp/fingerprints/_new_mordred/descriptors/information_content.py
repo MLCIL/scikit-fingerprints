@@ -1,9 +1,10 @@
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    ATOMIC_WEIGHTS_RDKIT,
     BOND_ORDERS,
     AtomicProperties,
 )
@@ -60,8 +61,8 @@ def calc(
         BIC = IC / log2(B)
     - complementary information content, how far IC falls short of that maximum:
         CIC = log2(A) - IC
-    - modified information content index, IC with every term weighted by the mass of
-      the class's atoms:
+    - modified information content index, IC with every term weighted by the atomic
+      mass of the class's atoms (see :func:`_class_masses`):
         MIC = sum of -mass * p * log2(p)
     - Z-modified information content index, weighted instead by their atomic number
       and by the size of the class:
@@ -87,7 +88,9 @@ def calc(
     sic = ic / (np.log2(num_atoms) if num_atoms > 1 else np.nan)
     bic = ic / (np.log2(bond_order_sum) if bond_order_sum > 1 else np.nan)
     cic = np.log2(num_atoms) - ic
-    mic = _shannon_entropy(class_size_per_atom, masses)
+    mic = _shannon_entropy(
+        class_size_per_atom, _class_masses(codes, masses, atomic_nums)
+    )
     zmic = _shannon_entropy(class_size_per_atom, atomic_nums * class_size_per_atom)
 
     return np.concatenate((ic, tic, sic, bic, cic, mic, zmic), dtype=np.float32)
@@ -177,6 +180,43 @@ def _class_size_per_atom(codes: list[list[int | tuple]]) -> np.ndarray:
         class_counts = Counter(order_codes)
         class_size_per_atom[order] = [class_counts[code] for code in order_codes]
     return class_size_per_atom
+
+
+def _class_masses(
+    codes: list[list[int | tuple]], masses: np.ndarray, atomic_nums: np.ndarray
+) -> np.ndarray:
+    """
+    Mass weighting the class of every atom in the modified information content,
+    shaped like :func:`_class_size_per_atom`, or one mass per atom for every order.
+
+    The definition weights a class by "the atomic mass of all the equivalent atoms in
+    the gth class" (Todeschini & Consonni, Molecular Descriptors for
+    Chemoinformatics, 2009, p. 411, after King, Int. J. Quantum Chem. Quantum Biol.
+    Symp. 16, 165-170, 1989). Equivalent atoms are of one element, so without isotope
+    labels they share one mass. Isotopes of an element still fall into one class, so
+    a class may mix masses, which the definition leaves open: it then takes the atomic
+    weight of the element. A class of a single isotope keeps that isotope's mass.
+
+    Mordred takes the mass of the class's last atom instead, which agrees with this
+    wherever its result does not depend on the order of the atoms.
+    """
+    element_masses = ATOMIC_WEIGHTS_RDKIT.lookup(atomic_nums)
+    if np.array_equal(masses, element_masses):
+        # no isotope labels, so every class shares one mass already
+        return masses
+
+    class_masses = np.empty((len(codes), len(masses)))
+    for order, order_codes in enumerate(codes):
+        atoms_of_class: defaultdict[int | tuple, list[int]] = defaultdict(list)
+        for atom_idx, code in enumerate(order_codes):
+            atoms_of_class[code].append(atom_idx)
+        for atom_idxs in atoms_of_class.values():
+            class_atom_masses = masses[atom_idxs]
+            is_one_mass = (class_atom_masses == class_atom_masses[0]).all()
+            class_masses[order, atom_idxs] = (
+                class_atom_masses[0] if is_one_mass else element_masses[atom_idxs[0]]
+            )
+    return class_masses
 
 
 def _neighbors(

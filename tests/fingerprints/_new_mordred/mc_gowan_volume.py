@@ -47,5 +47,5 @@ FEATURE_NAMES = ["VMcGowan"]
 def test_mc_gowan_volume_values(smiles, expected):
     mol_hydrogens = preprocess_mol(MolFromSmiles(smiles), explicit_hydrogens=True)
 
-    values = calc(AtomicProperties.from_mol(mol_hydrogens))
+    values = calc(AtomicProperties(mol_hydrogens))
     assert_allclose(values, np.asarray([expected], dtype=np.float32), rtol=1e-5)

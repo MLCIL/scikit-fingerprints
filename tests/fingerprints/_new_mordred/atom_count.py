@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from rdkit.Chem import MolFromSmiles
+from rdkit.Chem import Mol, MolFromSmiles, SmilesParserParams
 
 from skfp.fingerprints._new_mordred.descriptors import atom_count
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = [
     "nAtom",
@@ -39,7 +40,35 @@ FEATURE_NAMES = [
     ],
 )
 def test_atom_count_values(smiles, expected):
-    mol = MolFromSmiles(smiles)
-
-    values = atom_count.calc(mol, AtomicProperties.from_mol(mol))
+    values = _calc(MolFromSmiles(smiles))
     assert_allclose(values, np.asarray(expected, dtype=np.float32))
+
+
+def _parse_keeping_hydrogens(smiles: str) -> Mol:
+    params = SmilesParserParams()
+    params.removeHs = False
+    return MolFromSmiles(smiles, params)
+
+
+@pytest.mark.parametrize(
+    ("mol", "expected_num_heavy_atoms", "expected_num_hydrogens"),
+    [
+        # hydrogens that RemoveHs keeps as atoms still count, as in Mordred: as
+        # hydrogens, and as atoms of the hydrogen-suppressed molecule
+        (MolFromSmiles("[2H]c1ccccc1C"), 8, 8),
+        (_parse_keeping_hydrogens("[H]/N=C/C"), 4, 5),
+        (_parse_keeping_hydrogens("[H][H]"), 2, 2),
+        (MolFromSmiles("[H-].[Na+]"), 2, 1),
+    ],
+)
+def test_hydrogens_kept_by_remove_hs_are_counted(
+    mol, expected_num_heavy_atoms, expected_num_hydrogens
+):
+    values = _calc(mol)
+    assert values[FEATURE_NAMES.index("nHeavyAtom")] == expected_num_heavy_atoms
+    assert values[FEATURE_NAMES.index("nH")] == expected_num_hydrogens
+
+
+def _calc(mol: Mol) -> np.ndarray:
+    mol_regular = preprocess_mol(mol)
+    return atom_count.calc(mol_regular, AtomicProperties(mol_regular))
