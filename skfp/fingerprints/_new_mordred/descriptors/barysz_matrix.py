@@ -7,7 +7,11 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     ELEMENT_PROPERTY_TABLES,
     AtomicProperties,
 )
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import spectral_attributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import (
+    ATTRIBUTE_FEATURE_NAMES,
+    ATTRIBUTE_NAMES,
+    spectral_attributes,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,24 +20,12 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-_ATTR_NAMES = [
-    "SpAbs",
-    "SpMax",
-    "SpDiam",
-    "SpAD",
-    "SpMAD",
-    "LogEE",
-    "SM1",
-    "VE1",
-    "VE2",
-    "VE3",
-    "VR1",
-    "VR2",
-    "VR3",
-]
-
+# e.g. "Barysz matrix atomic number graph energy" (Mordred's SpAbs_DzZ), "Barysz matrix
+# mass LogEE" (LogEE_Dzm)
 FEATURE_NAMES = [
-    f"{attr}_Dz{prop}" for prop in ELEMENT_PROPERTY_TABLES for attr in _ATTR_NAMES
+    f"Barysz matrix {prop.replace('_', ' ')} {name}"
+    for prop in ELEMENT_PROPERTY_TABLES
+    for name in ATTRIBUTE_FEATURE_NAMES.values()
 ]
 
 
@@ -50,7 +42,9 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     """
     if n_frags != 1:
         values_nan = np.full(
-            len(ELEMENT_PROPERTY_TABLES) * len(_ATTR_NAMES), np.nan, dtype=np.float32
+            len(ELEMENT_PROPERTY_TABLES) * len(ATTRIBUTE_NAMES),
+            np.nan,
+            dtype=np.float32,
         )
 
         return values_nan
@@ -75,7 +69,7 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
         matrices.append(matrix)
 
     # a property whose matrix does not exist keeps its attributes at NaN
-    values = np.full((len(ELEMENT_PROPERTY_TABLES), len(_ATTR_NAMES)), np.nan)
+    values = np.full((len(ELEMENT_PROPERTY_TABLES), len(ATTRIBUTE_NAMES)), np.nan)
     if matrices:
         values[is_defined] = spectral_attributes(
             np.stack(matrices), atomic_props_regular, hermitian=True, n_frags=n_frags

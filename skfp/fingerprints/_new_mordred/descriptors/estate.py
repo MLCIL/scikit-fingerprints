@@ -94,13 +94,15 @@ _ATOM_TYPES = [
     "ssssPb",
 ]
 
+# e.g. "number of ssCH2 atoms" (Mordred's NssCH2), "sum of ssCH2
+# E-states" (SssCH2), "max aaCH E-state" (MAXaaCH)
 FEATURE_NAMES = list(
     itertools.chain.from_iterable(
         (
-            f"N{atom_type}",  # count
-            f"S{atom_type}",  # sum
-            f"MAX{atom_type}",  # max
-            f"MIN{atom_type}",  # min
+            f"number of {atom_type} atoms",
+            f"sum of {atom_type} E-states",
+            f"max {atom_type} E-state",
+            f"min {atom_type} E-state",
         )
         for atom_type in _ATOM_TYPES
     )

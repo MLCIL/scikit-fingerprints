@@ -70,12 +70,12 @@ ATOMIC_WEIGHTS_RDKIT = PeriodicTable(
 ELEMENT_PROPERTY_TABLES: dict[str, PeriodicTable] = {
     "atomic_number": ATOMIC_NUMBER,
     "mass": MASS,
-    "van_der_Waals_volume": VAN_DER_WAALS_VOLUME,
-    "Sanderson_electronegativity": SANDERSON_ELECTRONEGATIVITY,
-    "Pauling_electronegativity": PAULING_ELECTRONEGATIVITY,
-    "Allred_Rochow_electronegativity": ALLRED_ROCHOW_ELECTRONEGATIVITY,
+    "vdW_volume": VAN_DER_WAALS_VOLUME,
+    "Sanderson_EN": SANDERSON_ELECTRONEGATIVITY,
+    "Pauling_EN": PAULING_ELECTRONEGATIVITY,
+    "Allred-Rochow_EN": ALLRED_ROCHOW_ELECTRONEGATIVITY,
     "polarizability": POLARIZABILITY_94,
-    "ionization_potential": IONIZATION_POTENTIAL,
+    "ionization_energy": IONIZATION_POTENTIAL,
 }
 
 # value of each element property for a carbon atom, used to normalize property values
@@ -147,10 +147,10 @@ def get_ionization_potential(atom: Atom) -> float:
 
 # name -> AtomicProperties attribute holding the corresponding array
 CONNECTIVITY_PROPERTY_ATTRS: dict[str, str] = {
-    "valence_electrons": "valence_electrons",
-    "sigma_electrons": "sigma_electrons",
+    "valence_vertex_degree": "valence_vertex_degree",
+    "vertex_degree": "vertex_degree",
     "intrinsic_state": "intrinsic_state",
-    "gasteiger_charge": "gasteiger_charges",
+    "Gasteiger_charge": "gasteiger_charges",
 }
 
 # every property usable as an atom weight, in the order descriptors expose them
@@ -165,19 +165,20 @@ _WEIGHTING_PROPERTY_ROWS: dict[str, int] = {
 }
 
 
-def get_sigma_electrons(atom: Atom) -> int:
+def get_vertex_degree(atom: Atom) -> int:
     """
-    Return the number of sigma (single-bond framework) electrons on an atom,
-    approximated as the count of its non-hydrogen neighbors.
+    Kier-Hall vertex degree (delta) of an atom: the count of its non-hydrogen
+    neighbors, i.e. its degree in the hydrogen-depleted molecular graph.
 
     See http://dx.doi.org/10.1002%2Fjps.2600721016.
     """
     return sum(1 for a in atom.GetNeighbors() if a.GetAtomicNum() != 1)
 
 
-def get_valence_electrons(atom: Atom) -> float:
+def get_valence_vertex_degree(atom: Atom) -> float:
     """
-    Valence delta-value used in molecular connectivity indices.
+    Kier-Hall valence vertex degree (valence delta-value) used in molecular
+    connectivity indices, (Zv - h) / (Z - Zv - 1).
 
     Based on Kier, L. B., & Hall, L. H. (1983). General definition of
     valence delta-values for molecular connectivity. Journal of
@@ -202,10 +203,10 @@ def get_intrinsic_state(atom: Atom) -> float:
     See the Molconn-Z 4.00 manual, chapter 2, p. 283:
     http://www.edusoft-lc.com/molconn/manuals/400/chaptwo.html.
     """
-    d = get_sigma_electrons(atom)
+    d = get_vertex_degree(atom)
     if d == 0:
         return np.nan
-    dv = get_valence_electrons(atom)
+    dv = get_valence_vertex_degree(atom)
     return ((2.0 / ELEMENT_PERIOD[atom.GetAtomicNum()]) ** 2 * dv + 1) / d
 
 
@@ -265,9 +266,9 @@ class AtomicProperties:
         # hydrogens per atom, counting neighbor hydrogen atoms as well, so that the
         # count is the same with and without explicit hydrogens
         self.num_hydrogens = self.total_num_hs + self.count_neighbors(self.is_hydrogen)
-        # sigma electrons: the non-hydrogen neighbors of an atom
-        self.sigma_electrons = self.count_neighbors(~self.is_hydrogen)
-        self.valence_electrons = self._valence_electrons()
+        # vertex degree: the non-hydrogen neighbors of an atom
+        self.vertex_degree = self.count_neighbors(~self.is_hydrogen)
+        self.valence_vertex_degree = self._valence_vertex_degree()
         self.intrinsic_state = self._intrinsic_state()
 
         # every element property of every atom, shape (n_element_props, n_atoms).
@@ -323,9 +324,9 @@ class AtomicProperties:
         begins, ends = self.bond_begin_idxs, self.bond_end_idxs
         return self.sum_over_bonds(atom_mask[ends], atom_mask[begins]).astype(np.intp)
 
-    def _valence_electrons(self) -> np.ndarray:
+    def _valence_vertex_degree(self) -> np.ndarray:
         """
-        Valence delta-value of every atom, as in :func:`get_valence_electrons`.
+        Valence vertex degree of every atom, as in :func:`get_valence_vertex_degree`.
         """
         # the formal charge cancels out of the denominator: (Z - q) - (Zv - q) - 1
         numerator = self.outer_electrons - self.formal_charges - self.num_hydrogens
@@ -339,6 +340,6 @@ class AtomicProperties:
         periods = ELEMENT_PERIOD.lookup(self.atomic_nums)
         with np.errstate(divide="ignore", invalid="ignore"):
             values = (
-                (2.0 / periods) ** 2 * self.valence_electrons + 1
-            ) / self.sigma_electrons
-        return np.where(self.sigma_electrons == 0, np.nan, values)
+                (2.0 / periods) ** 2 * self.valence_vertex_degree + 1
+            ) / self.vertex_degree
+        return np.where(self.vertex_degree == 0, np.nan, values)

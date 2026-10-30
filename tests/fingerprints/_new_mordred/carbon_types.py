@@ -7,17 +7,17 @@ from skfp.fingerprints._new_mordred.descriptors import carbon_types
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = [
-    "C1SP1",
-    "C2SP1",
-    "C1SP2",
-    "C2SP2",
-    "C3SP2",
-    "C1SP3",
-    "C2SP3",
-    "C3SP3",
-    "C4SP3",
+    "sp carbons bonded to 1 carbon",
+    "sp carbons bonded to 2 carbons",
+    "sp2 carbons bonded to 1 carbon",
+    "sp2 carbons bonded to 2 carbons",
+    "sp2 carbons bonded to 3 carbons",
+    "sp3 carbons bonded to 1 carbon",
+    "sp3 carbons bonded to 2 carbons",
+    "sp3 carbons bonded to 3 carbons",
+    "sp3 carbons bonded to 4 carbons",
     "HybRatio",
-    "FCSP3",
+    "Fsp3",
 ]
 
 
@@ -55,7 +55,7 @@ def _kekulized_without_aromatic_flags(smiles: str) -> Chem.Mol:
 )
 def test_fraction_csp3_values(mol, expected_fraction):
     values = _calc(mol)
-    assert_allclose(values[FEATURE_NAMES.index("FCSP3")], expected_fraction, rtol=1e-6)
+    assert_allclose(values[FEATURE_NAMES.index("Fsp3")], expected_fraction, rtol=1e-6)
 
 
 def _calc(mol: Chem.Mol) -> np.ndarray:

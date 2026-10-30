@@ -42,17 +42,18 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
         in longer computation time.
 
     timeout : float, default=60.0
-        Seconds given to each of the two descriptors that have to enumerate the simple
-        paths of a molecule, ``DetourMatrix`` and ``MolecularId``. Both searches are
-        exponential in the number of independent cycles, and the ones that run over
-        their time are reported as NaN. The default matches Mordred's.
+        Seconds given to each of the two descriptor families that have to enumerate
+        the simple paths of a molecule, the detour matrix and the molecular ID (MID)
+        descriptors. Both searches are exponential in the number of independent
+        cycles, and the ones that run over their time are reported as NaN. The default
+        matches Mordred's.
 
     max_ring_system_rank : int, default=23
         Number of independent cycles above which a ring system is reported as NaN by
-        ``DetourMatrix`` without being searched at all. Searching one costs roughly
-        2.2x more per cycle, and rank 23 already takes minutes, so going further only
-        burns the timeout without ever producing a value. Raise it to let very fused
-        molecules through at the cost of waiting out the timeout on them.
+        the detour matrix descriptors without being searched at all. Searching one
+        costs roughly 2.2x more per cycle, and rank 23 already takes minutes, so going
+        further only burns the timeout without ever producing a value. Raise it to let
+        very fused molecules through at the cost of waiting out the timeout on them.
 
     sparse : bool, default=False
         Whether to return dense NumPy array, or sparse SciPy CSR array.
@@ -144,8 +145,9 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002
         """
-        Get fingerprint output feature names. They correspond to descriptor
-        names used by Mordred descriptor calculator, used in this fingerprint.
+        Get fingerprint output feature names. They are readable descriptor names
+        taken from the descriptor literature, keeping established acronyms and
+        symbols (e.g. TPSA, BCUT, ETA) unchanged.
 
         Parameters
         ----------
@@ -155,7 +157,7 @@ class NewMordredFingerprint(BaseFingerprintTransformer):
         Returns
         -------
         feature_names_out : ndarray of str objects
-            Mordred feature names.
+            Feature names.
         """
         return get_feature_names(self.use_3D)
 

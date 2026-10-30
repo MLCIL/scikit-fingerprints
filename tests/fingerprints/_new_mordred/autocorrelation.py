@@ -45,22 +45,24 @@ def computed_values():
     "prop",
     [
         "mass",
-        "van_der_Waals_volume",
-        "Sanderson_electronegativity",
+        "vdW_volume",
+        "Sanderson_EN",
         "polarizability",
-        "ionization_potential",
+        "ionization_energy",
         "intrinsic_state",
     ],
 )
 @pytest.mark.parametrize("descriptor", list(_REFERENCE["expected"]))
 def test_autocorrelation_reference_values(descriptor, prop, molecule, computed_values):
-    start_lag = 1 if descriptor in {"Moreau_autocorr", "Geary_autocorr"} else 0
+    start_lag = 1 if descriptor in {"MATS", "GATS"} else 0
     vals_mordred = np.array(
         _REFERENCE["expected"][descriptor][prop][molecule], dtype=float
     )
     vals_skfp = np.array(
         [
-            computed_values[molecule][f"{descriptor}_{prop}_lag_{start_lag + i}"]
+            computed_values[molecule][
+                f"{descriptor} {prop.replace('_', ' ')} lag {start_lag + i}"
+            ]
             for i in range(len(vals_mordred))
         ]
     )

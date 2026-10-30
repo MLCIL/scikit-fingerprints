@@ -13,7 +13,10 @@ from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import (
     warn_search_given_up,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import (
+    ATTRIBUTE_FEATURE_NAMES,
+    MatrixAttributes,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -22,20 +25,10 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "detour matrix graph energy" (Mordred's SpAbs_Dt), "detour matrix
+# LogEE" (LogEE_Dt)
 FEATURE_NAMES = [
-    "SpAbs_Dt",
-    "SpMax_Dt",
-    "SpDiam_Dt",
-    "SpAD_Dt",
-    "SpMAD_Dt",
-    "LogEE_Dt",
-    "SM1_Dt",
-    "VE1_Dt",
-    "VE2_Dt",
-    "VE3_Dt",
-    "VR1_Dt",
-    "VR2_Dt",
-    "VR3_Dt",
+    *(f"detour matrix {name}" for name in ATTRIBUTE_FEATURE_NAMES.values()),
     "DetourIndex",
 ]
 
@@ -78,7 +71,7 @@ def calc(
             max_ring_system_rank,
         )
     except SearchTimeoutError as error:
-        warn_search_given_up("DetourMatrix", atomic_props_regular.mol, error)
+        warn_search_given_up("detour matrix", atomic_props_regular.mol, error)
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     attrs = MatrixAttributes(

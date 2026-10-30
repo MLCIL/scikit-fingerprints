@@ -11,15 +11,15 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["VAdjMat"]
+FEATURE_NAMES = ["vertex adjacency information"]
 
 
 def calc(props: AtomicProperties) -> np.ndarray:
     r"""
     Compute the Mordred vertex adjacency information descriptor.
 
-    `VAdjMat` is defined as :math:`1 + \log_2(m)`, where :math:`m` is the number
-    of heavy-heavy bonds. Returns NaN when :math:`m = 0`.
+    The vertex adjacency information is defined as :math:`1 + \log_2(m)`, where
+    :math:`m` is the number of heavy-heavy bonds. Returns NaN when :math:`m = 0`.
     """
     is_heavy = ~props.is_hydrogen
     m = int(

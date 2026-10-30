@@ -40,7 +40,7 @@ def _param(molecule, feature_name):
     # log(sum(exp(lambda_i))). The divergence is log(1 + 1/EE), so large-EE
     # molecules still match within tolerance and xpass; hence strict=False.
     # See https://github.com/JacksonBurns/mordred-community/issues/24.
-    if feature_name == "LogEE_D":
+    if feature_name == "distance matrix LogEE":
         return pytest.param(
             molecule,
             feature_name,

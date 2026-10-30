@@ -18,18 +18,20 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 _VARIANTS = (
-    "information_content",
-    "total_information_content",
-    "structural_information_content",
-    "bonding_information_content",
-    "complementary_information_content",
-    "modified_information_content",
-    "Z_modified_information_content",
+    "information content",
+    "total information content",
+    "structural information content",
+    "bond information content",
+    "complementary information content",
+    "modified information content",
+    "Z-modified information content",
 )
 _MAX_ORDER = 5
 
+# e.g. "information content order 0" (Mordred's IC0), "bond information content
+# order 2" (BIC2)
 FEATURE_NAMES = [
-    f"{variant}_order_{order}"
+    f"{variant} order {order}"
     for variant in _VARIANTS
     for order in range(_MAX_ORDER + 1)
 ]
@@ -56,7 +58,7 @@ def calc(
     - structural information content, IC against the log2(A) that A atoms can reach
       at most; NaN for a single atom:
         SIC = IC / log2(A)
-    - bonding information content, the same against the bonds instead; NaN when
+    - bond information content, the same against the bonds instead; NaN when
       B <= 1:
         BIC = IC / log2(B)
     - complementary information content, how far IC falls short of that maximum:
