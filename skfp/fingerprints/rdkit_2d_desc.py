@@ -1,13 +1,117 @@
-from collections.abc import Sequence
+import json
+import warnings
+from collections.abc import Callable, Sequence
+from functools import lru_cache
 from numbers import Real
+from pathlib import Path
 
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit import Chem
+from rdkit.Chem import Descriptors, Mol
+from scipy import stats
 from scipy.sparse import csr_array
-from sklearn.utils._param_validation import Interval
+from sklearn.utils._param_validation import Interval, StrOptions
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols, ensure_smiles, no_rdkit_logs
+from skfp.utils import ensure_mols, no_rdkit_logs
+
+_UNBRANCHED_ALKANE_PATTERN = Chem.MolFromSmarts("[R0;D2][R0;D2][R0;D2][R0;D2]")
+
+
+def _count_unbranched_alkanes(mol: Mol) -> int:
+    return len(mol.GetSubstructMatches(_UNBRANCHED_ALKANE_PATTERN, uniquify=True))
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_descriptors() -> list[tuple[str, Callable]]:
+    path = Path(__file__).parent / "data" / "rdkit_2d_descriptor_names.json"
+
+    with path.open(encoding="utf-8") as file:
+        names = json.load(file)
+
+    functions = dict(Descriptors.descList)
+    functions["fr_unbrch_alkane"] = _count_unbranched_alkanes
+
+    missing = set(names) - set(functions)
+    if missing:
+        raise ValueError(f"Missing RDKit descriptors: {sorted(missing)}")
+
+    return [(name, functions[name]) for name in names]
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_distributions() -> dict:
+    path = Path(__file__).parent / "data" / "rdkit_2d_cdf_novartis.json"
+
+    with path.open(encoding="utf-8") as file:
+        return json.load(file)
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_molpile_cdf() -> dict:
+    path = Path(__file__).parent / "data" / "rdkit_2d_cdf_molpile.json"
+
+    with path.open(encoding="utf-8") as file:
+        data = json.load(file)
+
+    return {
+        name: (
+            np.asarray(thresholds, dtype=np.float64),
+            np.asarray(probabilities, dtype=np.float64),
+        )
+        for name, (thresholds, probabilities) in data.items()
+    }
+
+
+def _normalize_rdkit_2d(
+    values: Sequence[float | None], feature_names: Sequence[str]
+) -> np.ndarray:
+    """Normalize RDKit 2D descriptors using the original CDF distributions."""
+    distributions = _get_rdkit_2d_distributions()
+    result = np.zeros(len(values), dtype=np.float64)
+
+    for i, (name, value) in enumerate(zip(feature_names, values, strict=True)):
+        if name not in distributions:
+            continue
+
+        dist_name, params, min_val, max_val = distributions[name]
+
+        if dist_name in ("gilbrat", "gibrat"):
+            dist_name = "gilbrat" if hasattr(stats, "gilbrat") else "gibrat"
+
+        try:
+            dist = getattr(stats, dist_name)
+            clipped = np.clip(value, min_val, max_val)
+
+            normalized = dist.cdf(
+                clipped, *params[:-2], loc=params[-2], scale=params[-1]
+            )
+
+            result[i] = np.clip(normalized, 0.0, 1.0)
+        except Exception:  # noqa: BLE001
+            result[i] = 0.0
+
+    return result
+
+
+def _normalize_rdkit_2d_molpile(
+    values: Sequence[float | None],
+    feature_names: Sequence[str],
+) -> np.ndarray:
+    distributions = _get_rdkit_2d_molpile_cdf()
+    result = np.zeros(len(values), dtype=np.float64)
+
+    for i, (name, value) in enumerate(zip(feature_names, values, strict=True)):
+        if name not in distributions or value is None or not np.isfinite(value):
+            continue
+
+        thresholds, probabilities = distributions[name]
+        index = np.searchsorted(thresholds, value, side="right") - 1
+
+        if index >= 0:
+            result[i] = probabilities[index]
+
+    return result
 
 
 class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
@@ -93,18 +197,20 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
 
     _parameter_constraints: dict = {
         **BaseFingerprintTransformer._parameter_constraints,
-        "normalized": ["boolean"],
+        "normalized": ["boolean", None],
+        "normalization": [StrOptions({"none", "descriptastorus", "molpile"})],
         "clip_val": [None, Interval(Real, 0, None, closed="left")],
     }
 
     def __init__(
         self,
-        normalized: bool = False,
+        normalized: bool | None = None,
         clip_val: float = 2147483647,  # max int32 value
         sparse: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
+        normalization: str = "none",
     ):
         super().__init__(
             n_features_out=200,
@@ -115,6 +221,20 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         )
         self.normalized = normalized
         self.clip_val = clip_val
+
+        self.normalization = normalization
+
+        if normalized is not None:
+            if normalization != "none":
+                raise ValueError(
+                    "Use either 'normalized' or 'normalization', not both."
+                )
+
+            warnings.warn(
+                "The 'normalized' parameter is deprecated. Use 'normalization' instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002  # noqa: ARG002
         """
@@ -131,14 +251,7 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         feature_names_out : ndarray of str objects
             RDKit 2D descriptor names.
         """
-        from descriptastorus.descriptors.rdDescriptors import RDKit2D
-        from descriptastorus.descriptors.rdNormalizedDescriptors import (
-            RDKit2DNormalized,
-        )
-
-        gen = RDKit2DNormalized() if self.normalized else RDKit2D()
-        feature_names = [name for name, obj in gen.columns]
-
+        feature_names = [name for name, _ in _get_rdkit_2d_descriptors()]
         return np.asarray(feature_names, dtype=object)
 
     def transform(
@@ -163,27 +276,41 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy)
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
-        from descriptastorus.descriptors.rdDescriptors import RDKit2D
-        from descriptastorus.descriptors.rdNormalizedDescriptors import (
-            RDKit2DNormalized,
-        )
-
         mols = ensure_mols(X)
-        smiles = ensure_smiles(X)
+        descriptors = _get_rdkit_2d_descriptors()
+        feature_names = [name for name, _ in descriptors]
+
+        if self.normalized is None:
+            use_normalization = self.normalization == "descriptastorus"
+        else:
+            use_normalization = self.normalized
 
         # turn off RDKit logs, since descriptastorus does not use MorganGenerator
         # and generates a lot of warnings
         with no_rdkit_logs():
-            gen = RDKit2DNormalized() if self.normalized else RDKit2D()
-            X = [
-                np.array(gen.calculateMol(mol, smi))
-                for mol, smi in zip(mols, smiles, strict=False)
-            ]
+            results = []
+            for mol in mols:
+                raw_values = []
+
+                for _, func in descriptors:
+                    try:
+                        raw_values.append(func(mol))
+                    except Exception:  # noqa: BLE001
+                        raw_values.append(None)
+
+                if self.normalization == "molpile":
+                    values = _normalize_rdkit_2d_molpile(raw_values, feature_names)
+                elif use_normalization:
+                    values = _normalize_rdkit_2d(raw_values, feature_names)
+                else:
+                    values = np.asarray(raw_values, dtype=np.float64)
+
+                results.append(values)
 
         # clip values to float32 range
-        X = [np.clip(x, -self.clip_val, self.clip_val) for x in X]
+        results = [np.clip(x, -self.clip_val, self.clip_val) for x in results]
 
         if self.sparse:
-            return csr_array(X, dtype=np.float32)
+            return csr_array(results, dtype=np.float32)
         else:
-            return np.array(X, dtype=np.float32)
+            return np.array(results, dtype=np.float32)
