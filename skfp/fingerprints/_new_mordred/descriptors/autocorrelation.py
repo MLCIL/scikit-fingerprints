@@ -114,11 +114,29 @@ def _get_autocorrelations(
     Every returned array is indexed by property and then by distance, which is also
     the order the feature names are in.
     """
-    # row vector p^T M_d for every distance and property, shape (8, n_props, n)
-    # (equal to (M_d p)^T, as the masks are symmetric)
-    weighted = props @ dist_masks
-    # p^T M_d p, summed over atoms and transposed to shape (n_props, 8)
-    quadratic_form = np.sum(weighted * props, axis=2).T
+    # centering first, so that what vanishes for a property equal on every atom
+    # comes out as an exact zero, not residue the guards below would not recognize
+    means = props.mean(axis=1, keepdims=True)
+    props_centered = props - means
+
+    # row vector p_c^T M_d for every distance and property, shape (8, n_props, n)
+    # (equal to (M_d p_c)^T, as the masks are symmetric)
+    weighted_centered = props_centered @ dist_masks
+
+    # p_c^T M_d p_c, summed over atoms and transposed to shape (n_props, 8)
+    centered_quadratic_form = np.sum(weighted_centered * props_centered, axis=2).T
+
+    # summing the same row vector over the atoms instead gives deg_d . p_c
+    degree_dot_centered = weighted_centered.sum(axis=2).T
+
+    # as p = p_c + mean * 1, the uncentered form follows without multiplying the
+    # masks again: p^T M_d p = p_c^T M_d p_c + 2 mean (deg_d . p_c) + mean^2 1^T M_d 1,
+    # the last term over ordered pairs. It never vanishes, so the sum is exact enough
+    quadratic_form = (
+        centered_quadratic_form
+        + 2.0 * means * degree_dot_centered
+        + means**2 * 2.0 * pair_counts
+    )
 
     # ATS: sum over unordered atom pairs at distance d of p_i * p_j
     # masks are symmetric with zero diagonal, so we divide by 2
@@ -127,19 +145,8 @@ def _get_autocorrelations(
     aats = _per_pair_average(ats, pair_counts, num_atoms)
 
     # ATSC: like above, but on mean-centered properties
-    # note that the product is linear, so for the centered property p - mean * 1:
-    # (p - mean * 1)^T M_d = p^T M_d - mean * deg_d^T
-    # (as 1^T M_d = (M_d 1)^T = deg_d^T) and the masks need not be multiplied again
-    means = props.mean(axis=1, keepdims=True)
-    props_centered = props - means
-    weighted_centered = weighted - neighbor_counts[:, np.newaxis, :] * means
     centered_square_sums = np.sum(props_centered**2, axis=1)
-    atsc = np.column_stack(
-        [
-            centered_square_sums,
-            0.5 * np.sum(weighted_centered * props_centered, axis=2).T,
-        ]
-    )
+    atsc = np.column_stack([centered_square_sums, 0.5 * centered_quadratic_form])
     aatsc = _per_pair_average(atsc, pair_counts, num_atoms)
 
     # MATS (Moran coefficient): the centered per-pair average, normalized by
@@ -149,11 +156,12 @@ def _get_autocorrelations(
 
     # GATS (Geary coefficient): mean squared difference between paired atoms,
     # normalized by the property sample variance
-    # note: summing (p_i - p_j)^2 over the mask, i.e. over ordered atom pairs, gives:
-    # 2 * sum_i deg_d(i) p_i^2 - 2 * p^T M_d p
-    # so no pairwise difference matrix has to be formed explicitly, we can use the
-    # quadratic form from above
-    sum_squared_diff = 2.0 * (props**2 @ neighbor_counts.T) - 2.0 * quadratic_form
+    # summing (p_i - p_j)^2 over the mask gives 2 sum_i deg_d(i) p_i^2 - 2 p^T M_d p,
+    # so no pairwise difference matrix is needed; the mean cancels out of the
+    # differences, and centered the two terms cancel exactly for a constant property
+    sum_squared_diff = (
+        2.0 * (props_centered**2 @ neighbor_counts.T) - 2.0 * centered_quadratic_form
+    )
     # make sure we get non-negative value (could happen due to float arithmetic)
     sum_squared_diff = np.maximum(sum_squared_diff, 0.0)
     # Geary divides the sum over unordered pairs by 2 * pair_counts, and the sum

@@ -29,7 +29,7 @@ def test_new_mordred_fingerprint(smallest_mols_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old)
+    features = _get_features_to_compare(df_new)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -54,7 +54,7 @@ def test_new_mordred_sparse_fingerprint(smallest_mols_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old)
+    features = _get_features_to_compare(df_new)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -79,12 +79,7 @@ def test_new_mordred_3D_fingerprint(mols_conformers_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old, _SURFACE_AREA_FEATURES)
-    # every other 3D feature must be compared, rather than skipped as not computed
-    features_3D = set(df_new.columns) - set(
-        NewMordredFingerprint().get_feature_names_out()
-    )
-    assert features_3D - _SURFACE_AREA_FEATURES <= set(features)
+    features = _get_features_to_compare(df_new, _SURFACE_AREA_FEATURES)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -109,12 +104,7 @@ def test_new_mordred_3D_sparse_fingerprint(mols_conformers_list):
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old, _SURFACE_AREA_FEATURES)
-    # every other 3D feature must be compared, rather than skipped as not computed
-    features_3D = set(df_new.columns) - set(
-        NewMordredFingerprint().get_feature_names_out()
-    )
-    assert features_3D - _SURFACE_AREA_FEATURES <= set(features)
+    features = _get_features_to_compare(df_new, _SURFACE_AREA_FEATURES)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -156,7 +146,7 @@ def test_new_mordred_dative_bonds():
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = _get_features_to_compare(df_new, df_old)
+    features = _get_features_to_compare(df_new)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -167,9 +157,7 @@ def test_new_mordred_dative_bonds():
 
 
 def test_new_mordred_dummy_atoms():
-    # Mordred weights a dummy atom by its atomic number, 0. Every feature is
-    # compared, as the ones this concerns would otherwise be skipped as not computed
-    # had they been NaN
+    # Mordred weights a dummy atom by its atomic number, 0
     mols = [
         MolFromSmiles(smiles)
         for smiles in ["*c1ccccc1", "*CC(=O)O", "C[Si](*)(C)C", "[*:1]CC[*:2]"]
@@ -186,7 +174,7 @@ def test_new_mordred_dummy_atoms():
         X_old,
         mordred_fp.get_feature_names_out(),
     )
-    features = [name for name in df_new.columns if "LogEE" not in name]
+    features = _get_features_to_compare(df_new)
     assert_allclose(
         df_new[features],
         df_old[features],
@@ -315,13 +303,11 @@ def _arrays_to_dataframes(
 
 
 def _get_features_to_compare(
-    df_new: pd.DataFrame, df_old: pd.DataFrame, excluded: frozenset[str] = frozenset()
+    df_new: pd.DataFrame, excluded: frozenset[str] = frozenset()
 ) -> list[str]:
-    not_computed = (df_new.isna() | df_old.isna()).all()
+    # LogEE is our deliberate fix of an upstream formula, so it never matches
     return [
-        name
-        for name in df_new.columns
-        if not not_computed[name] and "LogEE" not in name and name not in excluded
+        name for name in df_new.columns if "LogEE" not in name and name not in excluded
     ]
 
 

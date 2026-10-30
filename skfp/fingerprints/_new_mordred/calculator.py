@@ -49,6 +49,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
     zagreb_index,
 )
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import DEFAULT_TIMEOUT
 from skfp.fingerprints._new_mordred.utils.feature_names import (
     ALL_FEATURE_NAMES,
     FEATURE_NAMES_2D,
@@ -170,7 +171,12 @@ def get_feature_names(use_3d: bool) -> np.ndarray:
     )
 
 
-def compute(mol: Mol, use_3D: bool) -> np.ndarray:
+def compute(
+    mol: Mol,
+    use_3D: bool,
+    timeout: float = DEFAULT_TIMEOUT,
+    max_ring_system_rank: int = detour_matrix.DEFAULT_MAX_RING_SYSTEM_RANK,
+) -> np.ndarray:
     n_features = len(ALL_FEATURE_NAMES) if use_3D else len(FEATURE_NAMES_2D)
     result = np.full(n_features, np.nan, dtype=np.float32)
 
@@ -288,12 +294,17 @@ def compute(mol: Mol, use_3D: bool) -> np.ndarray:
             props_regular, n_frags, distance_matrix_regular
         ),
         detour_matrix: detour_matrix.calc(
-            props_regular, distance_matrix_regular, rings_regular, n_frags
+            props_regular,
+            distance_matrix_regular,
+            rings_regular,
+            n_frags,
+            timeout,
+            max_ring_system_rank,
         ),
         molecular_distance_edge: molecular_distance_edge.calc(
             props_regular, distance_matrix_regular
         ),
-        molecular_id: molecular_id.calc(props_regular, n_frags),
+        molecular_id: molecular_id.calc(props_regular, n_frags, timeout),
         information_content: information_content.calc(
             mol_hydrogens, props_hydrogens, kekulized_bond_types_hydrogens
         ),

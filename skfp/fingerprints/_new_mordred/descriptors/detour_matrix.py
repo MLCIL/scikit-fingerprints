@@ -1,4 +1,5 @@
 import itertools
+from time import monotonic
 
 import numpy as np
 from scipy.sparse import coo_array
@@ -6,6 +7,11 @@ from scipy.sparse.csgraph import connected_components
 
 from skfp.fingerprints._new_mordred.descriptors.ring_count import RingSets
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import (
+    DEFAULT_TIMEOUT,
+    SearchTimeoutError,
+    warn_search_given_up,
+)
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
 
@@ -33,12 +39,19 @@ FEATURE_NAMES = [
     "DetourIndex",
 ]
 
+# number of independent cycles above which a ring system is given up on instead of
+# being searched: the search costs about 2.2x more per cycle, and rank 23 already
+# takes minutes, so going further only burns the timeout without yielding a value
+DEFAULT_MAX_RING_SYSTEM_RANK = 23
+
 
 def calc(
     atomic_props_regular: AtomicProperties,
     distance_matrix_regular: DistanceMatrix,
     rings_regular: RingSets,
     n_frags: int,
+    timeout: float = DEFAULT_TIMEOUT,
+    max_ring_system_rank: int = DEFAULT_MAX_RING_SYSTEM_RANK,
 ) -> np.ndarray:
     """
     Detour matrix descriptor.
@@ -46,16 +59,28 @@ def calc(
     Computes matrix-aggregating features (spectral and Randic-like) of the
     detour matrix, together with the detour index. The detour matrix is
     undefined for disconnected molecules, so NaN is returned for those.
+
+    Building it means searching for longest simple paths, which is NP-hard. The
+    search gets ``timeout`` seconds for the whole molecule, and NaN is returned
+    when it runs out, as it is for a molecule holding a ring system of more than
+    ``max_ring_system_rank`` independent cycles.
     """
     # avoids unnecessary eigendecomposition for disconnected molecules
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
-    detour_matrix = _get_detour_matrix(
-        atomic_props_regular,
-        distance_matrix_regular.matrix,
-        rings_regular.simple_ring_atom_sets,
-    )
+    try:
+        detour_matrix = _get_detour_matrix(
+            atomic_props_regular,
+            distance_matrix_regular.matrix,
+            rings_regular.simple_ring_atom_sets,
+            monotonic() + timeout,
+            max_ring_system_rank,
+        )
+    except SearchTimeoutError as error:
+        warn_search_given_up("DetourMatrix", atomic_props_regular.mol, error)
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
+
     attrs = MatrixAttributes(
         detour_matrix,
         atomic_props_regular,
@@ -92,6 +117,8 @@ def _get_detour_matrix(
     props: AtomicProperties,
     shortest_distances: np.ndarray,
     ring_atom_sets: list[set[int]],
+    deadline: float,
+    max_ring_system_rank: int,
 ) -> np.ndarray:
     """
     Build the detour (maximum topological distance) matrix of a molecule.
@@ -122,7 +149,9 @@ def _get_detour_matrix(
 
     for ring_system in ring_systems:
         atoms = np.array(sorted(ring_system), dtype=np.intp)
-        detour += _get_ring_system_correction(props, shortest_distances, atoms)
+        detour += _get_ring_system_correction(
+            props, shortest_distances, atoms, deadline, max_ring_system_rank
+        )
 
     return detour
 
@@ -292,7 +321,11 @@ def _get_neighbors_with_bonds(props: AtomicProperties) -> list[list[tuple[int, i
 
 
 def _get_ring_system_correction(
-    props: AtomicProperties, shortest_distances: np.ndarray, atoms: np.ndarray
+    props: AtomicProperties,
+    shortest_distances: np.ndarray,
+    atoms: np.ndarray,
+    deadline: float,
+    max_ring_system_rank: int,
 ) -> np.ndarray:
     """
     How much longer the longest way through one ring system is than the shortest,
@@ -304,7 +337,9 @@ def _get_ring_system_correction(
     the same atom never traverse the system, and their correction is zero.
     """
     within = shortest_distances[atoms[:, np.newaxis], atoms]
-    longest = _longest_paths_in_ring_system(props, atoms, within)
+    longest = _longest_paths_in_ring_system(
+        props, atoms, within, deadline, max_ring_system_rank
+    )
 
     # every atom reaches the ring system through the one of its atoms closest to
     # it, since all of its paths into the system pass through that atom. It is the
@@ -314,7 +349,11 @@ def _get_ring_system_correction(
 
 
 def _longest_paths_in_ring_system(
-    props: AtomicProperties, atoms: np.ndarray, within: np.ndarray
+    props: AtomicProperties,
+    atoms: np.ndarray,
+    within: np.ndarray,
+    deadline: float,
+    max_ring_system_rank: int,
 ) -> np.ndarray:
     """
     Longest simple path between every two atoms of one ring system.
@@ -330,11 +369,21 @@ def _longest_paths_in_ring_system(
 
     # fused or bridged rings have to be searched through, once from every atom.
     # This is pessimistically exponential, as the longest simple path is NP-hard
-    # for graphs in general, but affordable because ring systems are small.
+    # for graphs in general, but affordable because ring systems are usually small.
+    # How many independent cycles one holds is what decides that, so a system that
+    # holds too many is given up on rather than searched until the deadline.
+    num_bonds = sum(len(adjacent) for adjacent in neighbors) // 2
+    rank = num_bonds - len(atoms) + 1
+    if rank > max_ring_system_rank:
+        raise SearchTimeoutError(
+            f"it holds a ring system of {rank} independent cycles, past the "
+            f"max_ring_system_rank of {max_ring_system_rank}"
+        )
+
     longest = np.zeros_like(within)
     for source in range(len(atoms)):
         distances = [0] * len(atoms)
-        _walk_every_path(source, 0, neighbors, {source}, distances)
+        _walk_every_path(source, 0, neighbors, {source}, distances, deadline)
         longest[source] = distances
 
     return longest
@@ -370,13 +419,18 @@ def _walk_every_path(
     neighbors: list[list[int]],
     visited: set[int],
     longest: list[int],
+    deadline: float,
 ) -> None:
     """
     Longest simple path from one atom of a ring system to each of the others.
 
     Explores every simple path leaving ``atom`` by DFS with backtracking, keeping
-    in ``longest`` the greatest distance any of them reaches each atom at.
+    in ``longest`` the greatest distance any of them reaches each atom at. Gives
+    up with a ``SearchTimeoutError`` once ``deadline`` has passed.
     """
+    if monotonic() > deadline:
+        raise SearchTimeoutError("the longest path search ran past its timeout")
+
     distance += 1
 
     for neighbor in neighbors[atom]:
@@ -386,5 +440,5 @@ def _walk_every_path(
         longest[neighbor] = max(longest[neighbor], distance)
 
         visited.add(neighbor)
-        _walk_every_path(neighbor, distance, neighbors, visited, longest)
+        _walk_every_path(neighbor, distance, neighbors, visited, longest, deadline)
         visited.remove(neighbor)

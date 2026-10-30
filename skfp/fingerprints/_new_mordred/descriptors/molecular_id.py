@@ -1,8 +1,14 @@
 from math import sqrt
+from time import monotonic
 
 import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import (
+    DEFAULT_TIMEOUT,
+    SearchTimeoutError,
+    warn_search_given_up,
+)
 from skfp.fingerprints._new_mordred.utils.periodic_table import (
     HALOGEN_ATOMIC_NUMS,
     NUM_ELEMENTS,
@@ -42,7 +48,9 @@ _IS_HALOGEN = np.zeros(NUM_ELEMENTS, dtype=bool)
 _IS_HALOGEN[sorted(HALOGEN_ATOMIC_NUMS)] = True
 
 
-def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
+def calc(
+    props_regular: AtomicProperties, n_frags: int, timeout: float = DEFAULT_TIMEOUT
+) -> np.ndarray:
     """
     Molecular ID descriptors, sums of atomic IDs over a selected set of atoms.
 
@@ -51,12 +59,19 @@ def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     (``MID_h``), carbons, nitrogens, oxygens and halogens (``MID_X``).
 
     Atomic IDs are undefined for disconnected molecules, so NaN is returned for
-    those.
+    those. They are summed over every simple path of the molecule, which takes
+    exponential time, so the sum gets ``timeout`` seconds for the whole molecule
+    and NaN is returned when it runs out.
     """
     if n_frags != 1:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
-    atom_ids = _atom_ids(props_regular)
+    try:
+        atom_ids = _atom_ids(props_regular, monotonic() + timeout)
+    except SearchTimeoutError as error:
+        warn_search_given_up("MolecularId", props_regular.mol, error)
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
+
     atomic_nums = props_regular.atomic_nums
     # a heteroatom here is anything but carbon and hydrogen, unlike the
     # carbon-only definition AtomicProperties.is_hetero uses
@@ -78,7 +93,7 @@ def calc(props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     return np.asarray(values, dtype=np.float32)
 
 
-def _atom_ids(props: AtomicProperties) -> np.ndarray:
+def _atom_ids(props: AtomicProperties, deadline: float) -> np.ndarray:
     """
     Atomic ID of every atom: one plus half the sum, over all simple paths
     starting at that atom, of the inverse square root of the product of the
@@ -90,7 +105,7 @@ def _atom_ids(props: AtomicProperties) -> np.ndarray:
 
     return np.fromiter(
         (
-            1.0 + _sum_over_paths(adjacency, visited, start, 1) / 2.0
+            1.0 + _sum_over_paths(adjacency, visited, start, 1, deadline) / 2.0
             for start in range(num_atoms)
         ),
         dtype=np.float64,
@@ -121,6 +136,7 @@ def _sum_over_paths(
     visited: bytearray,
     atom: int,
     weight_product: int,
+    deadline: float,
 ) -> float:
     """
     Sum of the inverse square root of the edge weight product over every simple
@@ -128,9 +144,13 @@ def _sum_over_paths(
 
     Backtracking search: ``visited`` marks the atoms on the current path and is
     cleared on the way out, so each simple path is walked once. The cost is
-    exponential in the number of rings. Clearing the marks also lets a single
-    buffer serve every starting atom.
+    exponential in the number of rings, so the search gives up with a
+    ``SearchTimeoutError`` once ``deadline`` has passed. Clearing the marks also lets
+    a single buffer serve every starting atom.
     """
+    if monotonic() > deadline:
+        raise SearchTimeoutError("the simple path sum ran past its timeout")
+
     visited[atom] = 1
     total = 0.0
 
@@ -142,7 +162,7 @@ def _sum_over_paths(
         total += 1.0 / sqrt(product)
         # a longer path would only add terms below the epsilon, so stop here
         if product < _WEIGHT_PRODUCT_LIMIT:
-            total += _sum_over_paths(adjacency, visited, neighbor, product)
+            total += _sum_over_paths(adjacency, visited, neighbor, product, deadline)
 
     visited[atom] = 0
     return total
