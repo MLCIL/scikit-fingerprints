@@ -122,6 +122,7 @@ def _get_autocorrelations(
     # row vector p_c^T M_d for every distance and property, shape (8, n_props, n)
     # (equal to (M_d p_c)^T, as the masks are symmetric)
     weighted_centered = props_centered @ dist_masks
+
     # p_c^T M_d p_c, summed over atoms and transposed to shape (n_props, 8)
     centered_quadratic_form = np.sum(weighted_centered * props_centered, axis=2).T
 
