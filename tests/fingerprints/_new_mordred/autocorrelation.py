@@ -63,7 +63,7 @@ def test_autocorrelation_reference_values(descriptor, prop, molecule, computed_v
     vals_skfp = np.array(
         [
             computed_values[molecule][
-                f"{descriptor} lag {start_lag + i} weighted by {prop.replace('_', ' ')}"
+                f"{descriptor} {prop.replace('_', ' ')} lag {start_lag + i}"
             ]
             for i in range(len(vals_mordred))
         ]

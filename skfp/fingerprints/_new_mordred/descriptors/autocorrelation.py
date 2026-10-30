@@ -25,9 +25,12 @@ _PROP_NAMES_NO_CHARGE = [
     if not is_charge
 ]
 
+# e.g. "Moreau-Broto autocorrelation atomic number lag 1" (Mordred's ATS1Z), "average
+# centered Moreau-Broto autocorrelation mass lag 2" (AATSC2m), "Moran autocorrelation
+# intrinsic state lag 7" (MATS7s)
 FEATURE_NAMES = [
     *[
-        f"{desc} lag {dist} weighted by {prop.replace('_', ' ')}"
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
         for desc in [
             "Moreau-Broto autocorrelation",
             "average Moreau-Broto autocorrelation",
@@ -36,7 +39,7 @@ FEATURE_NAMES = [
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
-        f"{desc} lag {dist} weighted by {prop.replace('_', ' ')}"
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
         for desc in [
             "centered Moreau-Broto autocorrelation",
             "average centered Moreau-Broto autocorrelation",
@@ -45,7 +48,7 @@ FEATURE_NAMES = [
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
-        f"{desc} lag {dist} weighted by {prop.replace('_', ' ')}"
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
         for desc in ["Moran autocorrelation", "Geary autocorrelation"]
         for prop in WEIGHTING_PROPERTY_NAMES
         for dist in range(1, MAX_DISTANCE + 1)

@@ -20,8 +20,10 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "Barysz matrix atomic number graph energy" (Mordred's SpAbs_DzZ), "Barysz matrix
+# mass LogEE" (LogEE_Dzm)
 FEATURE_NAMES = [
-    f"Barysz matrix {name} weighted by {prop.replace('_', ' ')}"
+    f"Barysz matrix {prop.replace('_', ' ')} {name}"
     for prop in ELEMENT_PROPERTY_TABLES
     for name in ATTRIBUTE_FEATURE_NAMES.values()
 ]

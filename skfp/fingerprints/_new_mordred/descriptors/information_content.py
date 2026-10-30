@@ -28,6 +28,8 @@ _VARIANTS = (
 )
 _MAX_ORDER = 5
 
+# e.g. "information content order 0" (Mordred's IC0), "bond information content
+# order 2" (BIC2)
 FEATURE_NAMES = [
     f"{variant} order {order}"
     for variant in _VARIANTS

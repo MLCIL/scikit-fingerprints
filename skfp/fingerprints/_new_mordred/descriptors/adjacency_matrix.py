@@ -14,6 +14,8 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "adjacency matrix graph energy" (Mordred's SpAbs_A), "adjacency matrix
+# LogEE" (LogEE_A)
 FEATURE_NAMES = [
     f"adjacency matrix {name}"
     for attr, name in ATTRIBUTE_FEATURE_NAMES.items()

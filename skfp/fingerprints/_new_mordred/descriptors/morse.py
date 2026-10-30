@@ -26,10 +26,9 @@ _PROPS = [
 # MoRSE signals 1..32, signal k uses scattering parameter s = k - 1
 _SIGNALS = np.arange(1, 33)
 
+# e.g. "MoRSE unweighted signal 3" (Mordred's Mor03), "MoRSE mass signal 9" (Mor09m)
 FEATURE_NAMES = [
-    f"MoRSE signal {signal} unweighted"
-    if prop_name == "unweighted"
-    else f"MoRSE signal {signal} weighted by {prop_name.replace('_', ' ')}"
+    f"MoRSE {prop_name.replace('_', ' ')} signal {signal}"
     for prop_name in _PROPS
     for signal in _SIGNALS
 ]

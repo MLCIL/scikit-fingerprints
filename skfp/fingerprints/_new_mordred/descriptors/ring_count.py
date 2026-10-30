@@ -185,6 +185,9 @@ def _ring_count_features() -> list[RingCountFeature]:
 
 
 RING_COUNT_FEATURES = _ring_count_features()
+# e.g. "number of 5-membered aromatic rings" (Mordred's n5aRing), "number of 6-atom
+# fused heterocyclic ring systems" (n6FHRing), "number of 12-or-more-membered
+# non-aromatic rings" (nG12ARing)
 FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
 
 # rings buckets: size (max_size+2), aromaticity yes/no (2), heteroatom presence (2)

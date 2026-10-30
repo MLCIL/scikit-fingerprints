@@ -25,6 +25,8 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "detour matrix graph energy" (Mordred's SpAbs_Dt), "detour matrix
+# LogEE" (LogEE_Dt)
 FEATURE_NAMES = [
     *(f"detour matrix {name}" for name in ATTRIBUTE_FEATURE_NAMES.values()),
     "DetourIndex",

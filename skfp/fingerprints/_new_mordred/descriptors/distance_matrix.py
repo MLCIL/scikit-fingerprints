@@ -14,6 +14,8 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "distance matrix graph energy" (Mordred's SpAbs_D), "distance matrix
+# LogEE" (LogEE_D)
 FEATURE_NAMES = [
     f"distance matrix {name}"
     for attr, name in ATTRIBUTE_FEATURE_NAMES.items()

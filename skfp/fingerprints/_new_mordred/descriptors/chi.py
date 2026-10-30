@@ -39,11 +39,11 @@ _TYPE_LABELS = {
 }
 
 # the atom weightings the chi indices use, in the order calc() stacks them:
-# "simple" weights an atom by its vertex degree, "valence" by its valence vertex
-# degree
+# "simple" weights an atom by its vertex degree, "valence" by its valence vertex degree
 _PROPS = ("simple", "valence")
 
-
+# e.g. "simple chi chain order 3" (Mordred's Xch-3d), "valence chi path-cluster
+# order 4" (Xpc-4dv), "average simple chi path order 2" (AXp-2d)
 FEATURE_NAMES = [
     f"{'average ' if averaged else ''}{prop} chi {_TYPE_LABELS[subgraph_type]} "
     f"order {order}"

@@ -86,7 +86,7 @@ def test_barysz_matrix_atomic_number_undefined_for_lone_dummy_atom():
     values = [
         value
         for name, value in computed.items()
-        if name.endswith(" weighted by atomic number")
+        if name.startswith("Barysz matrix atomic number ")
     ]
     assert values
     assert_allclose(values, np.nan)

@@ -29,7 +29,7 @@ def test_morse_unweighted_reference_values(
     values = calc(mol, dists)
     values = dict(zip(FEATURE_NAMES, values, strict=True))
     values = [
-        values[f"MoRSE signal {signal} unweighted"]
+        values[f"MoRSE unweighted signal {signal}"]
         for signal in range(1, len(expected_values) + 1)
     ]
 

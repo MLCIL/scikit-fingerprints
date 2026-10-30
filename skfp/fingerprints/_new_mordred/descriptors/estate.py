@@ -94,6 +94,8 @@ _ATOM_TYPES = [
     "ssssPb",
 ]
 
+# e.g. "number of ssCH2 atoms" (Mordred's NssCH2), "sum of ssCH2
+# E-states" (SssCH2), "max aaCH E-state" (MAXaaCH)
 FEATURE_NAMES = list(
     itertools.chain.from_iterable(
         (
