@@ -70,12 +70,12 @@ ATOMIC_WEIGHTS_RDKIT = PeriodicTable(
 ELEMENT_PROPERTY_TABLES: dict[str, PeriodicTable] = {
     "atomic_number": ATOMIC_NUMBER,
     "mass": MASS,
-    "van_der_Waals_volume": VAN_DER_WAALS_VOLUME,
-    "Sanderson_electronegativity": SANDERSON_ELECTRONEGATIVITY,
-    "Pauling_electronegativity": PAULING_ELECTRONEGATIVITY,
-    "Allred-Rochow_electronegativity": ALLRED_ROCHOW_ELECTRONEGATIVITY,
+    "vdW_volume": VAN_DER_WAALS_VOLUME,
+    "Sanderson_EN": SANDERSON_ELECTRONEGATIVITY,
+    "Pauling_EN": PAULING_ELECTRONEGATIVITY,
+    "Allred-Rochow_EN": ALLRED_ROCHOW_ELECTRONEGATIVITY,
     "polarizability": POLARIZABILITY_94,
-    "ionization_potential": IONIZATION_POTENTIAL,
+    "ionization_energy": IONIZATION_POTENTIAL,
 }
 
 # value of each element property for a carbon atom, used to normalize property values
@@ -150,7 +150,7 @@ CONNECTIVITY_PROPERTY_ATTRS: dict[str, str] = {
     "valence_vertex_degree": "valence_vertex_degree",
     "vertex_degree": "vertex_degree",
     "intrinsic_state": "intrinsic_state",
-    "Gasteiger_partial_charge": "gasteiger_charges",
+    "Gasteiger_charge": "gasteiger_charges",
 }
 
 # every property usable as an atom weight, in the order descriptors expose them

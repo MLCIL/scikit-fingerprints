@@ -21,8 +21,8 @@ CLUSTER = "cluster"  # acyclic and branched, no atom joining exactly two
 SUBGRAPH_TYPES = (CHAIN, PATH, PATH_CLUSTER, CLUSTER)
 
 # The chi families: each covers one subgraph class over a range of orders, and
-# whether it is exposed as a plain sum, an average over the subgraphs, or both.
-# The averaged variant reads the same sums as the plain one.
+# whether it is exposed as a plain sum, a mean over the subgraphs, or both.
+# The mean variant reads the same sums as the plain one.
 _FAMILIES = (
     (CHAIN, range(3, 8), (False,)),
     (CLUSTER, range(3, 7), (False,)),
@@ -43,9 +43,9 @@ _TYPE_LABELS = {
 _PROPS = ("simple", "valence")
 
 # e.g. "simple chi chain order 3" (Mordred's Xch-3d), "valence chi path-cluster
-# order 4" (Xpc-4dv), "average simple chi path order 2" (AXp-2d)
+# order 4" (Xpc-4dv), "mean simple chi path order 2" (AXp-2d)
 FEATURE_NAMES = [
-    f"{'average ' if averaged else ''}{prop} chi {_TYPE_LABELS[subgraph_type]} "
+    f"{'mean ' if averaged else ''}{prop} chi {_TYPE_LABELS[subgraph_type]} "
     f"order {order}"
     for subgraph_type, orders, averaged_flags in _FAMILIES
     for order in orders

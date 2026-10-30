@@ -16,40 +16,32 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 MAX_DISTANCE = 8
 
 # plain (uncentered) ATS and AATS do not use signed partial charge
-_IS_CHARGE = np.array(
-    [name == "Gasteiger_partial_charge" for name in WEIGHTING_PROPERTY_NAMES]
-)
+_IS_CHARGE = np.array([name == "Gasteiger_charge" for name in WEIGHTING_PROPERTY_NAMES])
 _PROP_NAMES_NO_CHARGE = [
     name
     for name, is_charge in zip(WEIGHTING_PROPERTY_NAMES, _IS_CHARGE, strict=True)
     if not is_charge
 ]
 
-# e.g. "Moreau-Broto autocorrelation atomic number lag 1" (Mordred's ATS1Z), "average
-# centered Moreau-Broto autocorrelation mass lag 2" (AATSC2m), "Moran autocorrelation
-# intrinsic state lag 7" (MATS7s)
+# ATS is the Moreau-Broto autocorrelation, prefixed A when averaged and suffixed C
+# when centered; MATS and GATS are the Moran and Geary autocorrelations. E.g.
+# "ATS atomic number lag 1" (Mordred's ATS1Z), "AATSC mass lag 2" (AATSC2m)
 FEATURE_NAMES = [
     *[
         f"{desc} {prop.replace('_', ' ')} lag {dist}"
-        for desc in [
-            "Moreau-Broto autocorrelation",
-            "average Moreau-Broto autocorrelation",
-        ]
+        for desc in ["ATS", "AATS"]
         for prop in _PROP_NAMES_NO_CHARGE
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
         f"{desc} {prop.replace('_', ' ')} lag {dist}"
-        for desc in [
-            "centered Moreau-Broto autocorrelation",
-            "average centered Moreau-Broto autocorrelation",
-        ]
+        for desc in ["ATSC", "AATSC"]
         for prop in WEIGHTING_PROPERTY_NAMES
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
         f"{desc} {prop.replace('_', ' ')} lag {dist}"
-        for desc in ["Moran autocorrelation", "Geary autocorrelation"]
+        for desc in ["MATS", "GATS"]
         for prop in WEIGHTING_PROPERTY_NAMES
         for dist in range(1, MAX_DISTANCE + 1)
     ],

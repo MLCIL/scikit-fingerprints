@@ -19,8 +19,8 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 _PROPS = [
     "unweighted",  # pure interatomic distance
     "mass",
-    "van_der_Waals_volume",
-    "Sanderson_electronegativity",
+    "vdW_volume",
+    "Sanderson_EN",
     "polarizability",
 ]
 # MoRSE signals 1..32, signal k uses scattering parameter s = k - 1

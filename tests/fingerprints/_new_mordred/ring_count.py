@@ -10,8 +10,8 @@ GENERAL_RING_FEATURE_NAMES = [
     "number of heterocycles",
     "number of aromatic rings",
     "number of aromatic heterocycles",
-    "number of non-aromatic rings",
-    "number of non-aromatic heterocycles",
+    "number of aliphatic rings",
+    "number of aliphatic heterocycles",
 ]
 
 
@@ -22,7 +22,7 @@ GENERAL_RING_FEATURE_NAMES = [
             "C1CC1",
             {
                 "nRing": 1,
-                "number of non-aromatic rings": 1,
+                "number of aliphatic rings": 1,
                 "number of 3-membered rings": 1,
             },
         ),
@@ -43,13 +43,13 @@ GENERAL_RING_FEATURE_NAMES = [
             "C1CCC2CCCCC2C1",
             {
                 "nRing": 2,
-                "number of non-aromatic rings": 2,
+                "number of aliphatic rings": 2,
                 "number of 6-membered rings": 2,
-                "number of 6-membered non-aromatic rings": 2,
+                "number of 6-membered aliphatic rings": 2,
                 "number of fused ring systems": 1,
                 "number of 10-atom fused ring systems": 1,
-                "number of fused non-aromatic ring systems": 1,
-                "number of 10-atom fused non-aromatic ring systems": 1,
+                "number of fused aliphatic ring systems": 1,
+                "number of 10-atom fused aliphatic ring systems": 1,
             },
         ),
         (
@@ -77,8 +77,8 @@ GENERAL_RING_FEATURE_NAMES = [
             "C1CCCCCCCCCCCC1",
             {
                 "nRing": 1,
-                "number of non-aromatic rings": 1,
-                "number of 12-or-more-membered rings": 1,
+                "number of aliphatic rings": 1,
+                "number of 12+-membered rings": 1,
             },
         ),
     ],

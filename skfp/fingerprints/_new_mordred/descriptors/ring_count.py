@@ -91,9 +91,9 @@ _GENERAL_RING_FEATURES = [
     RingCountFeature("number of heterocycles", None, False, False, None, True),
     RingCountFeature("number of aromatic rings", None, False, False, True, None),
     RingCountFeature("number of aromatic heterocycles", None, False, False, True, True),
-    RingCountFeature("number of non-aromatic rings", None, False, False, False, None),
+    RingCountFeature("number of aliphatic rings", None, False, False, False, None),
     RingCountFeature(
-        "number of non-aromatic heterocycles", None, False, False, False, True
+        "number of aliphatic heterocycles", None, False, False, False, True
     ),
 ]
 _GENERAL_RING_NAMES = {feature.name for feature in _GENERAL_RING_FEATURES}
@@ -126,8 +126,10 @@ def _feature_name(
     Build the descriptor name from the ring filters encoded in the feature.
 
     A simple ring is sized by its member count, a fused ring system by its atom
-    count. Aromatic means all ring atoms are aromatic, non-aromatic that some are
-    not, and a heterocycle contains at least one atom other than carbon.
+    count. Aromatic means all ring atoms are aromatic, aliphatic that some are not,
+    and a heterocycle contains at least one atom other than carbon. A size suffixed
+    with + matches that size or larger. Fused features count whole ring systems, so
+    naphthalene holds one fused ring system, and indole one fused heterocycle.
     """
     if size is None and not fused and aromatic is None and hetero is None:
         return "nRing"
@@ -135,14 +137,14 @@ def _feature_name(
     if size is None:
         size_part = ""
     else:
-        size_text = f"{size}-or-more" if match_size_or_larger else str(size)
+        size_text = f"{size}+" if match_size_or_larger else str(size)
         size_part = f"{size_text}-atom " if fused else f"{size_text}-membered "
 
-    arom_part = {True: "aromatic ", False: "non-aromatic ", None: ""}[aromatic]
+    arom_part = {True: "aromatic ", False: "aliphatic ", None: ""}[aromatic]
 
     if fused:
         noun = {
-            True: "heterocyclic ring systems",
+            True: "heterocycles",
             False: "carbocyclic ring systems",
             None: "ring systems",
         }[hetero]
@@ -185,9 +187,9 @@ def _ring_count_features() -> list[RingCountFeature]:
 
 
 RING_COUNT_FEATURES = _ring_count_features()
-# e.g. "number of 5-membered aromatic rings" (Mordred's n5aRing), "number of 6-atom
-# fused heterocyclic ring systems" (n6FHRing), "number of 12-or-more-membered
-# non-aromatic rings" (nG12ARing)
+# e.g. "number of 5-membered aromatic rings" (Mordred's n5aRing), "number of 9-atom
+# fused heterocycles" (n9FHRing), "number of 12+-membered aliphatic
+# rings" (nG12ARing)
 FEATURE_NAMES = [feature.name for feature in RING_COUNT_FEATURES]
 
 # rings buckets: size (max_size+2), aromaticity yes/no (2), heteroatom presence (2)

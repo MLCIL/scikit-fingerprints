@@ -2,119 +2,119 @@
   "Hexane": {
     "distance matrix leading eigenvalue": 12.1093115,
     "distance matrix spectral diameter": 19.57341312,
-    "distance matrix spectral absolute deviation": 24.21862301,
-    "distance matrix spectral mean absolute deviation": 4.036437168,
+    "distance matrix spectral AD": 24.21862301,
+    "distance matrix spectral MAD": 4.036437168,
     "distance matrix LogEE": 12.10932554,
-    "distance matrix leading eigenvector coefficient sum": 2.412,
-    "distance matrix leading eigenvector average coefficient": 0.402,
-    "distance matrix Randic-like eigenvector index": 13.31649
+    "distance matrix eigenvector sum": 2.412,
+    "distance matrix eigenvector mean": 0.402,
+    "distance matrix Randic-like index": 13.31649
   },
   "Benzene": {
     "distance matrix leading eigenvalue": 9,
     "distance matrix spectral diameter": 13,
-    "distance matrix spectral absolute deviation": 18,
-    "distance matrix spectral mean absolute deviation": 3,
+    "distance matrix spectral AD": 18,
+    "distance matrix spectral MAD": 3,
     "distance matrix LogEE": 9.000420062,
-    "distance matrix leading eigenvector coefficient sum": 2.449,
-    "distance matrix leading eigenvector average coefficient": 0.408
+    "distance matrix eigenvector sum": 2.449,
+    "distance matrix eigenvector mean": 0.408
   },
   "Caffeine": {
     "distance matrix leading eigenvalue": 37.86260754,
     "distance matrix spectral diameter": 51.54837376,
-    "distance matrix spectral absolute deviation": 75.72521508,
-    "distance matrix spectral mean absolute deviation": 5.408943934,
+    "distance matrix spectral AD": 75.72521508,
+    "distance matrix spectral MAD": 5.408943934,
     "distance matrix LogEE": 37.86260754,
-    "distance matrix leading eigenvector coefficient sum": 3.695,
-    "distance matrix leading eigenvector average coefficient": 0.264
+    "distance matrix eigenvector sum": 3.695,
+    "distance matrix eigenvector mean": 0.264
   },
   "Cyanidin": {
     "distance matrix leading eigenvalue": 87.93048362,
     "distance matrix spectral diameter": 130.6445806,
-    "distance matrix spectral absolute deviation": 175.8609672,
-    "distance matrix spectral mean absolute deviation": 8.374331774,
+    "distance matrix spectral AD": 175.8609672,
+    "distance matrix spectral MAD": 8.374331774,
     "distance matrix LogEE": 87.93048362,
-    "distance matrix leading eigenvector coefficient sum": 4.517,
-    "distance matrix leading eigenvector average coefficient": 0.215
+    "distance matrix eigenvector sum": 4.517,
+    "distance matrix eigenvector mean": 0.215
   },
   "Lycopene": {
     "distance matrix leading eigenvalue": 462.8935771,
     "distance matrix spectral diameter": 726.367662,
-    "distance matrix spectral absolute deviation": 925.7871542,
-    "distance matrix spectral mean absolute deviation": 23.14467886,
+    "distance matrix spectral AD": 925.7871542,
+    "distance matrix spectral MAD": 23.14467886,
     "distance matrix LogEE": 462.8935771,
-    "distance matrix leading eigenvector coefficient sum": 6.22,
-    "distance matrix leading eigenvector average coefficient": 0.156
+    "distance matrix eigenvector sum": 6.22,
+    "distance matrix eigenvector mean": 0.156
   },
   "Epicatechin": {
     "distance matrix leading eigenvalue": 87.93048362,
     "distance matrix spectral diameter": 130.6445806,
-    "distance matrix spectral absolute deviation": 175.8609672,
-    "distance matrix spectral mean absolute deviation": 8.374331774,
+    "distance matrix spectral AD": 175.8609672,
+    "distance matrix spectral MAD": 8.374331774,
     "distance matrix LogEE": 87.93048362,
-    "distance matrix leading eigenvector coefficient sum": 4.517,
-    "distance matrix leading eigenvector average coefficient": 0.215
+    "distance matrix eigenvector sum": 4.517,
+    "distance matrix eigenvector mean": 0.215
   },
   "Limonene": {
     "distance matrix leading eigenvalue": 24.79457074,
     "distance matrix spectral diameter": 37.39674508,
-    "distance matrix spectral absolute deviation": 49.58914148,
-    "distance matrix spectral mean absolute deviation": 4.958914148,
+    "distance matrix spectral AD": 49.58914148,
+    "distance matrix spectral MAD": 4.958914148,
     "distance matrix LogEE": 24.79457074,
-    "distance matrix leading eigenvector coefficient sum": 3.117,
-    "distance matrix leading eigenvector average coefficient": 0.312
+    "distance matrix eigenvector sum": 3.117,
+    "distance matrix eigenvector mean": 0.312
   },
   "Allicin": {
     "distance matrix leading eigenvalue": 25.02074591,
     "distance matrix spectral diameter": 38.31124324,
-    "distance matrix spectral absolute deviation": 50.04149182,
-    "distance matrix spectral mean absolute deviation": 5.560165758,
+    "distance matrix spectral AD": 50.04149182,
+    "distance matrix spectral MAD": 5.560165758,
     "distance matrix LogEE": 25.02074591,
-    "distance matrix leading eigenvector coefficient sum": 2.947,
-    "distance matrix leading eigenvector average coefficient": 0.327
+    "distance matrix eigenvector sum": 2.947,
+    "distance matrix eigenvector mean": 0.327
   },
   "Glutathione": {
     "distance matrix leading eigenvalue": 100.5557233,
     "distance matrix spectral diameter": 150.8622885,
-    "distance matrix spectral absolute deviation": 201.1114466,
-    "distance matrix spectral mean absolute deviation": 10.05557233,
+    "distance matrix spectral AD": 201.1114466,
+    "distance matrix spectral MAD": 10.05557233,
     "distance matrix LogEE": 100.5557233,
-    "distance matrix leading eigenvector coefficient sum": 4.4,
-    "distance matrix leading eigenvector average coefficient": 0.22
+    "distance matrix eigenvector sum": 4.4,
+    "distance matrix eigenvector mean": 0.22
   },
   "Digoxin": {
     "distance matrix leading eigenvalue": 563.352885,
     "distance matrix spectral diameter": 883.3072847,
-    "distance matrix spectral absolute deviation": 1126.70577,
-    "distance matrix spectral mean absolute deviation": 20.48555945,
+    "distance matrix spectral AD": 1126.70577,
+    "distance matrix spectral MAD": 20.48555945,
     "distance matrix LogEE": 563.352885,
-    "distance matrix leading eigenvector coefficient sum": 7.301,
-    "distance matrix leading eigenvector average coefficient": 0.133
+    "distance matrix eigenvector sum": 7.301,
+    "distance matrix eigenvector mean": 0.133
   },
   "Capsaicin": {
     "distance matrix leading eigenvalue": 133.1136235,
     "distance matrix spectral diameter": 208.7766518,
-    "distance matrix spectral absolute deviation": 266.227247,
-    "distance matrix spectral mean absolute deviation": 12.1012385,
+    "distance matrix spectral AD": 266.227247,
+    "distance matrix spectral MAD": 12.1012385,
     "distance matrix LogEE": 133.1136235,
-    "distance matrix leading eigenvector coefficient sum": 4.618,
-    "distance matrix leading eigenvector average coefficient": 0.21
+    "distance matrix eigenvector sum": 4.618,
+    "distance matrix eigenvector mean": 0.21
   },
   "EllagicAcid": {
     "distance matrix leading eigenvalue": 79.57404117,
     "distance matrix spectral diameter": 109.2717721,
-    "distance matrix spectral absolute deviation": 159.1480823,
-    "distance matrix spectral mean absolute deviation": 7.234003743,
+    "distance matrix spectral AD": 159.1480823,
+    "distance matrix spectral MAD": 7.234003743,
     "distance matrix LogEE": 79.57404117,
-    "distance matrix leading eigenvector coefficient sum": 4.63,
-    "distance matrix leading eigenvector average coefficient": 0.21
+    "distance matrix eigenvector sum": 4.63,
+    "distance matrix eigenvector mean": 0.21
   },
   "Astaxanthin": {
     "distance matrix leading eigenvalue": 476.7410508,
     "distance matrix spectral diameter": 765.8660718,
-    "distance matrix spectral absolute deviation": 953.4821015,
-    "distance matrix spectral mean absolute deviation": 21.67004776,
+    "distance matrix spectral AD": 953.4821015,
+    "distance matrix spectral MAD": 21.67004776,
     "distance matrix LogEE": 476.7410508,
-    "distance matrix leading eigenvector coefficient sum": 6.562,
-    "distance matrix leading eigenvector average coefficient": 0.149
+    "distance matrix eigenvector sum": 6.562,
+    "distance matrix eigenvector mean": 0.149
   }
 }

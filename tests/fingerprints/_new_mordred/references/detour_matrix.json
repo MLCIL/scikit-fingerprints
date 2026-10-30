@@ -2,91 +2,91 @@
   "Hexane": {
     "detour matrix leading eigenvalue": 12.1093115,
     "detour matrix spectral diameter": 19.57341312,
-    "detour matrix spectral absolute deviation": 24.21862301,
-    "detour matrix spectral mean absolute deviation": 4.036437168,
+    "detour matrix spectral AD": 24.21862301,
+    "detour matrix spectral MAD": 4.036437168,
     "detour matrix LogEE": 12.10932554
   },
   "Benzene": {
     "detour matrix leading eigenvalue": 21,
     "detour matrix spectral diameter": 27,
-    "detour matrix spectral absolute deviation": 42,
-    "detour matrix spectral mean absolute deviation": 7,
+    "detour matrix spectral AD": 42,
+    "detour matrix spectral MAD": 7,
     "detour matrix LogEE": 21
   },
   "Caffeine": {
     "detour matrix leading eigenvalue": 95.16634059,
     "detour matrix spectral diameter": 114.4774666,
-    "detour matrix spectral absolute deviation": 190.3326812,
-    "detour matrix spectral mean absolute deviation": 13.59519151,
+    "detour matrix spectral AD": 190.3326812,
+    "detour matrix spectral MAD": 13.59519151,
     "detour matrix LogEE": 95.16634059
   },
   "Cyanidin": {
     "detour matrix leading eigenvalue": 191.5904568,
     "detour matrix spectral diameter": 263.4509827,
-    "detour matrix spectral absolute deviation": 383.1809137,
-    "detour matrix spectral mean absolute deviation": 18.24671017,
+    "detour matrix spectral AD": 383.1809137,
+    "detour matrix spectral MAD": 18.24671017,
     "detour matrix LogEE": 191.5904568
   },
   "Lycopene": {
     "detour matrix leading eigenvalue": 462.8935771,
     "detour matrix spectral diameter": 726.367662,
-    "detour matrix spectral absolute deviation": 925.7871542,
-    "detour matrix spectral mean absolute deviation": 23.14467886,
+    "detour matrix spectral AD": 925.7871542,
+    "detour matrix spectral MAD": 23.14467886,
     "detour matrix LogEE": 462.8935771
   },
   "Epicatechin": {
     "detour matrix leading eigenvalue": 191.5904568,
     "detour matrix spectral diameter": 263.4509827,
-    "detour matrix spectral absolute deviation": 383.1809137,
-    "detour matrix spectral mean absolute deviation": 18.24671017,
+    "detour matrix spectral AD": 383.1809137,
+    "detour matrix spectral MAD": 18.24671017,
     "detour matrix LogEE": 191.5904568
   },
   "Limonene": {
     "detour matrix leading eigenvalue": 41.38554761,
     "detour matrix spectral diameter": 57.2454538,
-    "detour matrix spectral absolute deviation": 82.77109522,
-    "detour matrix spectral mean absolute deviation": 8.277109522,
+    "detour matrix spectral AD": 82.77109522,
+    "detour matrix spectral MAD": 8.277109522,
     "detour matrix LogEE": 41.38554761
   },
   "Allicin": {
     "detour matrix leading eigenvalue": 25.02074591,
     "detour matrix spectral diameter": 38.31124324,
-    "detour matrix spectral absolute deviation": 50.04149182,
-    "detour matrix spectral mean absolute deviation": 5.560165758,
+    "detour matrix spectral AD": 50.04149182,
+    "detour matrix spectral MAD": 5.560165758,
     "detour matrix LogEE": 25.02074591
   },
   "Glutathione": {
     "detour matrix leading eigenvalue": 100.5557233,
     "detour matrix spectral diameter": 150.8622885,
-    "detour matrix spectral absolute deviation": 201.1114466,
-    "detour matrix spectral mean absolute deviation": 10.05557233,
+    "detour matrix spectral AD": 201.1114466,
+    "detour matrix spectral MAD": 10.05557233,
     "detour matrix LogEE": 100.5557233
   },
   "Digoxin": {
     "detour matrix leading eigenvalue": 1035.473415,
     "detour matrix spectral diameter": 1452.167174,
-    "detour matrix spectral absolute deviation": 2075.168371,
-    "detour matrix spectral mean absolute deviation": 37.73033401
+    "detour matrix spectral AD": 2075.168371,
+    "detour matrix spectral MAD": 37.73033401
   },
   "Capsaicin": {
     "detour matrix leading eigenvalue": 159.9284809,
     "detour matrix spectral diameter": 241.9071906,
-    "detour matrix spectral absolute deviation": 319.8569618,
-    "detour matrix spectral mean absolute deviation": 14.53895281,
+    "detour matrix spectral AD": 319.8569618,
+    "detour matrix spectral MAD": 14.53895281,
     "detour matrix LogEE": 159.9284809
   },
   "EllagicAcid": {
     "detour matrix leading eigenvalue": 282.1476622,
     "detour matrix spectral diameter": 316.918998,
-    "detour matrix spectral absolute deviation": 564.2953244,
-    "detour matrix spectral mean absolute deviation": 25.64978747,
+    "detour matrix spectral AD": 564.2953244,
+    "detour matrix spectral MAD": 25.64978747,
     "detour matrix LogEE": 282.1476622
   },
   "Astaxanthin": {
     "detour matrix leading eigenvalue": 574.3451302,
     "detour matrix spectral diameter": 888.9116878,
-    "detour matrix spectral absolute deviation": 1148.69026,
-    "detour matrix spectral mean absolute deviation": 26.10659683,
+    "detour matrix spectral AD": 1148.69026,
+    "detour matrix spectral MAD": 26.10659683,
     "detour matrix LogEE": 574.3451302
   }
 }

@@ -149,13 +149,13 @@ def test_eta_reference_without_heavy_atoms_is_empty(smiles):
     computed = _compute(MolFromSmiles(smiles))
     expected = {
         "ETA eta R": 0.0,
-        "average ETA eta R": np.nan,
+        "mean ETA eta R": np.nan,
         "ETA eta RL": 0.0,
-        "average ETA eta RL": np.nan,
+        "mean ETA eta RL": np.nan,
         "ETA eta B": 1.0,
-        "average ETA eta B": 0.5,
+        "mean ETA eta B": 0.5,
         "ETA eta BR": 1.0,
-        "average ETA eta BR": 0.5,
+        "mean ETA eta BR": 0.5,
         "ETA dAlpha A": 0.0,
         "ETA dAlpha B": 0.0,
         "ETA epsilon 3": np.nan,
@@ -189,6 +189,6 @@ def test_eta_reference_undefined_for_more_than_four_neighbors_with_kept_hydrogen
     names = [
         f"{prefix}ETA {name}"
         for name in ("eta R", "eta RL", "eta F", "eta FL", "eta B", "eta BR")
-        for prefix in ("", "average ")
+        for prefix in ("", "mean ")
     ] + ["ETA dAlpha A", "ETA dAlpha B"]
     assert_allclose([computed[name] for name in names], np.nan)

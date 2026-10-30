@@ -84,4 +84,4 @@ def test_molecular_distance_edge_no_matching_atoms(mordred_test_mols):
     ]
     assert nitrogen_oxygen
     assert all(np.isnan(result[name]) for name in nitrogen_oxygen)
-    assert np.isfinite(result["molecular distance edge primary carbons"])
+    assert np.isfinite(result["MDE primary carbons"])

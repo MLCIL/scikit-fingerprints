@@ -11,15 +11,15 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
-    "nBonds",
-    "nBonds non-H",
-    "nBonds single",
-    "nBonds double",
-    "nBonds triple",
-    "nBonds aromatic",
-    "nBonds multiple",
-    "nBonds Kekule single",
-    "nBonds Kekule double",
+    "number of bonds",
+    "number of heavy-atom bonds",
+    "number of single bonds",
+    "number of double bonds",
+    "number of triple bonds",
+    "number of aromatic bonds",
+    "number of multiple bonds",
+    "number of Kekule single bonds",
+    "number of Kekule double bonds",
 ]
 
 

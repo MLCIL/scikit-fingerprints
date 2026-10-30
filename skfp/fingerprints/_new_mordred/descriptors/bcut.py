@@ -13,7 +13,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 
-# e.g. "BCUT mass smallest eigenvalue" (Mordred's BCUTm-1l), "BCUT Gasteiger partial
+# e.g. "BCUT mass smallest eigenvalue" (Mordred's BCUTm-1l), "BCUT Gasteiger
 # charge largest eigenvalue" (BCUTc-1h)
 FEATURE_NAMES = [
     f"BCUT {prop.replace('_', ' ')} {kind} eigenvalue"
