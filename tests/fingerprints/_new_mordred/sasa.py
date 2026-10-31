@@ -98,9 +98,19 @@ def test_sasa_of_an_empty_molecule_is_empty():
 @pytest.mark.parametrize("atomic_num", [0, 104], ids=["dummy_atom", "rutherfordium"])
 def test_sasa_is_nan_for_an_atom_without_radius(atomic_num):
     # Mordred's radii table has no entry for a dummy atom or for elements from
-    # rutherfordium on, and Mordred gives no surface area for such a molecule
+    # rutherfordium on; as in Mordred, such an atom has no area and covers no other
     mol = RWMol(_mol_from_positions(6, [(0.0, 0.0, 0.0), (1.5, 0.0, 0.0)]))
     mol.GetAtomWithIdx(1).SetAtomicNum(atomic_num)
+
+    areas = solvent_accessible_surface_area(mol, conformer=0)
+
+    assert_allclose(areas[0], _lone_sphere_area(6), rtol=1e-6)
+    assert np.isnan(areas[1])
+
+
+def test_sasa_is_nan_when_no_atom_has_a_radius():
+    mol = RWMol(_mol_from_positions(6, [(0.0, 0.0, 0.0)]))
+    mol.GetAtomWithIdx(0).SetAtomicNum(104)
 
     areas = solvent_accessible_surface_area(mol, conformer=0)
 
