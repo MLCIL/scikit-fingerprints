@@ -1,5 +1,5 @@
 import numpy as np
-from rdkit.Chem import Atom, Mol
+from rdkit.Chem import Atom, Mol, RWMol
 from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
 
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
@@ -15,8 +15,8 @@ def solvent_accessible_surface_area(
     Computes per-atom solvent accessible surface area using the Lee-Richards
     algorithm, as implemented in :func:`rdkit.Chem.rdFreeSASA.CalcSASA`. Atomic
     van der Waals radii are taken from Mordred's table, which has none for a dummy
-    atom or for elements from rutherfordium (104) on, so all areas are ``nan`` for
-    a molecule with such an atom.
+    atom or for elements from rutherfordium (104) on. As in Mordred, such an atom
+    gets a ``nan`` area and covers no other atom.
 
     Mordred computes SASA with its own dense Shrake-Rupley mesh. FreeSASA's
     Lee-Richards, at its default of 20 slices per atom, comes closer to that than
@@ -49,23 +49,31 @@ def solvent_accessible_surface_area(
     atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol, np.intp)
     radii = VAN_DER_WAALS_RADII.lookup(atomic_nums)
 
+    areas = np.full(len(radii), np.nan, dtype=np.float32)
+    has_radius = ~np.isnan(radii)
     # CalcSASA raises on a molecule without atoms
-    if radii.size == 0:
-        return np.empty(0, dtype=np.float32)
-    if np.isnan(radii).any():
-        return np.full(len(radii), np.nan, dtype=np.float32)
+    if not has_radius.any():
+        return areas
 
     positions = mol.GetConformer(conformer).GetPositions()
-    if _has_stacked_atoms(positions, radii):
-        return np.full(len(radii), np.nan, dtype=np.float32)
+    if _has_stacked_atoms(positions[has_radius], radii[has_radius]):
+        return areas
+
+    # Mordred leaves an atom without radius out of every other atom's neighbors
+    if not has_radius.all():
+        editable = RWMol(mol)
+        for atom_idx in reversed(np.flatnonzero(~has_radius).tolist()):
+            editable.RemoveAtom(atom_idx)  # keeps the conformer of the rest
+        mol = editable.GetMol()
 
     opts = SASAOpts()
     opts.algorithm = SASAAlgorithm.LeeRichards
     opts.probeRadius = solvent_radius
-    CalcSASA(mol, radii.tolist(), confIdx=conformer, opts=opts)
+    CalcSASA(mol, radii[has_radius].tolist(), confIdx=conformer, opts=opts)
 
     # read back by atom index, which is faster than iterating mol.GetAtoms()
-    return atoms_apply_func(_read_sasa, mol, np.float32)
+    areas[has_radius] = atoms_apply_func(_read_sasa, mol, np.float32)
+    return areas
 
 
 def _has_stacked_atoms(positions: np.ndarray, radii: np.ndarray) -> bool:

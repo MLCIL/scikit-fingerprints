@@ -10,9 +10,10 @@ from skfp.fingerprints._new_mordred.descriptors.cpsa import FEATURE_NAMES_3D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from tests.fingerprints._new_mordred.utils import _MORDRED_NAMES
 
-# surface areas come from RDKit, with its atomic radii, instead of Mordred's own
-# algorithm and radii, and differ by several percent, so the charged partial surface
-# area descriptors built on them are compared in tests/fingerprints/_new_mordred/cpsa.py
+# surface areas come from FreeSASA's Lee-Richards, with Mordred's radii, instead of
+# Mordred's own algorithm and differ by up to several percent, so the charged partial
+# surface area descriptors built on them are compared in
+# tests/fingerprints/_new_mordred/cpsa.py
 _SURFACE_AREA_FEATURES = frozenset(FEATURE_NAMES_3D)
 
 
