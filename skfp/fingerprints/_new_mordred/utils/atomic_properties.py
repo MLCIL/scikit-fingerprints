@@ -53,11 +53,6 @@ _N_OUTER_ELECS = np.array(
     dtype=np.intp,
 )
 
-# van der Waals radius used by RDKit, defined for every element
-VAN_DER_WAALS_RADII_RDKIT = PeriodicTable(
-    [_RDKIT_PERIODIC_TABLE.GetRvdw(num) for num in range(1, NUM_ELEMENTS)]
-)
-
 # atomic weight used by RDKit, the mass of an atom without an isotope label, which
 # differs from the Mordred mass table for some elements
 ATOMIC_WEIGHTS_RDKIT = PeriodicTable(
