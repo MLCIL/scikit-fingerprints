@@ -51,7 +51,8 @@ def solvent_accessible_surface_area(
 
     areas = np.full(len(radii), np.nan, dtype=np.float32)
     has_radius = ~np.isnan(radii)
-    # CalcSASA raises on a molecule without atoms
+    # nothing to measure: no atoms, or none with a radius, and CalcSASA raises on a
+    # molecule without atoms
     if not has_radius.any():
         return areas
 
