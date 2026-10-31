@@ -1,12 +1,11 @@
-import numpy as np
-from rdkit.Chem import Atom, Mol, RWMol
-from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
-from scipy.spatial.distance import cdist
+import warnings
 
-from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    VAN_DER_WAALS_RADII_RDKIT,
-)
+import numpy as np
+from rdkit.Chem import Atom, Mol, MolToSmiles, RemoveHs, RWMol
+from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
+
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
+from skfp.fingerprints._new_mordred.utils.periodic_table import VAN_DER_WAALS_RADII
 
 
 def solvent_accessible_surface_area(
@@ -15,9 +14,21 @@ def solvent_accessible_surface_area(
     """
     Solvent accessible surface area (SASA).
 
-    Computes per-atom solvent accessible surface area using the Shrake-Rupley
+    Computes per-atom solvent accessible surface area using the Lee-Richards
     algorithm, as implemented in :func:`rdkit.Chem.rdFreeSASA.CalcSASA`. Atomic
-    van der Waals radii are taken from RDKit's periodic table.
+    van der Waals radii are taken from Mordred's table, which has none for a dummy
+    atom or for elements from rutherfordium (104) on. As in Mordred, such an atom
+    gets a ``nan`` area and covers no other atom.
+
+    Mordred computes SASA with its own dense Shrake-Rupley mesh. FreeSASA's
+    Lee-Richards, at its default of 20 slices per atom, comes closer to that than
+    its Shrake-Rupley, whose 100 test points RDKit offers no way to raise.
+
+    All areas are also ``nan`` when two atoms of the same radius sit at exactly the
+    same position, for which Lee-Richards returns ``nan`` or a wrong area. Such a
+    conformer is broken, typically with fragments embedded on top of each other,
+    and Mordred's areas for it come down to floating-point rounding, so a warning
+    names the molecule.
 
     Parameters
     ----------
@@ -39,36 +50,54 @@ def solvent_accessible_surface_area(
         in ``mol``.
     """
     atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol, np.intp)
-    radii = VAN_DER_WAALS_RADII_RDKIT.lookup(atomic_nums)
-    # the sphere Shrake-Rupley measures, reaching out to the probe centre
-    probe_reach = radii + solvent_radius
+    radii = VAN_DER_WAALS_RADII.lookup(atomic_nums)
+
+    areas = np.full(len(radii), np.nan, dtype=np.float32)
+    has_radius = ~np.isnan(radii)
+    # nothing to measure: no atoms, or none with a radius, and CalcSASA raises on a
+    # molecule without atoms
+    if not has_radius.any():
+        return areas
+
     positions = mol.GetConformer(conformer).GetPositions()
+    if _has_stacked_atoms(positions[has_radius], radii[has_radius]):
+        # a broken conformer is the caller's to fix, so it is reported, as the
+        # path searches report giving up, naming the molecule without hydrogens
+        smiles = MolToSmiles(RemoveHs(mol, sanitize=False))
+        warnings.warn(
+            f"charged partial surface area gave up on {smiles}: atoms of "
+            "the same radius share a position, as when fragments are embedded on top "
+            "of each other. Its features are returned as NaN.",
+            stacklevel=3,
+        )
+        return areas
 
-    # CalcSASA reads an atom's first neighbor without checking that it has one, so
-    # an atom whose probe sphere no other one's overlaps either faults the process
-    # or comes out silently wrong (31.09 instead of 135.19 for a lone argon, RDKit
-    # 2026.03.5). Such an atom is a whole unoccluded sphere, which is filled in
-    # here, and it occludes nothing, so the rest are unaffected by its leaving.
-    overlaps = cdist(positions, positions) < probe_reach + probe_reach[:, np.newaxis]
-    np.fill_diagonal(overlaps, False)  # an atom always overlaps itself
-    is_lone = ~overlaps.any(axis=1)
-    areas = (4.0 * np.pi * probe_reach**2).astype(np.float32)
-
-    if is_lone.any():
+    # Mordred leaves an atom without radius out of every other atom's neighbors
+    if not has_radius.all():
         editable = RWMol(mol)
-        for atom_idx in reversed(np.flatnonzero(is_lone).tolist()):
+        for atom_idx in reversed(np.flatnonzero(~has_radius).tolist()):
             editable.RemoveAtom(atom_idx)  # keeps the conformer of the rest
-        mol, radii = editable.GetMol(), radii[~is_lone]
+        mol = editable.GetMol()
 
-    if radii.size:
-        opts = SASAOpts()
-        opts.algorithm = SASAAlgorithm.ShrakeRupley
-        opts.probeRadius = solvent_radius
-        CalcSASA(mol, radii.tolist(), confIdx=conformer, opts=opts)
-        # read back by atom index, which is faster than iterating mol.GetAtoms()
-        areas[~is_lone] = atoms_apply_func(_read_sasa, mol, np.float32)
+    opts = SASAOpts()
+    opts.algorithm = SASAAlgorithm.LeeRichards
+    opts.probeRadius = solvent_radius
+    CalcSASA(mol, radii[has_radius].tolist(), confIdx=conformer, opts=opts)
 
+    # read back by atom index, which is faster than iterating mol.GetAtoms()
+    areas[has_radius] = atoms_apply_func(_read_sasa, mol, np.float32)
     return areas
+
+
+def _has_stacked_atoms(positions: np.ndarray, radii: np.ndarray) -> bool:
+    """
+    Whether two atoms of the same radius share exactly the same position.
+
+    Lee-Richards divides by their zero distance apart. A smaller atom inside a
+    larger one at the same position is fine, being buried, so radius is compared too.
+    """
+    keys = np.column_stack([positions, radii])
+    return len(np.unique(keys, axis=0)) < len(keys)
 
 
 def _read_sasa(atom: Atom) -> float:
