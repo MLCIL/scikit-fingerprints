@@ -132,7 +132,8 @@ def test_sasa_is_nan_for_stacked_atoms(positions):
     # the same position, as when fragments are embedded on top of each other
     mol = _mol_from_positions(6, positions)
 
-    areas = solvent_accessible_surface_area(mol, conformer=0)
+    with pytest.warns(UserWarning, match="share a position"):
+        areas = solvent_accessible_surface_area(mol, conformer=0)
 
     assert np.isnan(areas).all()
 

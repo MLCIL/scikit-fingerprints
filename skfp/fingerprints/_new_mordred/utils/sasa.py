@@ -1,5 +1,7 @@
+import warnings
+
 import numpy as np
-from rdkit.Chem import Atom, Mol, RWMol
+from rdkit.Chem import Atom, Mol, MolToSmiles, RemoveHs, RWMol
 from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
 
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
@@ -25,7 +27,8 @@ def solvent_accessible_surface_area(
     All areas are also ``nan`` when two atoms of the same radius sit at exactly the
     same position, for which Lee-Richards returns ``nan`` or a wrong area. Such a
     conformer is broken, typically with fragments embedded on top of each other,
-    and Mordred's areas for it come down to floating-point rounding.
+    and Mordred's areas for it come down to floating-point rounding, so a warning
+    names the molecule.
 
     Parameters
     ----------
@@ -58,6 +61,15 @@ def solvent_accessible_surface_area(
 
     positions = mol.GetConformer(conformer).GetPositions()
     if _has_stacked_atoms(positions[has_radius], radii[has_radius]):
+        # a broken conformer is the caller's to fix, so it is reported, as the
+        # path searches report giving up, naming the molecule without hydrogens
+        smiles = MolToSmiles(RemoveHs(mol, sanitize=False))
+        warnings.warn(
+            f"charged partial surface area gave up on {smiles}: atoms of "
+            "the same radius share a position, as when fragments are embedded on top "
+            "of each other. Its features are returned as NaN.",
+            stacklevel=3,
+        )
         return areas
 
     # Mordred leaves an atom without radius out of every other atom's neighbors
