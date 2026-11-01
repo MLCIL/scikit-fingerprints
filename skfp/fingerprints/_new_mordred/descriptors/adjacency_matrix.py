@@ -2,7 +2,10 @@ import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
-from skfp.fingerprints._new_mordred.utils.matrix_attributes import MatrixAttributes
+from skfp.fingerprints._new_mordred.utils.matrix_attributes import (
+    ATTRIBUTE_FEATURE_NAMES,
+    MatrixAttributes,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -11,19 +14,12 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# e.g. "adjacency matrix graph energy" (Mordred's SpAbs_A), "adjacency matrix
+# LogEE" (LogEE_A)
 FEATURE_NAMES = [
-    "SpAbs_A",
-    "SpMax_A",
-    "SpDiam_A",
-    "SpAD_A",
-    "SpMAD_A",
-    "LogEE_A",
-    "VE1_A",
-    "VE2_A",
-    "VE3_A",
-    "VR1_A",
-    "VR2_A",
-    "VR3_A",
+    f"adjacency matrix {name}"
+    for attr, name in ATTRIBUTE_FEATURE_NAMES.items()
+    if attr != "sm1"
 ]
 
 

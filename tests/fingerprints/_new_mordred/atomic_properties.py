@@ -8,8 +8,8 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     BOND_ORDERS,
     AtomicProperties,
     get_intrinsic_state,
-    get_sigma_electrons,
-    get_valence_electrons,
+    get_valence_vertex_degree,
+    get_vertex_degree,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
@@ -88,9 +88,9 @@ def build_atom(label: str, explicit_hs: bool) -> Atom:
         ("-I", 1),
     ],
 )
-def test_sigma_electrons(label, expected_value, explicit_hs):
+def test_vertex_degree(label, expected_value, explicit_hs):
     atom = build_atom(label, explicit_hs)
-    actual_value = get_sigma_electrons(atom)
+    actual_value = get_vertex_degree(atom)
     assert_allclose(actual_value, expected_value, atol=1e-3)
 
 
@@ -123,9 +123,9 @@ def test_sigma_electrons(label, expected_value, explicit_hs):
         ("-I", 0.16),
     ],
 )
-def test_valence_electrons(label, expected_value, explicit_hs):
+def test_valence_vertex_degree(label, expected_value, explicit_hs):
     atom = build_atom(label, explicit_hs)
-    actual_value = get_valence_electrons(atom)
+    actual_value = get_valence_vertex_degree(atom)
     assert_allclose(actual_value, expected_value, atol=1e-2)
 
 

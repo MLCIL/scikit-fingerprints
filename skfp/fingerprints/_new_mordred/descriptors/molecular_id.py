@@ -26,16 +26,16 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = [
     "MID",
     "AMID",
-    "MID_h",
-    "AMID_h",
-    "MID_C",
-    "AMID_C",
-    "MID_N",
-    "AMID_N",
-    "MID_O",
-    "AMID_O",
-    "MID_X",
-    "AMID_X",
+    "MID heteroatoms",
+    "AMID heteroatoms",
+    "MID carbons",
+    "AMID carbons",
+    "MID nitrogens",
+    "AMID nitrogens",
+    "MID oxygens",
+    "AMID oxygens",
+    "MID halogens",
+    "AMID halogens",
 ]
 
 # a path stops being extended once the product of its edge weights reaches this
@@ -55,8 +55,8 @@ def calc(
     Molecular ID descriptors, sums of atomic IDs over a selected set of atoms.
 
     The features come in pairs: a sum over the selected atoms and that same sum
-    averaged over the molecule. Selections are all atoms (``MID``), heteroatoms
-    (``MID_h``), carbons, nitrogens, oxygens and halogens (``MID_X``).
+    averaged over the molecule. Selections are all atoms (``MID``), heteroatoms,
+    carbons, nitrogens, oxygens and halogens.
 
     Atomic IDs are undefined for disconnected molecules, so NaN is returned for
     those. They are summed over every simple path of the molecule, which takes
@@ -69,7 +69,7 @@ def calc(
     try:
         atom_ids = _atom_ids(props_regular, monotonic() + timeout)
     except SearchTimeoutError as error:
-        warn_search_given_up("MolecularId", props_regular.mol, error)
+        warn_search_given_up("molecular ID", props_regular.mol, error)
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     atomic_nums = props_regular.atomic_nums

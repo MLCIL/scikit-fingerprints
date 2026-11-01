@@ -1,14 +1,14 @@
 {
-  "Hexane": {"fMF": 0},
-  "Benzene": {"fMF": 0.5},
-  "Caffeine": {"fMF": 0.375},
-  "Lycopene": {"fMF": 0},
-  "Epicatechin": {"fMF": 0.457142857},
-  "Limonene": {"fMF": 0.230769231},
-  "Allicin": {"fMF": 0},
-  "Glutathione": {"fMF": 0},
-  "Digoxin": {"fMF": 0.361344538},
-  "Capsaicin": {"fMF": 0.12244898},
-  "EllagicAcid": {"fMF": 0.571428571},
-  "Astaxanthin": {"fMF": 0.3125}
+  "Hexane": {"Murcko framework ratio": 0},
+  "Benzene": {"Murcko framework ratio": 0.5},
+  "Caffeine": {"Murcko framework ratio": 0.375},
+  "Lycopene": {"Murcko framework ratio": 0},
+  "Epicatechin": {"Murcko framework ratio": 0.457142857},
+  "Limonene": {"Murcko framework ratio": 0.230769231},
+  "Allicin": {"Murcko framework ratio": 0},
+  "Glutathione": {"Murcko framework ratio": 0},
+  "Digoxin": {"Murcko framework ratio": 0.361344538},
+  "Capsaicin": {"Murcko framework ratio": 0.12244898},
+  "EllagicAcid": {"Murcko framework ratio": 0.571428571},
+  "Astaxanthin": {"Murcko framework ratio": 0.3125}
 }

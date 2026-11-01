@@ -108,8 +108,8 @@ def test_descriptors_without_charged_atoms_follow_mordred():
         # sums over no atoms, but version 5 divides by their number
         assert_allclose([values[f"{prefix}{v}"] for v in range(1, 5)], 0.0)
         assert np.isnan(values[f"{prefix}5"]), prefix
-    assert values["TASA"] > 0.0
-    assert_allclose(values["RASA"], 1.0, rtol=1e-6)
+    assert values["THSA"] > 0.0
+    assert_allclose(values["RHSA"], 1.0, rtol=1e-6)
 
 
 def test_missing_gasteiger_charge_makes_all_values_nan():

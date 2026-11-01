@@ -43,14 +43,14 @@ def test_topological_charge_reference_values(molecule, mordred_test_mols):
 def test_feature_names():
     assert _REFERENCE["feature_names"] == FEATURE_NAMES
     assert (
-        [f"GGI{order}" for order in range(1, 11)]
-        + [f"JGI{order}" for order in range(1, 11)]
-        + ["JGT10"]
+        [f"topological charge index order {order}" for order in range(1, 11)]
+        + [f"mean topological charge index order {order}" for order in range(1, 11)]
+        + ["global topological charge index"]
     ) == FEATURE_NAMES
 
 
 def test_global_is_sum_of_mean():
-    # JGT10 is defined as the sum of the mean charges (JGI1..JGI10)
+    # the global index is the sum of the mean topological charge indices, orders 1-10
     mol = MolFromSmiles("CCN(CC)CCOC(=O)c1ccc(N)cc1")
     values = calc(AdjacencyMatrix(mol), DistanceMatrix.from_mol(mol))
 

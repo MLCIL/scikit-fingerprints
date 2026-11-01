@@ -2,6 +2,7 @@ import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     CARBON_ELEMENT_PROPERTIES,
+    ELEMENT_PROPERTY_TABLES,
     AtomicProperties,
 )
 
@@ -12,25 +13,17 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
+# sums, then means, of every element property scaled on carbon, in
+# ELEMENT_PROPERTY_TABLES order
 FEATURE_NAMES = [
-    # sums, one per element property, in ELEMENT_PROPERTY_TABLES order
-    "SZ",
-    "Sm",
-    "Sv",
-    "Sse",
-    "Spe",
-    "Sare",
-    "Sp",
-    "Si",
-    # the same properties again, as means
-    "MZ",
-    "Mm",
-    "Mv",
-    "Mse",
-    "Mpe",
-    "Mare",
-    "Mp",
-    "Mi",
+    *(
+        f"sum of carbon-scaled {prop.replace('_', ' ')}"
+        for prop in ELEMENT_PROPERTY_TABLES
+    ),
+    *(
+        f"mean of carbon-scaled {prop.replace('_', ' ')}"
+        for prop in ELEMENT_PROPERTY_TABLES
+    ),
 ]
 
 

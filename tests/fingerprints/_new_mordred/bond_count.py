@@ -55,7 +55,7 @@ def _parse_keeping_hydrogens(smiles: str) -> Mol:
 @pytest.mark.parametrize(
     "smiles, expected",
     [
-        # nBonds nBondsO nBondsS nBondsD nBondsT nBondsA nBondsM nBondsKS nBondsKD
+        # all, non-H, single, double, triple, aromatic, multiple, Kekule single/double
         ("CCO", [8, 2, 8, 0, 0, 0, 0, 8, 0]),
         ("c1ccccc1", [12, 6, 6, 0, 0, 6, 6, 9, 3]),
         ("C=C", [5, 1, 4, 1, 0, 0, 1, 4, 1]),
@@ -72,7 +72,7 @@ def test_bond_count_values(smiles, expected):
 @pytest.mark.parametrize(
     ("mol", "expected"),
     [
-        # nBonds nBondsO nBondsS nBondsD nBondsT nBondsA nBondsM nBondsKS nBondsKD
+        # all, non-H, single, double, triple, aromatic, multiple, Kekule single/double
         # only the hydrogen-suppressed molecule is re-sanitized, so a Kekule input
         # has aromatic bonds there and single and double ones with hydrogens
         (

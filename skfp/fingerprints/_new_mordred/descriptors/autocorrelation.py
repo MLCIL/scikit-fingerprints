@@ -16,29 +16,32 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 MAX_DISTANCE = 8
 
 # plain (uncentered) ATS and AATS do not use signed partial charge
-_IS_CHARGE = np.array([name == "gasteiger_charge" for name in WEIGHTING_PROPERTY_NAMES])
+_IS_CHARGE = np.array([name == "Gasteiger_charge" for name in WEIGHTING_PROPERTY_NAMES])
 _PROP_NAMES_NO_CHARGE = [
     name
     for name, is_charge in zip(WEIGHTING_PROPERTY_NAMES, _IS_CHARGE, strict=True)
     if not is_charge
 ]
 
+# ATS is the Moreau-Broto autocorrelation, prefixed A when averaged and suffixed C
+# when centered; MATS and GATS are the Moran and Geary autocorrelations. E.g.
+# "ATS atomic number lag 1" (Mordred's ATS1Z), "AATSC mass lag 2" (AATSC2m)
 FEATURE_NAMES = [
     *[
-        f"{desc}_{prop}_lag_{dist}"
-        for desc in ["autocorr", "autocorr_avg"]
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
+        for desc in ["ATS", "AATS"]
         for prop in _PROP_NAMES_NO_CHARGE
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
-        f"{desc}_{prop}_lag_{dist}"
-        for desc in ["autocorr_centered", "autocorr_avg_centered"]
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
+        for desc in ["ATSC", "AATSC"]
         for prop in WEIGHTING_PROPERTY_NAMES
         for dist in range(MAX_DISTANCE + 1)
     ],
     *[
-        f"{desc}_{prop}_lag_{dist}"
-        for desc in ["Moreau_autocorr", "Geary_autocorr"]
+        f"{desc} {prop.replace('_', ' ')} lag {dist}"
+        for desc in ["MATS", "GATS"]
         for prop in WEIGHTING_PROPERTY_NAMES
         for dist in range(1, MAX_DISTANCE + 1)
     ],

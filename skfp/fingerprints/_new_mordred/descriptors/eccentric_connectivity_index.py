@@ -12,7 +12,7 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["ECIndex"]
+FEATURE_NAMES = ["eccentric connectivity index"]
 
 
 def calc(
@@ -21,7 +21,7 @@ def calc(
     r"""
     Compute the Mordred eccentric connectivity index descriptor.
 
-    `ECIndex` is defined as :math:`\sum_{i}^{A} E_i D_i`, where :math:`E_i` is the
+    The index is defined as :math:`\sum_{i}^{A} E_i D_i`, where :math:`E_i` is the
     eccentricity of atom :math:`i`, :math:`D_i` is its vertex degree, and :math:`A`
     is the number of heavy atoms.
     """

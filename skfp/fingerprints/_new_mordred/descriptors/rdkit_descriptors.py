@@ -21,11 +21,11 @@ FEATURE_NAMES_2D = [
     "nHBAcc",
     "nHBDon",
     "LabuteASA",
-    *[f"PEOE_VSA{i}" for i in range(1, 14)],
-    *[f"SMR_VSA{i}" for i in range(1, 10)],
-    *[f"SlogP_VSA{i}" for i in range(1, 12)],
-    *[f"EState_VSA{i}" for i in range(1, 11)],
-    *[f"VSA_EState{i}" for i in range(1, 10)],
+    *[f"PEOE VSA {i}" for i in range(1, 14)],
+    *[f"SMR VSA {i}" for i in range(1, 10)],
+    *[f"SlogP VSA {i}" for i in range(1, 12)],
+    *[f"EState VSA {i}" for i in range(1, 11)],
+    *[f"VSA EState {i}" for i in range(1, 10)],
     "SLogP",
     "SMR",
     "TopoPSA(NO)",
@@ -34,7 +34,12 @@ FEATURE_NAMES_2D = [
     "AMW",
 ]
 
-FEATURE_NAMES_3D = ["MOMI-Z", "MOMI-Y", "MOMI-X", "PBF"]
+FEATURE_NAMES_3D = [
+    "principal moment of inertia Z",
+    "principal moment of inertia Y",
+    "principal moment of inertia X",
+    "PBF",
+]
 
 
 def _calc_moe_type_descriptors(mol: Mol) -> list[float]:

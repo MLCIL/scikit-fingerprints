@@ -11,7 +11,7 @@ https://github.com/JacksonBurns/mordred-community
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
 
-FEATURE_NAMES = ["WPath", "WPol"]
+FEATURE_NAMES = ["Wiener index", "Wiener polarity number"]
 
 
 def calc(mol_regular: Mol, distance_matrix_regular: DistanceMatrix) -> np.ndarray:

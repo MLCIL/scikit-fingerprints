@@ -21,51 +21,51 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 
 
 FEATURE_NAMES = [
-    "ETA_alpha",
-    "AETA_alpha",
-    "ETA_shape_p",
-    "ETA_shape_y",
-    "ETA_shape_x",
-    "ETA_beta",
-    "AETA_beta",
-    "ETA_beta_s",
-    "AETA_beta_s",
-    "ETA_beta_ns",
-    "AETA_beta_ns",
-    "ETA_beta_ns_d",
-    "AETA_beta_ns_d",
-    "ETA_eta",
-    "AETA_eta",
-    "ETA_eta_L",
-    "AETA_eta_L",
-    "ETA_eta_R",
-    "AETA_eta_R",
-    "ETA_eta_RL",
-    "AETA_eta_RL",
-    "ETA_eta_F",
-    "AETA_eta_F",
-    "ETA_eta_FL",
-    "AETA_eta_FL",
-    "ETA_eta_B",
-    "AETA_eta_B",
-    "ETA_eta_BR",
-    "AETA_eta_BR",
-    "ETA_dAlpha_A",
-    "ETA_dAlpha_B",
-    "ETA_epsilon_1",
-    "ETA_epsilon_2",
-    "ETA_epsilon_3",
-    "ETA_epsilon_4",
-    "ETA_epsilon_5",
-    "ETA_dEpsilon_A",
-    "ETA_dEpsilon_B",
-    "ETA_dEpsilon_C",
-    "ETA_dEpsilon_D",
-    "ETA_dBeta",
-    "AETA_dBeta",
-    "ETA_psi_1",
-    "ETA_dPsi_A",
-    "ETA_dPsi_B",
+    "ETA alpha",
+    "mean ETA alpha",
+    "ETA shape p",
+    "ETA shape y",
+    "ETA shape x",
+    "ETA beta",
+    "mean ETA beta",
+    "ETA beta s",
+    "mean ETA beta s",
+    "ETA beta ns",
+    "mean ETA beta ns",
+    "ETA beta ns d",
+    "mean ETA beta ns d",
+    "ETA eta",
+    "mean ETA eta",
+    "ETA eta L",
+    "mean ETA eta L",
+    "ETA eta R",
+    "mean ETA eta R",
+    "ETA eta RL",
+    "mean ETA eta RL",
+    "ETA eta F",
+    "mean ETA eta F",
+    "ETA eta FL",
+    "mean ETA eta FL",
+    "ETA eta B",
+    "mean ETA eta B",
+    "ETA eta BR",
+    "mean ETA eta BR",
+    "ETA dAlpha A",
+    "ETA dAlpha B",
+    "ETA epsilon 1",
+    "ETA epsilon 2",
+    "ETA epsilon 3",
+    "ETA epsilon 4",
+    "ETA epsilon 5",
+    "ETA dEpsilon A",
+    "ETA dEpsilon B",
+    "ETA dEpsilon C",
+    "ETA dEpsilon D",
+    "ETA dBeta",
+    "mean ETA dBeta",
+    "ETA psi 1",
+    "ETA dPsi A",
+    "ETA dPsi B",
 ]
 
 
@@ -99,7 +99,7 @@ def calc(
     # the alkane reference drops hydrogen atoms and their bonds, so it holds only the
     # heavy atoms; one surviving RemoveHs (isotope, hydride) would count as a carbon
     is_heavy = ~props.is_hydrogen
-    alkane_degrees = props.sigma_electrons[is_heavy]
+    alkane_degrees = props.vertex_degree[is_heavy]
 
     gamma, beta_sigma, beta_non_sigma, beta_delta = _beta_and_gamma(
         props, kekulized_bond_types, rings.is_in_ring, core_counts, epsilons
@@ -108,7 +108,7 @@ def calc(
     core_count = core_counts.sum()
     core_count_mean = core_count / num_atoms
 
-    # ETA_shape_{p,y,x}: fraction of total core count from atoms of degree 1/3/4
+    # ETA shape p/y/x: fraction of total core count from atoms of degree 1/3/4
     shape = np.array(
         [core_counts[degrees == d].sum() / (core_count or np.nan) for d in (1, 3, 4)]
     )
@@ -398,7 +398,7 @@ def _epsilon_values(
     # heavy atoms and hydrogens bonded to heteroatoms, on the H-explicit molecule.
     # Deliberate deviation: Mordred tests only ``GetNeighbors()[0]``, which for a
     # hydrogen with several bonds comes down to bond ordering. They differ only
-    # there, e.g. ETA_epsilon_5 of [Fe][H-]C is 1.175 here against Mordred's 0.883.
+    # there, e.g. ETA epsilon 5 of [Fe][H-]C is 1.175 here against Mordred's 0.883.
     is_hydrogen = props_hydrogens.is_hydrogen
     is_carbon = props_hydrogens.is_carbon
     begins, ends = props_hydrogens.bond_begin_idxs, props_hydrogens.bond_end_idxs

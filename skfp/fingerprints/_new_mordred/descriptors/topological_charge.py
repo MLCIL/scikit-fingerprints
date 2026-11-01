@@ -16,9 +16,12 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 _MAX_ORDER = 10
 
 FEATURE_NAMES = [
-    *[f"GGI{order}" for order in range(1, _MAX_ORDER + 1)],  # raw
-    *[f"JGI{order}" for order in range(1, _MAX_ORDER + 1)],  # mean
-    "JGT10",  # global
+    *[f"topological charge index order {order}" for order in range(1, _MAX_ORDER + 1)],
+    *[
+        f"mean topological charge index order {order}"
+        for order in range(1, _MAX_ORDER + 1)
+    ],
+    "global topological charge index",
 ]
 
 
@@ -35,9 +38,11 @@ def calc(
     the absolute charge terms of atom pairs exactly ``k`` bonds apart are
     accumulated:
 
-        * "raw" (GGI{k}): sum of the absolute charge terms
-        * "mean" (JGI{k}): the raw sum divided by the number of such pairs
-        * "global" (JGT10): sum of the mean charges over orders 1 to 10
+        * topological charge index (GGI{k}): sum of the absolute charge terms
+        * mean topological charge index (JGI{k}): the raw sum divided by the number
+          of such pairs
+        * global topological charge index (JGT10): sum of the mean charges over
+          orders 1 to 10
     """
     charge_terms = _charge_term_matrix(
         adjacency_matrix_regular.matrix, distance_matrix_regular.matrix

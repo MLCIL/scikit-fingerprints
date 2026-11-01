@@ -80,7 +80,7 @@ class PeriodicTable:
 NUM_ELEMENTS = 119
 
 ALLRED_ROCHOW_ELECTRONEGATIVITY = PeriodicTable.from_file(
-    "allred_rocow_electron_negativity.txt"
+    "allred_rochow_electron_negativity.txt"
 )
 IONIZATION_POTENTIAL = PeriodicTable.from_file("ionization_potential.txt")
 MASS = PeriodicTable.from_file("mass.txt")

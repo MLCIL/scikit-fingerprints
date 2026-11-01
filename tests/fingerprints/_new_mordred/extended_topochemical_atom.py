@@ -111,10 +111,10 @@ def test_disconnected_mol_all_nan():
 )
 def test_eta_epsilon_4_saturated_variant_hydrogens(smiles, expected):
     computed = _compute(MolFromSmiles(smiles))
-    assert_allclose(computed["ETA_epsilon_4"], expected, rtol=1e-5)
+    assert_allclose(computed["ETA epsilon 4"], expected, rtol=1e-5)
 
 
-# Mordred builds the alkane reference of ETA_epsilon_3 on the hydrogen-explicit
+# Mordred builds the alkane reference of ETA epsilon 3 on the hydrogen-explicit
 # molecule and gives up when an atom there has more than four neighbors, hydrogens
 # included, e.g. a phosphorus with four carbons and a hydrogen; the hydrogen-free
 # alkane reference of the other ETA descriptors still exists. Expected values are
@@ -135,7 +135,7 @@ def test_eta_epsilon_4_saturated_variant_hydrogens(smiles, expected):
 def test_eta_epsilon_3_undefined_for_more_than_four_neighbors_with_hydrogens(smiles):
     computed = _compute(MolFromSmiles(smiles))
     values = [
-        computed[f] for f in ("ETA_epsilon_3", "ETA_dEpsilon_A", "ETA_dEpsilon_C")
+        computed[f] for f in ("ETA epsilon 3", "ETA dEpsilon A", "ETA dEpsilon C")
     ]
     assert_allclose(values, np.nan)
 
@@ -148,21 +148,21 @@ def test_eta_epsilon_3_undefined_for_more_than_four_neighbors_with_hydrogens(smi
 def test_eta_reference_without_heavy_atoms_is_empty(smiles):
     computed = _compute(MolFromSmiles(smiles))
     expected = {
-        "ETA_eta_R": 0.0,
-        "AETA_eta_R": np.nan,
-        "ETA_eta_RL": 0.0,
-        "AETA_eta_RL": np.nan,
-        "ETA_eta_B": 1.0,
-        "AETA_eta_B": 0.5,
-        "ETA_eta_BR": 1.0,
-        "AETA_eta_BR": 0.5,
-        "ETA_dAlpha_A": 0.0,
-        "ETA_dAlpha_B": 0.0,
-        "ETA_epsilon_3": np.nan,
-        "ETA_shape_p": np.nan,
-        "ETA_shape_y": np.nan,
-        "ETA_shape_x": np.nan,
-        "ETA_epsilon_4": np.nan,
+        "ETA eta R": 0.0,
+        "mean ETA eta R": np.nan,
+        "ETA eta RL": 0.0,
+        "mean ETA eta RL": np.nan,
+        "ETA eta B": 1.0,
+        "mean ETA eta B": 0.5,
+        "ETA eta BR": 1.0,
+        "mean ETA eta BR": 0.5,
+        "ETA dAlpha A": 0.0,
+        "ETA dAlpha B": 0.0,
+        "ETA epsilon 3": np.nan,
+        "ETA shape p": np.nan,
+        "ETA shape y": np.nan,
+        "ETA shape x": np.nan,
+        "ETA epsilon 4": np.nan,
     }
     assert_allclose([computed[name] for name in expected], list(expected.values()))
 
@@ -187,8 +187,8 @@ def test_eta_reference_undefined_for_more_than_four_neighbors_with_kept_hydrogen
 ):
     computed = _compute(MolFromSmiles(smiles))
     names = [
-        f"{prefix}ETA_{name}"
-        for name in ("eta_R", "eta_RL", "eta_F", "eta_FL", "eta_B", "eta_BR")
-        for prefix in ("", "A")
-    ] + ["ETA_dAlpha_A", "ETA_dAlpha_B"]
+        f"{prefix}ETA {name}"
+        for name in ("eta R", "eta RL", "eta F", "eta FL", "eta B", "eta BR")
+        for prefix in ("", "mean ")
+    ] + ["ETA dAlpha A", "ETA dAlpha B"]
     assert_allclose([computed[name] for name in names], np.nan)

@@ -11,28 +11,28 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
-    "MDEC-11",
-    "MDEC-12",
-    "MDEC-13",
-    "MDEC-14",
-    "MDEC-22",
-    "MDEC-23",
-    "MDEC-24",
-    "MDEC-33",
-    "MDEC-34",
-    "MDEC-44",
-    "MDEN-11",
-    "MDEN-12",
-    "MDEN-13",
-    "MDEN-22",
-    "MDEN-23",
-    "MDEN-33",
-    "MDEO-11",
-    "MDEO-12",
-    "MDEO-22",
+    "MDE primary carbons",
+    "MDE primary and secondary carbons",
+    "MDE primary and tertiary carbons",
+    "MDE primary and quaternary carbons",
+    "MDE secondary carbons",
+    "MDE secondary and tertiary carbons",
+    "MDE secondary and quaternary carbons",
+    "MDE tertiary carbons",
+    "MDE tertiary and quaternary carbons",
+    "MDE quaternary carbons",
+    "MDE primary nitrogens",
+    "MDE primary and secondary nitrogens",
+    "MDE primary and tertiary nitrogens",
+    "MDE secondary nitrogens",
+    "MDE secondary and tertiary nitrogens",
+    "MDE tertiary nitrogens",
+    "MDE primary oxygens",
+    "MDE primary and secondary oxygens",
+    "MDE secondary oxygens",
 ]
 
-# elements (C, N, O) and valences from feature names
+# elements (C, N, O) and heavy-atom degree pairs, in feature order
 _ELEMENTS = [6, 7, 8]
 _BUCKETS = [
     (atomic_num, valence_1, valence_2)

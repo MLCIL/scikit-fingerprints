@@ -14,7 +14,7 @@
     "Astaxanthin": "CC1=C(/C=C/C(C)=C/C=C/C(C)=C/C=C/C=C(C)/C=C/C=C(C)/C=C/C2=C(C)C(=O)[C@@H](O)CC2(C)C)C(C)(C)C[C@H](O)C1=O"
   },
   "expected": {
-    "autocorr": {
+    "ATS": {
       "mass": {
         "Hexane": [
           879.809622,
@@ -149,7 +149,7 @@
           7501.498672
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           2976.273833,
           3723.897138,
@@ -283,7 +283,7 @@
           32032.80092
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           139.301592,
           137.349428,
@@ -551,7 +551,7 @@
           272.2853523
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           3349.613265,
           2777.687448,
@@ -820,7 +820,7 @@
         ]
       }
     },
-    "autocorr_avg": {
+    "AATS": {
       "mass": {
         "Hexane": [
           43.9904811,
@@ -955,7 +955,7 @@
           27.57903924
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           148.8136916,
           195.9945862,
@@ -1089,7 +1089,7 @@
           117.7676504
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           6.9650796,
           7.228917263,
@@ -1357,7 +1357,7 @@
           1.001049089
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           167.4806632,
           146.1940762,
@@ -1626,7 +1626,7 @@
         ]
       }
     },
-    "autocorr_centered": {
+    "ATSC": {
       "mass": {
         "Hexane": [
           508.4772378,
@@ -1761,7 +1761,7 @@
           1535.084233
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           945.5351364,
           -110.3124326,
@@ -1895,7 +1895,7 @@
           2476.988476
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           0.0996072,
           -0.01162084,
@@ -2163,7 +2163,7 @@
           9.946477884
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           22.96103329,
           -2.678787217,
@@ -2432,7 +2432,7 @@
         ]
       }
     },
-    "autocorr_avg_centered": {
+    "AATSC": {
       "mass": {
         "Hexane": [
           25.42386189,
@@ -2567,7 +2567,7 @@
           5.643692034
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           47.27675682,
           -5.805917504,
@@ -2701,7 +2701,7 @@
           9.10657528
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           0.00498036,
           -0.000612,
@@ -2969,7 +2969,7 @@
           0.036567933
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           1.148051665,
           -0.140988801,
@@ -3238,7 +3238,7 @@
         ]
       }
     },
-    "Moreau_autocorr": {
+    "MATS": {
       "mass": {
         "Hexane": [
           -0.122807018,
@@ -3361,7 +3361,7 @@
           0.172737498
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           -0.122807018,
           -0.232804233,
@@ -3483,7 +3483,7 @@
           0.17088254
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           -0.122807018,
           -0.232804233,
@@ -3727,7 +3727,7 @@
           0.151962904
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           -0.122807018,
           -0.232804233,
@@ -3972,7 +3972,7 @@
         ]
       }
     },
-    "Geary_autocorr": {
+    "GATS": {
       "mass": {
         "Hexane": [
           1.666666667,
@@ -4095,7 +4095,7 @@
           0.765991078
         ]
       },
-      "van_der_Waals_volume": {
+      "vdW_volume": {
         "Hexane": [
           1.666666667,
           1.382275132,
@@ -4217,7 +4217,7 @@
           0.782939291
         ]
       },
-      "Sanderson_electronegativity": {
+      "Sanderson_EN": {
         "Hexane": [
           1.666666667,
           1.382275132,
@@ -4461,7 +4461,7 @@
           0.780864544
         ]
       },
-      "ionization_potential": {
+      "ionization_energy": {
         "Hexane": [
           1.666666667,
           1.382275132,

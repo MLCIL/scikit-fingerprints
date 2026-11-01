@@ -42,7 +42,9 @@ def _calc_from_smiles(smiles: str) -> float:
 def test_framework_reference_values(molecule, mordred_test_mols):
     value = _calc(mordred_test_mols[molecule])
 
-    assert_allclose(value, _REFERENCE[molecule]["fMF"], rtol=1e-6, atol=1e-7)
+    assert_allclose(
+        value, _REFERENCE[molecule]["Murcko framework ratio"], rtol=1e-6, atol=1e-7
+    )
 
 
 @pytest.mark.parametrize(

@@ -10,31 +10,31 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 """
 
 FEATURE_NAMES = [
-    # Molecular Walk Count
-    "MWC01",
-    "MWC02",
-    "MWC03",
-    "MWC04",
-    "MWC05",
-    "MWC06",
-    "MWC07",
-    "MWC08",
-    "MWC09",
-    "MWC10",
-    # Total MWC
-    "TMWC10",
-    # Self-Returning Walk
-    "SRW02",
-    "SRW03",
-    "SRW04",
-    "SRW05",
-    "SRW06",
-    "SRW07",
-    "SRW08",
-    "SRW09",
-    "SRW10",
-    # Total SRW
-    "TSRW10",
+    # molecular walk count; order 1 is the bond count, the rest are log-scaled
+    "walk count order 1",
+    "log walk count order 2",
+    "log walk count order 3",
+    "log walk count order 4",
+    "log walk count order 5",
+    "log walk count order 6",
+    "log walk count order 7",
+    "log walk count order 8",
+    "log walk count order 9",
+    "log walk count order 10",
+    # total walk count: the atom count plus the per-order values above
+    "total walk count",
+    # self-returning walk count, log scale
+    "log self-returning walk count order 2",
+    "log self-returning walk count order 3",
+    "log self-returning walk count order 4",
+    "log self-returning walk count order 5",
+    "log self-returning walk count order 6",
+    "log self-returning walk count order 7",
+    "log self-returning walk count order 8",
+    "log self-returning walk count order 9",
+    "log self-returning walk count order 10",
+    # total self-returning walk count: the atom count plus the per-order values above
+    "total self-returning walk count",
 ]
 
 
