@@ -1,0 +1,10 @@
+# Wersje, na ktorych zmierzono wszystko na posterze (bitai2, wrzesien 2026).
+# Pomiar jest porownaniem dwoch bibliotek, wiec wersja referencji jest czescia
+# wyniku - przy innej te liczby nie musza sie powtorzyc.
+mordredcommunity==2.0.7
+rdkit==2026.3.5
+numpy==2.*
+pandas==2.*
+scipy==1.*
+joblib==1.*
+matplotlib==3.*

@@ -1,0 +1,9 @@
+# @package _global_
+
+defaults:
+  - _self_
+
+hydra:
+  sweeper:
+    params:
+      +model: glob(skfp_mordred_*)
