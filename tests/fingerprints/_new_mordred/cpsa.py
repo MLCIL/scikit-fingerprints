@@ -21,15 +21,14 @@ from skfp.utils import get_conf_id
 This code has been adapted from the BSD-licensed mordred-community library.
 https://github.com/JacksonBurns/mordred-community
 
-Reference values generated from mordred-community and stored at
-./references/cpsa.json as expected[molecule][descriptor].
+Reference values generated from mordred-community, which reproduces them exactly,
+and stored at ./references/cpsa.json as expected[molecule][descriptor].
 
-Surface-area-dependent descriptors are compared with rtol=0.05, matching the
-5% relative tolerance mordred itself uses for SASA (see mordred/tests/test_SASA.py).
-mordred-community reproduces these reference values exactly. RNCS/RPCS, however,
-hinge on a single atom's SASA rather than the total: RDKit's per-atom SASA
-diverges too much from mordred's own SurfaceArea there (even though total SASA
-agrees within 5%), so they are marked xfail.
+Surface-area-dependent descriptors are compared with a relative tolerance: both
+Mordred and FreeSASA compute surface areas with Shrake-Rupley and Mordred's radii,
+but FreeSASA tests 100 points per atom where Mordred tests about 2,500, which
+reads totals a few percent low. RNCS and RPCS hinge on the area of a single atom,
+where the coarser mesh errs more, so they are marked xfail.
 
 See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license text.
 """
@@ -45,7 +44,7 @@ _FEATURE_NAMES = [
     pytest.param(
         name,
         marks=pytest.mark.xfail(
-            reason="depends on per-atom SASA; RDKit and mordred diverge",
+            reason="area of a single atom; FreeSASA and mordred diverge",
             strict=False,
         ),
     )
