@@ -13,32 +13,6 @@ from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
 )
 
-RDKIT_2D_FEATURE_NAMES = [
-    "BalabanJ",
-    "BertzCT",
-    "nHBAcc",
-    "nHBDon",
-    "LabuteASA",
-    *[f"PEOE VSA {i}" for i in range(1, 14)],
-    *[f"SMR VSA {i}" for i in range(1, 10)],
-    *[f"SlogP VSA {i}" for i in range(1, 12)],
-    *[f"EState VSA {i}" for i in range(1, 11)],
-    *[f"VSA EState {i}" for i in range(1, 10)],
-    "SLogP",
-    "SMR",
-    "TopoPSA(NO)",
-    "TopoPSA",
-    "MW",
-    "AMW",
-]
-
-RDKIT_3D_FEATURE_NAMES = [
-    "principal moment of inertia Z",
-    "principal moment of inertia Y",
-    "principal moment of inertia X",
-    "PBF",
-]
-
 
 def test_rdkit_descriptors_avoid_lambda_wrappers():
     source = Path(rdkit_descriptors.__file__).read_text()
