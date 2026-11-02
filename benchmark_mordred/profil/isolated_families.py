@@ -43,7 +43,7 @@ from skfp.fingerprints._new_mordred.descriptors import (
 )
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    AdjacencyMatrix, DistanceMatrix,
+    DistanceMatrix,
 )
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import (
     bonds_apply_func, preprocess_mol,
@@ -73,8 +73,6 @@ class Prereq:
         "pr", lambda: AtomicProperties.from_mol(s.mol_regular)))
     dm_regular = property(lambda s: s._get(
         "dm", lambda: DistanceMatrix.from_mol(s.mol_regular)))
-    am_regular = property(lambda s: s._get(
-        "am", lambda: AdjacencyMatrix(s.mol_regular)))
     rings_regular = property(lambda s: s._get(
         "ri", lambda: ring_count.RingSets(s.mol_regular, s.props_regular)))
     subgraphs = property(lambda s: s._get(
@@ -90,8 +88,13 @@ class Prereq:
         Bond.GetBondType,
         preprocess_mol(Mol(s.mol_regular), kekulize=True, sanitize=False),
         np.intp)))
-    estate_indices = property(lambda s: s._get(
-        "ei", lambda: estate.calc_indices(s.props_regular, s.dm_regular)))
+    # wersja z jawnymi wodorami: calculator.py buduje dzis obie i rozne rodziny
+    # biora rozne, wiec skrypt musi umiec podac kazda z nich
+    kekulized_bonds_hydrogens = property(lambda s: s._get(
+        "kbh", lambda: bonds_apply_func(
+            Bond.GetBondType,
+            preprocess_mol(Mol(s.mol_hydrogens), kekulize=True, sanitize=False),
+            np.intp)))
 
 
 # rodzina -> (modul mordreda, funkcja liczaca u nas z prerekwizytami)
@@ -99,21 +102,22 @@ FAMILIES = {
     "Chi": ("Chi", lambda p: chi.calc(p.props_regular, p.subgraphs)),
     "PathCount": ("PathCount", lambda p: path_count.calc(p.props_regular, p.subgraphs)),
     "InformationContent": ("InformationContent", lambda p: information_content.calc(
-        p.mol_hydrogens, p.props_hydrogens, p.kekulized_bonds)),
+        p.mol_hydrogens, p.props_hydrogens, p.kekulized_bonds_hydrogens)),
     "MolecularId": ("MolecularId", lambda p: molecular_id.calc(
         p.props_regular, p.n_frags)),
     "Autocorrelation": ("Autocorrelation", lambda p: autocorrelation.calc(
         p.props_hydrogens, p.dm_hydrogens)),
     "ExtendedTopochemicalAtom": ("ExtendedTopochemicalAtom",
         lambda p: extended_topochemical_atom.calc(
-            p.kekulized_bonds, p.props_regular, p.props_hydrogens,
+            p.kekulized_bonds, p.kekulized_bonds_hydrogens,
+            p.props_regular, p.props_hydrogens,
             p.dm_regular, p.rings_regular, p.n_frags)),
     "MolecularDistanceEdge": ("MolecularDistanceEdge",
         lambda p: molecular_distance_edge.calc(
-            p.props_regular, p.am_regular, p.dm_regular)),
+            p.props_regular, p.dm_regular)),
     "DetourMatrix": ("DetourMatrix", lambda p: detour_matrix.calc(
         p.props_regular, p.dm_regular, p.rings_regular, p.n_frags)),
-    "EState": ("EState", lambda p: estate.calc(p.mol_regular, p.estate_indices)),
+    "EState": ("EState", lambda p: estate.calc(p.mol_regular)),
     "BaryszMatrix": ("BaryszMatrix", lambda p: barysz_matrix.calc(
         p.props_regular, p.n_frags)),
 }

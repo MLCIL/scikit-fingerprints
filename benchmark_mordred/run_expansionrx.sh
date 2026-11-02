@@ -15,7 +15,11 @@
 # zakonczeniu Fazy A, zeby liczyl sie na wolnej maszynie.
 set -u
 
-PY=.venv/bin/python
+# repo i interpreter wyznaczamy jak w pozostalych runnerach, zeby skrypt dzialal
+# z dowolnego katalogu i na dowolnej maszynie
+REPO=${BENCH_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
+PY=${BENCH_PY:-$([ -x "$REPO/.venv/bin/python" ] && echo "$REPO/.venv/bin/python" || command -v python)}
+cd "$REPO"
 RES=${BENCH_RES:-results/expansionrx}
 read -r -a EXTRA <<< "${BENCH_EXTRA:-}"
 LOGS=$RES/logs

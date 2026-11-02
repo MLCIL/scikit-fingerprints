@@ -58,7 +58,8 @@ def main() -> None:
                      "n_sampled": len(mols)})
         print(f"  {name:28s} {mw.mean():9.1f} Da   {atoms.mean():7.1f} atomow", flush=True)
 
-    out = Path("results/dataset_masses.csv")
+    out = Path(os.environ.get("BENCH_RES", "results")) / "dataset_masses.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(out, index=False)
     print(f"\nzapisane {out} ({len(rows)} zbiorow)")
 

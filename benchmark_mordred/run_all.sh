@@ -3,8 +3,14 @@
 # Odpalac z katalogu glownego repo:  nohup setsid bash benchmark_mordred/run_all.sh &
 set -u
 
-PY=.venv/bin/python
-PEPDIR="$PWD/../peptides_molecular_fingerprints_classification/data/PeptideReactor"
+# repo i interpreter wyznaczamy jak w pozostalych runnerach, zeby skrypt dzialal
+# z dowolnego katalogu i na dowolnej maszynie
+REPO=${BENCH_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
+PY=${BENCH_PY:-$([ -x "$REPO/.venv/bin/python" ] && echo "$REPO/.venv/bin/python" || command -v python)}
+cd "$REPO"
+# PEPDIR mozna podac wprost; domyslnie szukamy repo peptydowego obok tego repo
+PEPTIDE_REPO=${PEPTIDE_REPO:-$REPO/../peptides_molecular_fingerprints_classification}
+PEPDIR=${PEPDIR:-$PEPTIDE_REPO/data/PeptideReactor}
 # BENCH_RES i BENCH_EXTRA sluza do przepuszczenia tego samego drivera na
 # mikroskopijnych danych przed prawdziwym przebiegiem, np.
 #   BENCH_RES=/tmp/dryrun BENCH_EXTRA="--max-size 30 --repeats 1" bash benchmark_mordred/run_all.sh
