@@ -80,6 +80,14 @@ def calc_rdkit_2d(
     """
     Compute 2D descriptors that map directly to RDKit descriptor functions.
     """
+    # BertzCT builds its symmetry classes from bond-order weighted distances. With
+    # the default forceDMat=True it ignores the passed matrix and recomputes two
+    # (an unweighted one it then discards, and the weighted one), so we pass the
+    # weighted one ourselves and skip the recomputation
+    distance_matrix_bond_orders = DistanceMatrix.from_mol(
+        mol_regular, use_bond_orders=True
+    )
+
     values = [
         safe_value(
             GraphDescriptors.BalabanJ,
@@ -89,7 +97,8 @@ def calc_rdkit_2d(
         safe_value(
             GraphDescriptors.BertzCT,
             mol_regular,
-            dMat=distance_matrix_regular.matrix,
+            dMat=distance_matrix_bond_orders.matrix,
+            forceDMat=False,
         ),
         mol_properties.num_h_bond_acceptors,
         mol_properties.num_h_bond_donors,
