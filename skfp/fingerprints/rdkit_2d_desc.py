@@ -1,13 +1,114 @@
-from collections.abc import Sequence
+import json
+import warnings
+from collections.abc import Callable, Sequence
+from functools import lru_cache
 from numbers import Real
+from pathlib import Path
 
 import numpy as np
-from rdkit.Chem import Mol
+from rdkit import Chem
+from rdkit.Chem import Descriptors, Mol
+from scipy import stats
 from scipy.sparse import csr_array
-from sklearn.utils._param_validation import Interval
+from sklearn.utils._param_validation import Interval, StrOptions
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols, ensure_smiles, no_rdkit_logs
+from skfp.utils import ensure_mols, no_rdkit_logs
+
+_UNBRANCHED_ALKANE_PATTERN = Chem.MolFromSmarts("[R0;D2][R0;D2][R0;D2][R0;D2]")
+
+
+def _count_unbranched_alkanes(mol: Mol) -> int:
+    return len(mol.GetSubstructMatches(_UNBRANCHED_ALKANE_PATTERN, uniquify=True))
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_descriptors() -> list[tuple[str, Callable]]:
+    names = RDKit2DDescriptorsFingerprint._descriptor_names
+
+    functions = dict(Descriptors.descList)
+    functions["fr_unbrch_alkane"] = _count_unbranched_alkanes
+
+    missing = set(names) - set(functions)
+    if missing:
+        raise ValueError(f"Missing RDKit descriptors: {sorted(missing)}")
+
+    return [(name, functions[name]) for name in names]
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_distributions() -> dict:
+    path = Path(__file__).parent / "data" / "rdkit_2d_cdf_novartis.json"
+
+    with path.open(encoding="utf-8") as file:
+        return json.load(file)
+
+
+@lru_cache(maxsize=1)
+def _get_rdkit_2d_molpile_cdf() -> dict:
+    path = Path(__file__).parent / "data" / "rdkit_2d_cdf_molpile.json"
+
+    with path.open(encoding="utf-8") as file:
+        data = json.load(file)
+
+    return {
+        name: (
+            np.asarray(thresholds, dtype=np.float64),
+            np.asarray(probabilities, dtype=np.float64),
+        )
+        for name, (thresholds, probabilities) in data.items()
+    }
+
+
+def _normalize_rdkit_2d(
+    values: Sequence[float | None], feature_names: Sequence[str]
+) -> np.ndarray:
+    """Normalize RDKit 2D descriptors using the original CDF distributions."""
+    distributions = _get_rdkit_2d_distributions()
+    result = np.zeros(len(values), dtype=np.float64)
+
+    for i, (name, value) in enumerate(zip(feature_names, values, strict=True)):
+        if name not in distributions:
+            continue
+
+        dist_name, params, min_val, max_val = distributions[name]
+
+        if dist_name in ("gilbrat", "gibrat"):
+            dist_name = "gilbrat" if hasattr(stats, "gilbrat") else "gibrat"
+
+        try:
+            dist = getattr(stats, dist_name)
+            clipped = np.clip(value, min_val, max_val)
+
+            normalized = dist.cdf(
+                clipped, *params[:-2], loc=params[-2], scale=params[-1]
+            )
+
+            result[i] = np.clip(normalized, 0.0, 1.0)
+        except Exception:  # noqa: BLE001
+            result[i] = 0.0
+
+    return result
+
+
+def _normalize_rdkit_2d_molpile(
+    values: Sequence[float | None],
+    feature_names: Sequence[str],
+) -> np.ndarray:
+    distributions = _get_rdkit_2d_molpile_cdf()
+    result = np.zeros(len(values), dtype=np.float64)
+
+    for i, (name, value) in enumerate(zip(feature_names, values, strict=True)):
+        if name not in distributions or value is None or not np.isfinite(value):
+            continue
+
+        thresholds, probabilities = distributions[name]
+        index = np.searchsorted(thresholds, value, side="right") - 1
+
+        if index >= 0:
+            result[i] = probabilities[index]
+
+    return result
 
 
 class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
@@ -91,20 +192,225 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
            [ 1.00000000e+00,  2.18749619e+00,  ...  0.00000000e+00,  3.55007619e-01]], dtype=float32)
     """
 
+    _descriptor_names = [
+        "BalabanJ",
+        "BertzCT",
+        "Chi0",
+        "Chi0n",
+        "Chi0v",
+        "Chi1",
+        "Chi1n",
+        "Chi1v",
+        "Chi2n",
+        "Chi2v",
+        "Chi3n",
+        "Chi3v",
+        "Chi4n",
+        "Chi4v",
+        "EState_VSA1",
+        "EState_VSA10",
+        "EState_VSA11",
+        "EState_VSA2",
+        "EState_VSA3",
+        "EState_VSA4",
+        "EState_VSA5",
+        "EState_VSA6",
+        "EState_VSA7",
+        "EState_VSA8",
+        "EState_VSA9",
+        "ExactMolWt",
+        "FpDensityMorgan1",
+        "FpDensityMorgan2",
+        "FpDensityMorgan3",
+        "FractionCSP3",
+        "HallKierAlpha",
+        "HeavyAtomCount",
+        "HeavyAtomMolWt",
+        "Ipc",
+        "Kappa1",
+        "Kappa2",
+        "Kappa3",
+        "LabuteASA",
+        "MaxAbsEStateIndex",
+        "MaxAbsPartialCharge",
+        "MaxEStateIndex",
+        "MaxPartialCharge",
+        "MinAbsEStateIndex",
+        "MinAbsPartialCharge",
+        "MinEStateIndex",
+        "MinPartialCharge",
+        "MolLogP",
+        "MolMR",
+        "MolWt",
+        "NHOHCount",
+        "NOCount",
+        "NumAliphaticCarbocycles",
+        "NumAliphaticHeterocycles",
+        "NumAliphaticRings",
+        "NumAromaticCarbocycles",
+        "NumAromaticHeterocycles",
+        "NumAromaticRings",
+        "NumHAcceptors",
+        "NumHDonors",
+        "NumHeteroatoms",
+        "NumRadicalElectrons",
+        "NumRotatableBonds",
+        "NumSaturatedCarbocycles",
+        "NumSaturatedHeterocycles",
+        "NumSaturatedRings",
+        "NumValenceElectrons",
+        "PEOE_VSA1",
+        "PEOE_VSA10",
+        "PEOE_VSA11",
+        "PEOE_VSA12",
+        "PEOE_VSA13",
+        "PEOE_VSA14",
+        "PEOE_VSA2",
+        "PEOE_VSA3",
+        "PEOE_VSA4",
+        "PEOE_VSA5",
+        "PEOE_VSA6",
+        "PEOE_VSA7",
+        "PEOE_VSA8",
+        "PEOE_VSA9",
+        "RingCount",
+        "SMR_VSA1",
+        "SMR_VSA10",
+        "SMR_VSA2",
+        "SMR_VSA3",
+        "SMR_VSA4",
+        "SMR_VSA5",
+        "SMR_VSA6",
+        "SMR_VSA7",
+        "SMR_VSA8",
+        "SMR_VSA9",
+        "SlogP_VSA1",
+        "SlogP_VSA10",
+        "SlogP_VSA11",
+        "SlogP_VSA12",
+        "SlogP_VSA2",
+        "SlogP_VSA3",
+        "SlogP_VSA4",
+        "SlogP_VSA5",
+        "SlogP_VSA6",
+        "SlogP_VSA7",
+        "SlogP_VSA8",
+        "SlogP_VSA9",
+        "TPSA",
+        "VSA_EState1",
+        "VSA_EState10",
+        "VSA_EState2",
+        "VSA_EState3",
+        "VSA_EState4",
+        "VSA_EState5",
+        "VSA_EState6",
+        "VSA_EState7",
+        "VSA_EState8",
+        "VSA_EState9",
+        "fr_Al_COO",
+        "fr_Al_OH",
+        "fr_Al_OH_noTert",
+        "fr_ArN",
+        "fr_Ar_COO",
+        "fr_Ar_N",
+        "fr_Ar_NH",
+        "fr_Ar_OH",
+        "fr_COO",
+        "fr_COO2",
+        "fr_C_O",
+        "fr_C_O_noCOO",
+        "fr_C_S",
+        "fr_HOCCN",
+        "fr_Imine",
+        "fr_NH0",
+        "fr_NH1",
+        "fr_NH2",
+        "fr_N_O",
+        "fr_Ndealkylation1",
+        "fr_Ndealkylation2",
+        "fr_Nhpyrrole",
+        "fr_SH",
+        "fr_aldehyde",
+        "fr_alkyl_carbamate",
+        "fr_alkyl_halide",
+        "fr_allylic_oxid",
+        "fr_amide",
+        "fr_amidine",
+        "fr_aniline",
+        "fr_aryl_methyl",
+        "fr_azide",
+        "fr_azo",
+        "fr_barbitur",
+        "fr_benzene",
+        "fr_benzodiazepine",
+        "fr_bicyclic",
+        "fr_diazo",
+        "fr_dihydropyridine",
+        "fr_epoxide",
+        "fr_ester",
+        "fr_ether",
+        "fr_furan",
+        "fr_guanido",
+        "fr_halogen",
+        "fr_hdrzine",
+        "fr_hdrzone",
+        "fr_imidazole",
+        "fr_imide",
+        "fr_isocyan",
+        "fr_isothiocyan",
+        "fr_ketone",
+        "fr_ketone_Topliss",
+        "fr_lactam",
+        "fr_lactone",
+        "fr_methoxy",
+        "fr_morpholine",
+        "fr_nitrile",
+        "fr_nitro",
+        "fr_nitro_arom",
+        "fr_nitro_arom_nonortho",
+        "fr_nitroso",
+        "fr_oxazole",
+        "fr_oxime",
+        "fr_para_hydroxylation",
+        "fr_phenol",
+        "fr_phenol_noOrthoHbond",
+        "fr_phos_acid",
+        "fr_phos_ester",
+        "fr_piperdine",
+        "fr_piperzine",
+        "fr_priamide",
+        "fr_prisulfonamd",
+        "fr_pyridine",
+        "fr_quatN",
+        "fr_sulfide",
+        "fr_sulfonamd",
+        "fr_sulfone",
+        "fr_term_acetylene",
+        "fr_tetrazole",
+        "fr_thiazole",
+        "fr_thiocyan",
+        "fr_thiophene",
+        "fr_unbrch_alkane",
+        "fr_urea",
+        "qed",
+    ]
+
     _parameter_constraints: dict = {
         **BaseFingerprintTransformer._parameter_constraints,
-        "normalized": ["boolean"],
+        "normalized": ["boolean", None],
+        "normalization": [StrOptions({"none", "descriptastorus", "molpile"})],
         "clip_val": [None, Interval(Real, 0, None, closed="left")],
     }
 
     def __init__(
         self,
-        normalized: bool = False,
+        normalized: bool | None = None,
         clip_val: float = 2147483647,  # max int32 value
         sparse: bool = False,
         n_jobs: int | None = None,
         batch_size: int | None = None,
         verbose: int | dict = 0,
+        normalization: str = "none",
     ):
         super().__init__(
             n_features_out=200,
@@ -115,6 +421,20 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         )
         self.normalized = normalized
         self.clip_val = clip_val
+
+        self.normalization = normalization
+
+        if normalized is not None:
+            if normalization != "none":
+                raise ValueError(
+                    "Use either 'normalized' or 'normalization', not both."
+                )
+
+            warnings.warn(
+                "The 'normalized' parameter is deprecated. Use 'normalization' instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002  # noqa: ARG002
         """
@@ -131,14 +451,7 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         feature_names_out : ndarray of str objects
             RDKit 2D descriptor names.
         """
-        from descriptastorus.descriptors.rdDescriptors import RDKit2D
-        from descriptastorus.descriptors.rdNormalizedDescriptors import (
-            RDKit2DNormalized,
-        )
-
-        gen = RDKit2DNormalized() if self.normalized else RDKit2D()
-        feature_names = [name for name, obj in gen.columns]
-
+        feature_names = [name for name, _ in _get_rdkit_2d_descriptors()]
         return np.asarray(feature_names, dtype=object)
 
     def transform(
@@ -163,27 +476,41 @@ class RDKit2DDescriptorsFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy)
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
-        from descriptastorus.descriptors.rdDescriptors import RDKit2D
-        from descriptastorus.descriptors.rdNormalizedDescriptors import (
-            RDKit2DNormalized,
-        )
-
         mols = ensure_mols(X)
-        smiles = ensure_smiles(X)
+        descriptors = _get_rdkit_2d_descriptors()
+        feature_names = [name for name, _ in descriptors]
+
+        if self.normalized is None:
+            use_normalization = self.normalization == "descriptastorus"
+        else:
+            use_normalization = self.normalized
 
         # turn off RDKit logs, since descriptastorus does not use MorganGenerator
         # and generates a lot of warnings
         with no_rdkit_logs():
-            gen = RDKit2DNormalized() if self.normalized else RDKit2D()
-            X = [
-                np.array(gen.calculateMol(mol, smi))
-                for mol, smi in zip(mols, smiles, strict=False)
-            ]
+            results = []
+            for mol in mols:
+                raw_values = []
+
+                for _, func in descriptors:
+                    try:
+                        raw_values.append(func(mol))
+                    except Exception:  # noqa: BLE001
+                        raw_values.append(None)
+
+                if self.normalization == "molpile":
+                    values = _normalize_rdkit_2d_molpile(raw_values, feature_names)
+                elif use_normalization:
+                    values = _normalize_rdkit_2d(raw_values, feature_names)
+                else:
+                    values = np.asarray(raw_values, dtype=np.float64)
+
+                results.append(values)
 
         # clip values to float32 range
-        X = [np.clip(x, -self.clip_val, self.clip_val) for x in X]
+        results = [np.clip(x, -self.clip_val, self.clip_val) for x in results]
 
         if self.sparse:
-            return csr_array(X, dtype=np.float32)
+            return csr_array(results, dtype=np.float32)
         else:
-            return np.array(X, dtype=np.float32)
+            return np.array(results, dtype=np.float32)
