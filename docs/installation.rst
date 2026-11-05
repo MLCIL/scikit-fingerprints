@@ -30,3 +30,18 @@ To use neural fingerprints (e.g. CLAMP), install the ``neural`` extra (this inst
 
 If you need a specific PyTorch build (CPU/CUDA), install PyTorch following the official instructions. We highly recommend using uv for this to avoid dependency conflicts.
 
+
+Mordred descriptors (mordredcommunity)
+--------------------------------------
+
+:class:`~skfp.fingerprints.MordredFingerprint` computes Mordred descriptors with a built-in
+implementation by default. To use the ``mordredcommunity`` library instead
+(``implementation="mordredcommunity"``), install the ``mordredcommunity`` extra:
+
+.. code-block:: console
+
+    pip install "scikit-fingerprints[mordredcommunity]"
+
+Use it to reproduce results of earlier scikit-fingerprints versions, which computed Mordred
+descriptors with ``mordredcommunity``. ``MordredFingerprint`` objects pickled by those versions
+use it automatically.
