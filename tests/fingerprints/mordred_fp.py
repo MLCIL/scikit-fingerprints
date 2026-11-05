@@ -101,10 +101,13 @@ def test_mordred_wrong_implementation():
 
 
 def test_mordred_does_not_import_mordredcommunity():
-    # mordredcommunity is optional, so it must be imported only when chosen;
-    # checked in a fresh interpreter, since other tests import it in this one
+    # mordredcommunity is optional, so scikit-fingerprints must import it only when
+    # chosen; checked in a fresh interpreter, since other tests import it in this
+    # one, and without chemprop, used by the neural fingerprints, whose own
+    # dependencies (astartes and aimsim) import it
     code = (
         "import pickle, pkgutil, sys\n"
+        "sys.modules['chemprop'] = None\n"
         "from sklearn import clone\n"
         "import skfp\n"
         "for module in pkgutil.iter_modules(skfp.__path__, 'skfp.'):\n"

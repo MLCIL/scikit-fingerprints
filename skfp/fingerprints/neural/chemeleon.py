@@ -1,8 +1,11 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
+from chemprop.data import BatchMolGraph
+from chemprop.featurizers import SimpleMoleculeMolGraphFeaturizer
+from chemprop.models import MPNN
+from chemprop.nn import BondMessagePassing, MeanAggregation, RegressionFFN
 from rdkit.Chem import Mol
 
 from skfp.fingerprints.neural.base_neural_fp_transformer import (
@@ -11,12 +14,6 @@ from skfp.fingerprints.neural.base_neural_fp_transformer import (
     TensorLike,
 )
 from skfp.utils import ensure_mols
-
-# chemprop is imported only when CheMeleon is used, since importing it also imports
-# mordredcommunity, through its astartes and aimsim dependencies
-if TYPE_CHECKING:
-    from chemprop.data import BatchMolGraph
-    from chemprop.models import MPNN
 
 
 class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
@@ -126,7 +123,7 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
         """
         return super().transform(X, copy=copy)
 
-    def get_model(self) -> "MPNN":
+    def get_model(self) -> MPNN:
         """
         Return the pretrained CheMeleon model.
 
@@ -138,10 +135,7 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
         return super().get_model()
 
     @classmethod
-    def _load_model(cls, path: str) -> "MPNN":
-        from chemprop.models import MPNN
-        from chemprop.nn import BondMessagePassing, MeanAggregation, RegressionFFN
-
+    def _load_model(cls, path: str) -> MPNN:
         chemeleon_mp = torch.load(path, map_location="cpu", weights_only=True)
         mp = BondMessagePassing(**chemeleon_mp["hyper_parameters"])
         mp.load_state_dict(chemeleon_mp["state_dict"])
@@ -154,14 +148,11 @@ class CheMeleonFingerprint(BaseNeuralFingerprintTransformer):
         model.eval()
         return model
 
-    def _prepare_input(self, X: Sequence[str | Mol]) -> "BatchMolGraph":
-        from chemprop.data import BatchMolGraph
-        from chemprop.featurizers import SimpleMoleculeMolGraphFeaturizer
-
+    def _prepare_input(self, X: Sequence[str | Mol]) -> BatchMolGraph:
         X = ensure_mols(X)
         featurizer = SimpleMoleculeMolGraphFeaturizer()
         return BatchMolGraph([featurizer(mol) for mol in X])
 
-    def _forward_nn(self, X: "BatchMolGraph") -> TensorLike:
+    def _forward_nn(self, X: BatchMolGraph) -> TensorLike:
         model = self.get_model()
         return model.fingerprint(X)
