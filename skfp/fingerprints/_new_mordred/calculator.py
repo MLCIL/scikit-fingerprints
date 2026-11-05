@@ -171,6 +171,22 @@ def get_feature_names(use_3d: bool) -> np.ndarray:
     )
 
 
+def _has_3D_conformer(mol: Mol) -> bool:
+    """
+    Whether the conformer ``conf_id`` points to exists and is 3D, not a flat one read
+    from a 2D file. Mordred computes the 3D descriptors only in this case.
+    """
+    if mol.GetNumConformers() == 0:
+        return False
+    conf_id = get_conf_id(mol)
+    try:
+        conformer = mol.GetConformer(conf_id)
+    except ValueError:
+        # conf_id of a conformer the molecule does not have
+        return False
+    return conformer.Is3D()
+
+
 def compute(
     mol: Mol,
     use_3D: bool,
@@ -313,12 +329,8 @@ def compute(
     for module, values in descriptors_2d.items():
         result[_OUTPUT_IDXS_2D[module]] = values
 
-    # 3D descriptors, left as NaN for molecules without a 3D conformer, as in Mordred
-    if (
-        use_3D
-        and mol.GetNumConformers() > 0
-        and mol.GetConformer(get_conf_id(mol)).Is3D()
-    ):
+    # 3D descriptors, left as NaN for molecules without a 3D conformer
+    if use_3D and _has_3D_conformer(mol):
         # the hydrogen-explicit molecule keeps the conformers of the input
         conf_id = get_conf_id(mol_hydrogens)
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)

@@ -15,27 +15,9 @@ it imports that optional dependency.
 
 class MordredImplementation(ABC):
     """
-    Computes Mordred descriptors of molecules.
-
-    Parameters
-    ----------
-    use_3D : bool
-        Whether to include 3D (conformer-based) descriptors.
-
-    timeout : float
-        Seconds given to the descriptor searches that are exponential in the number
-        of cycles of a molecule.
-
-    max_ring_system_rank : int
-        Number of independent cycles above which the detour matrix descriptors
-        are reported as NaN without searching. Implementations without such a
-        limit ignore it.
+    Computes Mordred descriptors of molecules. Each implementation takes the
+    ``MordredFingerprint`` parameters it uses.
     """
-
-    def __init__(self, use_3D: bool, timeout: float, max_ring_system_rank: int):
-        self.use_3D = use_3D
-        self.timeout = timeout
-        self.max_ring_system_rank = max_ring_system_rank
 
     @abstractmethod
     def get_feature_names(self) -> np.ndarray:
@@ -52,6 +34,11 @@ class MordredImplementation(ABC):
 
 class SkfpMordredImplementation(MordredImplementation):
     """Vectorized Mordred descriptors built into scikit-fingerprints."""
+
+    def __init__(self, use_3D: bool, timeout: float, max_ring_system_rank: int):
+        self.use_3D = use_3D
+        self.timeout = timeout
+        self.max_ring_system_rank = max_ring_system_rank
 
     def get_feature_names(self) -> np.ndarray:
         return calculator.get_feature_names(self.use_3D)

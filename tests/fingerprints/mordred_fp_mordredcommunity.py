@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from rdkit.Chem import Mol
-from rdkit.Chem.AllChem import Compute2DCoords
+from rdkit.Chem import AddHs, Mol, MolFromSmiles
+from rdkit.Chem.AllChem import Compute2DCoords, EmbedMultipleConfs
 from scipy.sparse import csr_array
 
 pytest.importorskip("mordred")
@@ -71,12 +71,18 @@ def test_mordred_community_3D_sparse_fingerprint(mols_conformers_list):
     assert X_skfp.dtype == np.float32
 
 
-def test_mordred_community_3D_without_3D_conformers(smallest_mols_list):
-    # molecules without conformers, and copies with a flat one, as read from 2D files
+def test_mordred_community_3D_without_3D_conformers(
+    smallest_mols_list, mols_conformers_list
+):
+    # molecules without conformers, copies with a flat one, as read from 2D files, and
+    # with conf_id pointing to a conformer they do not have
     flat_mols = [Mol(mol) for mol in smallest_mols_list]
     for mol in flat_mols:
         Compute2DCoords(mol)
-    mols = smallest_mols_list + flat_mols
+    missing_conformer_mols = [Mol(mol) for mol in mols_conformers_list]
+    for mol in missing_conformer_mols:
+        mol.SetIntProp("conf_id", max(c.GetId() for c in mol.GetConformers()) + 1)
+    mols = smallest_mols_list + flat_mols + missing_conformer_mols
 
     mordred_fp = MordredFingerprint(use_3D=True, implementation="mordredcommunity")
     X = mordred_fp.transform(mols)
@@ -90,6 +96,24 @@ def test_mordred_community_3D_without_3D_conformers(smallest_mols_list):
     )
     assert_allclose(X[:, is_2D], X_2D, equal_nan=True)
     assert np.isnan(X[:, ~is_2D]).all()
+
+
+# Mordred returns the principal moments of inertia of this molecule as complex
+# numbers with no imaginary part
+@pytest.mark.filterwarnings("ignore::numpy.exceptions.ComplexWarning")
+def test_mordred_community_3D_uses_the_conf_id_conformer():
+    mol = AddHs(MolFromSmiles("CC(C)Cc1ccc(cc1)C(C)C(=O)O"))
+    EmbedMultipleConfs(mol, numConfs=2, randomSeed=42)
+    mol.SetIntProp("conf_id", 1)
+    mordred_fp = MordredFingerprint(use_3D=True, implementation="mordredcommunity")
+    X = mordred_fp.transform([mol])
+
+    calc = Calculator(descriptors, ignore_3D=False)
+    X_second = np.array([calc(mol, id=1)], dtype=np.float32)
+    X_first = np.array([calc(mol, id=0)], dtype=np.float32)
+
+    assert_allclose(X, X_second, equal_nan=True)
+    assert not np.allclose(X, X_first, equal_nan=True)
 
 
 def test_mordred_community_feature_names():

@@ -57,12 +57,16 @@ def test_mordred_3D_sparse_fingerprint(mols_conformers_list):
     assert X_skfp.dtype == np.float32
 
 
-def test_mordred_3D_without_3D_conformers(smallest_mols_list):
-    # molecules without conformers, and copies with a flat one, as read from 2D files
+def test_mordred_3D_without_3D_conformers(smallest_mols_list, mols_conformers_list):
+    # molecules without conformers, copies with a flat one, as read from 2D files, and
+    # with conf_id pointing to a conformer they do not have
     flat_mols = [Mol(mol) for mol in smallest_mols_list]
     for mol in flat_mols:
         Compute2DCoords(mol)
-    mols = smallest_mols_list + flat_mols
+    missing_conformer_mols = [Mol(mol) for mol in mols_conformers_list]
+    for mol in missing_conformer_mols:
+        mol.SetIntProp("conf_id", max(c.GetId() for c in mol.GetConformers()) + 1)
+    mols = smallest_mols_list + flat_mols + missing_conformer_mols
 
     X = MordredFingerprint(use_3D=True).transform(mols)
     X_2D = MordredFingerprint().transform(mols)

@@ -98,8 +98,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
         Whether the fingerprint is 3D-based and needs molecules with conformers to
         compute its 3D descriptors. This depends on the ``use_3D`` parameter, and has
         the same value. If the ``conf_id`` property is set, it will be used to
-        determine the conformation, except with ``implementation="mordredcommunity"``,
-        which always uses the default one. You can use
+        determine the conformation. You can use
         :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     References
@@ -178,9 +177,9 @@ class MordredFingerprint(BaseFingerprintTransformer):
 
     def _validate_params(self) -> None:
         super()._validate_params()
-        # checked in the main process, so that a missing mordredcommunity fails
+        # built in the main process, so that a missing mordredcommunity fails
         # before the molecules are split between joblib workers
-        self._get_implementation_class()
+        self._get_implementation()
         if (
             self.implementation == "mordredcommunity"
             and self.max_ring_system_rank != DEFAULT_MAX_RING_SYSTEM_RANK
@@ -239,16 +238,12 @@ class MordredFingerprint(BaseFingerprintTransformer):
         return csr_array(X) if self.sparse else X
 
     def _get_implementation(self) -> MordredImplementation:
-        implementation_cls = self._get_implementation_class()
-        return implementation_cls(
-            use_3D=self.use_3D,
-            timeout=self.timeout,
-            max_ring_system_rank=self.max_ring_system_rank,
-        )
-
-    def _get_implementation_class(self) -> type[MordredImplementation]:
         if self.implementation == "skfp":
-            return SkfpMordredImplementation
+            return SkfpMordredImplementation(
+                use_3D=self.use_3D,
+                timeout=self.timeout,
+                max_ring_system_rank=self.max_ring_system_rank,
+            )
 
         if self.implementation == "mordredcommunity":
             # mordredcommunity is an optional dependency, imported only when chosen
@@ -266,7 +261,9 @@ class MordredFingerprint(BaseFingerprintTransformer):
                     "requires the mordredcommunity optional dependency. Install it "
                     'with: pip install "scikit-fingerprints[mordredcommunity]"'
                 ) from e
-            return MordredCommunityImplementation
+            return MordredCommunityImplementation(
+                use_3D=self.use_3D, timeout=self.timeout
+            )
 
         raise ValueError(
             "implementation must be 'skfp' or 'mordredcommunity', "
