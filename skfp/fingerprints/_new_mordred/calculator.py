@@ -313,8 +313,12 @@ def compute(
     for module, values in descriptors_2d.items():
         result[_OUTPUT_IDXS_2D[module]] = values
 
-    # 3D descriptors
-    if use_3D:
+    # 3D descriptors, left as NaN for molecules without a 3D conformer, as in Mordred
+    if (
+        use_3D
+        and mol.GetNumConformers() > 0
+        and mol.GetConformer(get_conf_id(mol)).Is3D()
+    ):
         # the hydrogen-explicit molecule keeps the conformers of the input
         conf_id = get_conf_id(mol_hydrogens)
         distance_matrix_3d = DistanceMatrix3D(mol_hydrogens, conf_id)
