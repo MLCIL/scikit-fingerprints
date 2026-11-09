@@ -1,9 +1,7 @@
 import numpy as np
 
-from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    AdjacencyMatrix,
-    DistanceMatrix,
-)
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -16,7 +14,7 @@ FEATURE_NAMES = ["eccentric connectivity index"]
 
 
 def calc(
-    adjacency_matrix_regular: AdjacencyMatrix, distance_matrix_regular: DistanceMatrix
+    props_regular: AtomicProperties, distance_matrix_regular: DistanceMatrix
 ) -> np.ndarray:
     r"""
     Compute the Mordred eccentric connectivity index descriptor.
@@ -26,7 +24,7 @@ def calc(
     is the number of heavy atoms.
     """
     E = distance_matrix_regular.eccentricities
-    D = adjacency_matrix_regular.degree
+    D = props_regular.degrees
 
     value = (E * D).sum()
 

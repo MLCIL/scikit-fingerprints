@@ -1,7 +1,6 @@
 import numpy as np
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
-from skfp.fingerprints._new_mordred.utils.graph_matrix import AdjacencyMatrix
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -13,9 +12,7 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 FEATURE_NAMES = ["Zagreb1", "Zagreb2", "mZagreb1", "mZagreb2"]
 
 
-def calc(
-    props: AtomicProperties, adjacency_matrix_regular: AdjacencyMatrix
-) -> np.ndarray:
+def calc(props: AtomicProperties) -> np.ndarray:
     """
     Zagreb indices.
 
@@ -26,7 +23,7 @@ def calc(
     ``Zagreb1`` and ``Zagreb2`` match :func:`skfp.descriptors.zagreb_index_m1` and
     :func:`skfp.descriptors.zagreb_index_m2`, which sum over atoms and bonds in Python.
     """
-    degrees = adjacency_matrix_regular.degree
+    degrees = props.degrees
     bond_degrees = degrees[props.bond_begin_idxs] * degrees[props.bond_end_idxs]
 
     with np.errstate(divide="ignore", invalid="ignore"):

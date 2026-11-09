@@ -253,7 +253,8 @@ def _get_bridges(props: AtomicProperties) -> np.ndarray:
     the search that reached it, and carries the earliest stamp anything below it
     can climb back to; a bond is a bridge when nothing below it reaches past it.
     """
-    neighbors = _get_neighbors_with_bonds(props)
+    # every neighbor with the index of the bond leading to it
+    neighbors = props.neighbor_lists()
     num_atoms = props.num_atoms
     step = 0
     stamps = np.full(num_atoms, -1, dtype=np.intp)  # when each atom was reached
@@ -297,20 +298,6 @@ def _get_bridges(props: AtomicProperties) -> np.ndarray:
                         is_bridge[incoming_bond] = True
 
     return is_bridge
-
-
-def _get_neighbors_with_bonds(props: AtomicProperties) -> list[list[tuple[int, int]]]:
-    """
-    Adjacency lists of all atoms, each neighbor with the bond leading to it.
-    """
-    neighbors: list[list[tuple[int, int]]] = [[] for _ in range(props.num_atoms)]
-    begins = props.bond_begin_idxs.tolist()
-    ends = props.bond_end_idxs.tolist()
-    for bond, (begin, end) in enumerate(zip(begins, ends, strict=True)):
-        neighbors[begin].append((end, bond))
-        neighbors[end].append((begin, bond))
-
-    return neighbors
 
 
 def _get_ring_system_correction(
@@ -430,7 +417,9 @@ def _walk_every_path(
         if neighbor in visited:
             continue
 
-        longest[neighbor] = max(longest[neighbor], distance)
+        # a plain comparison, as a max() call costs more in this innermost loop
+        if distance > longest[neighbor]:  # noqa: PLR1730
+            longest[neighbor] = distance
 
         visited.add(neighbor)
         _walk_every_path(neighbor, distance, neighbors, visited, longest, deadline)

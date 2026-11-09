@@ -5,10 +5,8 @@ from numpy.testing import assert_allclose
 from skfp.fingerprints._new_mordred.descriptors.eccentric_connectivity_index import (
     calc,
 )
-from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    AdjacencyMatrix,
-    DistanceMatrix,
-)
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -40,5 +38,5 @@ See skfp/fingerprints/data/mordred-community_bsd_license.txt for the license tex
 def test_eccentric_connectivity_index_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
 
-    values = calc(AdjacencyMatrix(mol_regular), DistanceMatrix.from_mol(mol_regular))
+    values = calc(AtomicProperties(mol_regular), DistanceMatrix.from_mol(mol_regular))
     assert_allclose(values, np.float32(expected), rtol=1e-6)

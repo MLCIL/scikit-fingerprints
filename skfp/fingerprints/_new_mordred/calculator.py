@@ -207,10 +207,9 @@ def compute(
     distance_matrix_hydrogens = DistanceMatrix.with_hydrogens_added(
         distance_matrix_regular, props_hydrogens
     )
-    gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
 
     # cpsa_3d reuses cpsa_2d values
-    cpsa_2d = cpsa.calc_2d(gasteiger_charges_hydrogens)
+    cpsa_2d = cpsa.calc_2d(props_hydrogens.gasteiger_charges)
 
     # kekulized molecule (aromatic -> single/double bonds)
     mol_kekulized = preprocess_mol(mol_regular, kekulize=True, sanitize=False)
@@ -237,8 +236,8 @@ def compute(
             adjacency_matrix_regular,
             adjacency_eigendecomposition,
         ),
-        wiener_index: wiener_index.calc(mol_regular, distance_matrix_regular),
-        zagreb_index: zagreb_index.calc(props_regular, adjacency_matrix_regular),
+        wiener_index: wiener_index.calc(distance_matrix_regular),
+        zagreb_index: zagreb_index.calc(props_regular),
         acid_base: acid_base.calc(mol_hydrogens),
         autocorrelation: autocorrelation.calc(
             props_hydrogens, distance_matrix_hydrogens
@@ -248,14 +247,14 @@ def compute(
             mol_regular, mol_hydrogens, distance_matrix_regular, mol_properties
         ),
         mol_filters: mol_filters.calc(mol_properties),
-        atom_count: atom_count.calc(mol_regular, props_regular),
+        atom_count: atom_count.calc(mol_regular, props_regular, mol_properties),
         bond_count: bond_count.calc(
             props_regular,
             props_hydrogens,
             kekulized_bond_types,
             kekulized_bond_types_hydrogens,
         ),
-        carbon_types: carbon_types.calc(mol_kekulized, mol_hydrogens),
+        carbon_types: carbon_types.calc(props_regular, mol_hydrogens),
         constitutional: constitutional.calc(props_hydrogens),
         rotatable_bond: rotatable_bond.calc(mol_regular),
         log_s: log_s.calc(mol_regular),
@@ -288,7 +287,7 @@ def compute(
         kappa_shape_index: kappa_shape_index.calc(props_regular, subgraphs_regular),
         fragment_complexity: fragment_complexity.calc(props_regular),
         eccentric_connectivity_index: eccentric_connectivity_index.calc(
-            adjacency_matrix_regular, distance_matrix_regular
+            props_regular, distance_matrix_regular
         ),
         distance_matrix: distance_matrix.calc(
             props_regular, n_frags, distance_matrix_regular
@@ -306,7 +305,7 @@ def compute(
         ),
         molecular_id: molecular_id.calc(props_regular, n_frags, timeout),
         information_content: information_content.calc(
-            mol_hydrogens, props_hydrogens, kekulized_bond_types_hydrogens
+            props_hydrogens, kekulized_bond_types_hydrogens
         ),
     }
 
@@ -322,21 +321,16 @@ def compute(
         # mol_regular keeps the 3D conformer (RemoveHs preserves heavy-atom
         # coordinates), so it is the heavy-atom 3D molecule
         distance_matrix_3d_regular = DistanceMatrix3D(mol_regular, conf_id)
-        adjacency_matrix_hydrogens = AdjacencyMatrix(mol_hydrogens)
 
         descriptors_3d: dict[ModuleType, np.ndarray] = {
-            morse: morse.calc(mol_hydrogens, distance_matrix_3d),
+            morse: morse.calc(props_hydrogens, distance_matrix_3d),
             rdkit_descriptors: rdkit_descriptors.calc_rdkit_3d(mol_hydrogens, conf_id),
-            cpsa: cpsa.calc_3d(
-                mol_hydrogens, conf_id, cpsa_2d, gasteiger_charges_hydrogens
-            ),
+            cpsa: cpsa.calc_3d(props_hydrogens, distance_matrix_3d, conf_id, cpsa_2d),
             gravitational_index: gravitational_index.calc(
-                mol_regular,
-                mol_hydrogens,
+                props_regular,
+                props_hydrogens,
                 distance_matrix_3d_regular,
                 distance_matrix_3d,
-                adjacency_matrix_regular,
-                adjacency_matrix_hydrogens,
             ),
             geometric_index: geometric_index.calc(distance_matrix_3d),
         }

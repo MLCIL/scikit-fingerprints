@@ -10,10 +10,8 @@ from skfp.fingerprints._new_mordred.descriptors.gravitational_index import (
     FEATURE_NAMES,
     calc,
 )
-from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    AdjacencyMatrix,
-    DistanceMatrix3D,
-)
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
@@ -46,12 +44,10 @@ def computed_values(mordred_test_mols_hydrogens_3d):
         mol_regular = preprocess_mol(mol_hydrogens)
 
         values = calc(
-            mol_regular,
-            mol_hydrogens,
+            AtomicProperties(mol_regular),
+            AtomicProperties(mol_hydrogens),
             DistanceMatrix3D(mol_regular, conf_id),
             DistanceMatrix3D(mol_hydrogens, conf_id),
-            AdjacencyMatrix(mol_regular),
-            AdjacencyMatrix(mol_hydrogens),
         )
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
@@ -73,12 +69,8 @@ def test_atoms_in_the_same_place_make_all_values_nan():
     conformer.Set3D(True)
     conf_id = mol.AddConformer(conformer, assignId=True)
 
+    props = AtomicProperties(mol)
     values = calc(
-        mol,
-        mol,
-        DistanceMatrix3D(mol, conf_id),
-        DistanceMatrix3D(mol, conf_id),
-        AdjacencyMatrix(mol),
-        AdjacencyMatrix(mol),
+        props, props, DistanceMatrix3D(mol, conf_id), DistanceMatrix3D(mol, conf_id)
     )
     assert np.isnan(values).all()

@@ -1,6 +1,7 @@
 import numpy as np
-from rdkit.Chem import Mol
 
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 from skfp.fingerprints._new_mordred.utils.sasa import solvent_accessible_surface_area
 
 """
@@ -63,17 +64,18 @@ def calc_2d(gasteiger_charges_hydrogens: np.ndarray) -> np.ndarray:
 
 
 def calc_3d(
-    mol_hydrogens: Mol,
+    props_hydrogens: AtomicProperties,
+    distance_matrix_3d: DistanceMatrix3D,
     conf_id: int,
     cpsa_2d: np.ndarray,
-    gasteiger_charges_hydrogens: np.ndarray,
 ):
     """
     Charged partial surface area (CPSA) descriptors.
 
     Combine per-atom solvent-accessible surface areas with Gasteiger partial
     charges to describe polar interactions on the molecular surface, using the
-    conformer ``conf_id``. All values are ``nan`` for an empty molecule.
+    conformer ``conf_id`` of the hydrogen-explicit molecule, whose 3D distances
+    ``distance_matrix_3d`` holds. All values are ``nan`` for an empty molecule.
 
     PNSA{v}/PPSA{v} (partial negative/positive surface area) sum the surface
     area of the negatively/positively charged atoms, weighted by a
@@ -110,20 +112,31 @@ def calc_3d(
     quantitative structure-property relationship studies. Analytical Chemistry,
     62(21), 2323-2329. https://doi.org/10.1021/ac00220a013
     """
-    num_atoms = mol_hydrogens.GetNumAtoms()
+    gasteiger_charges_hydrogens = props_hydrogens.gasteiger_charges
+    num_atoms = props_hydrogens.num_atoms
     if num_atoms == 0 or np.isnan(gasteiger_charges_hydrogens).any():
         values = np.full(len(FEATURE_NAMES_3D), np.nan, dtype=np.float32)
         return values
 
     rncg, rpcg = cpsa_2d
-    surface_area = solvent_accessible_surface_area(mol_hydrogens, conf_id)
+    surface_area = solvent_accessible_surface_area(
+        props_hydrogens.mol,
+        props_hydrogens.atomic_nums,
+        distance_matrix_3d.matrix,
+        conformer=conf_id,
+    )
     surface_area_sum = surface_area.sum()
-    masks = [
-        gasteiger_charges_hydrogens < 0.0,  # negative
-        gasteiger_charges_hydrogens > 0.0,  # positive
+    # the charges of each sign, negative then positive, with the surface areas of
+    # their atoms, shared by the descriptors below
+    by_sign = [
+        (gasteiger_charges_hydrogens[mask], surface_area[mask])
+        for mask in (
+            gasteiger_charges_hydrogens < 0.0,
+            gasteiger_charges_hydrogens > 0.0,
+        )
     ]
 
-    pnsa, ppsa = _pnsa_ppsa(gasteiger_charges_hydrogens, masks, surface_area, num_atoms)
+    pnsa, ppsa = _pnsa_ppsa(by_sign, num_atoms)
     tasa, tpsa = _tasa_tpsa(gasteiger_charges_hydrogens, surface_area)
 
     values = [
@@ -134,7 +147,7 @@ def calc_3d(
         ppsa / surface_area_sum,  # FPSA
         pnsa * surface_area_sum / 1000.0,  # WNSA
         ppsa * surface_area_sum / 1000.0,  # WPSA
-        _rncs_rpcs(gasteiger_charges_hydrogens, masks, surface_area, rncg, rpcg),
+        _rncs_rpcs(by_sign, rncg, rpcg),
         [tasa, tpsa],
         [tasa / surface_area_sum],  # RHSA
         [tpsa / surface_area_sum],  # RPSA
@@ -144,10 +157,7 @@ def calc_3d(
 
 
 def _pnsa_ppsa(
-    gasteiger_charges_hydrogens: np.ndarray,
-    masks: list[np.ndarray],
-    surface_area: np.ndarray,
-    num_atoms: int,
+    by_sign: list[tuple[np.ndarray, np.ndarray]], num_atoms: int
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Partial negative and positive surface area descriptors (PNSA{v}, PPSA{v}).
@@ -160,12 +170,10 @@ def _pnsa_ppsa(
     pnsa: list[float] = []
     ppsa: list[float] = []
 
-    for mask, desc in zip(masks, [pnsa, ppsa], strict=True):
-        charges = gasteiger_charges_hydrogens[mask]
+    for (charges, sa), desc in zip(by_sign, [pnsa, ppsa], strict=True):
         if charges.size == 0:
             desc.extend([0.0, 0.0, 0.0, 0.0, np.nan])
         else:
-            sa = surface_area[mask]
             charges_sum = np.sum(charges)
 
             factors = [
@@ -181,11 +189,7 @@ def _pnsa_ppsa(
 
 
 def _rncs_rpcs(
-    gasteiger_charges_hydrogens: np.ndarray,
-    masks: list[np.ndarray],
-    surface_area: np.ndarray,
-    rncg: np.ndarray,
-    rpcg: np.ndarray,
+    by_sign: list[tuple[np.ndarray, np.ndarray]], rncg: np.ndarray, rpcg: np.ndarray
 ) -> np.ndarray:
     """
     Relative negative and positive charge surface area descriptors (RNCS, RPCS).
@@ -196,12 +200,11 @@ def _rncs_rpcs(
     """
     values = []
 
-    for mask, desc in zip(masks, [rncg, rpcg], strict=True):
-        charges = gasteiger_charges_hydrogens[mask]
+    for (charges, sa), desc in zip(by_sign, [rncg, rpcg], strict=True):
         if charges.size == 0:
             values.append(0.0)
         else:
-            sa_max = surface_area[mask][np.argmax(np.abs(charges))]
+            sa_max = sa[np.argmax(np.abs(charges))]
             values.append(sa_max / desc)
 
     return np.asarray(values, dtype=np.float32)

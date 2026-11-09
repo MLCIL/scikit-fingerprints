@@ -1,6 +1,5 @@
 import numpy as np
 from rdkit.Chem import (
-    GetDistanceMatrix,
     GraphDescriptors,
     Mol,
     MolSurf,
@@ -9,10 +8,7 @@ from rdkit.Chem import (
 from rdkit.Chem.EState import EState_VSA
 
 from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import safe_value
-from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    DistanceMatrix,
-    _cache_prefix,
-)
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
 from skfp.fingerprints._new_mordred.utils.molecular_properties import (
     MolecularProperties,
 )
@@ -92,11 +88,10 @@ def calc_rdkit_2d(
     # BertzCT builds its symmetry classes from bond-order weighted distances. With
     # the default forceDMat=True it ignores the passed matrix and recomputes two
     # (an unweighted one it then discards, and the weighted one), so we pass the
-    # weighted one ourselves and skip the recomputation. Only the matrix is needed,
-    # so it skips the DistanceMatrix wrapper and its derived quantities
-    distance_matrix_bond_orders = GetDistanceMatrix(
-        mol_regular, useBO=True, prefix=_cache_prefix(use_bond_orders=True)
-    )
+    # weighted one ourselves and skip the recomputation
+    distance_matrix_bond_orders = DistanceMatrix.from_mol(
+        mol_regular, use_bond_orders=True
+    ).matrix
 
     values = [
         safe_value(
