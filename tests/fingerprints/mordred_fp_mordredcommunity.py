@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from rdkit.Chem import AddHs, Mol, MolFromSmiles
-from rdkit.Chem.AllChem import Compute2DCoords, EmbedMultipleConfs
+from rdkit.Chem import AddHs, MolFromSmiles
+from rdkit.Chem.AllChem import EmbedMultipleConfs
 from scipy.sparse import csr_array
 
 pytest.importorskip("mordred")
@@ -10,7 +10,7 @@ pytest.importorskip("mordred")
 from mordred import Calculator, descriptors
 
 from skfp.fingerprints import MordredFingerprint
-from skfp.fingerprints._new_mordred import mordred_community
+from skfp.fingerprints._mordred_implementations import mordred_community
 
 
 def test_mordred_community_fingerprint(smallest_smiles_list, smallest_mols_list):
@@ -71,31 +71,11 @@ def test_mordred_community_3D_sparse_fingerprint(mols_conformers_list):
     assert X_skfp.dtype == np.float32
 
 
-def test_mordred_community_3D_without_3D_conformers(
-    smallest_mols_list, mols_conformers_list
-):
-    # molecules without conformers, copies with a flat one, as read from 2D files, and
-    # with conf_id pointing to a conformer they do not have
-    flat_mols = [Mol(mol) for mol in smallest_mols_list]
-    for mol in flat_mols:
-        Compute2DCoords(mol)
-    missing_conformer_mols = [Mol(mol) for mol in mols_conformers_list]
-    for mol in missing_conformer_mols:
-        mol.SetIntProp("conf_id", max(c.GetId() for c in mol.GetConformers()) + 1)
-    mols = smallest_mols_list + flat_mols + missing_conformer_mols
-
+def test_mordred_community_3D_without_conformers(smallest_mols_list):
     mordred_fp = MordredFingerprint(use_3D=True, implementation="mordredcommunity")
-    X = mordred_fp.transform(mols)
 
-    mordred_fp_2D = MordredFingerprint(implementation="mordredcommunity")
-    X_2D = mordred_fp_2D.transform(mols)
-
-    # mordredcommunity interleaves the 3D descriptors with the 2D ones
-    is_2D = np.isin(
-        mordred_fp.get_feature_names_out(), mordred_fp_2D.get_feature_names_out()
-    )
-    assert_allclose(X[:, is_2D], X_2D, equal_nan=True)
-    assert np.isnan(X[:, ~is_2D]).all()
+    with pytest.raises(TypeError, match="must have at least one conformation"):
+        mordred_fp.transform(smallest_mols_list)
 
 
 # Mordred returns the principal moments of inertia of this molecule as complex

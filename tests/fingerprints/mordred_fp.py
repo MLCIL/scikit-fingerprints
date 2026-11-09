@@ -1,3 +1,4 @@
+import io
 import pickle
 import subprocess
 import sys
@@ -7,73 +8,112 @@ import pytest
 from numpy.testing import assert_allclose, assert_equal
 from rdkit.Chem import Conformer, Mol, MolFromSmiles, RenumberAtoms
 from rdkit.Chem.AllChem import Compute2DCoords, EmbedMolecule, EmbedMultipleConfs
+from scipy.sparse import csr_array
 from sklearn.utils._param_validation import InvalidParameterError
 
 from skfp.fingerprints import MordredFingerprint
+from skfp.fingerprints._new_mordred import calculator
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 """
 Tests that do not need the mordredcommunity optional dependency. Its implementation
-is tested in mordred_fp_mordredcommunity.py, and compared with the built-in one in
+is tested in mordred_fp_mordredcommunity.py, and compared with the optimized one in
 mordred_fp_parity.py.
 """
 
 
-def test_mordred_fingerprint(smallest_smiles_list):
-    X_seq = MordredFingerprint().transform(smallest_smiles_list)
-    X_skfp = MordredFingerprint(n_jobs=-1).transform(smallest_smiles_list)
+def test_mordred_fingerprint(smallest_smiles_list, smallest_mols_list):
+    mordred_fp = MordredFingerprint(n_jobs=-1)
+    X_skfp = mordred_fp.transform(smallest_smiles_list)
 
-    assert_allclose(X_skfp, X_seq, equal_nan=True)
+    X_calculator = [calculator.compute(mol, use_3D=False) for mol in smallest_mols_list]
+    X_calculator = np.array(X_calculator, dtype=np.float32)
+
+    assert_allclose(X_skfp, X_calculator, equal_nan=True)
     assert_equal(X_skfp.shape, (len(smallest_smiles_list), 1613))
     assert X_skfp.dtype == np.float32
 
 
-def test_mordred_sparse_fingerprint(smallest_smiles_list):
-    X_dense = MordredFingerprint(n_jobs=-1).transform(smallest_smiles_list)
-    X_skfp = MordredFingerprint(sparse=True, n_jobs=-1).transform(smallest_smiles_list)
+def test_mordred_sparse_fingerprint(smallest_smiles_list, smallest_mols_list):
+    mordred_fp = MordredFingerprint(sparse=True, n_jobs=-1)
+    X_skfp = mordred_fp.transform(smallest_smiles_list)
 
-    assert_allclose(X_skfp.toarray(), X_dense, equal_nan=True)
+    X_calculator = [calculator.compute(mol, use_3D=False) for mol in smallest_mols_list]
+    X_calculator = csr_array(X_calculator, dtype=np.float32)
+
+    assert_allclose(X_skfp.toarray(), X_calculator.toarray(), equal_nan=True)
     assert_equal(X_skfp.shape, (len(smallest_smiles_list), 1613))
     assert X_skfp.dtype == np.float32
 
 
 def test_mordred_3D_fingerprint(mols_conformers_list):
-    X_seq = MordredFingerprint(use_3D=True).transform(mols_conformers_list)
-    X_skfp = MordredFingerprint(use_3D=True, n_jobs=-1).transform(mols_conformers_list)
+    mordred_fp = MordredFingerprint(use_3D=True, n_jobs=-1)
+    X_skfp = mordred_fp.transform(mols_conformers_list)
 
-    assert_allclose(X_skfp, X_seq, equal_nan=True)
+    X_calculator = [
+        calculator.compute(mol, use_3D=True) for mol in mols_conformers_list
+    ]
+    X_calculator = np.array(X_calculator, dtype=np.float32)
+
+    assert_allclose(X_skfp, X_calculator, equal_nan=True)
     assert_equal(X_skfp.shape, (len(mols_conformers_list), 1826))
     assert X_skfp.dtype == np.float32
 
 
 def test_mordred_3D_sparse_fingerprint(mols_conformers_list):
-    X_dense = MordredFingerprint(use_3D=True, n_jobs=-1).transform(mols_conformers_list)
-    X_skfp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1).transform(
-        mols_conformers_list
-    )
+    mordred_fp = MordredFingerprint(use_3D=True, sparse=True, n_jobs=-1)
+    X_skfp = mordred_fp.transform(mols_conformers_list)
 
-    assert_allclose(X_skfp.toarray(), X_dense, equal_nan=True)
+    X_calculator = [
+        calculator.compute(mol, use_3D=True) for mol in mols_conformers_list
+    ]
+    X_calculator = csr_array(X_calculator, dtype=np.float32)
+
+    assert_allclose(X_skfp.toarray(), X_calculator.toarray(), equal_nan=True)
     assert_equal(X_skfp.shape, (len(mols_conformers_list), 1826))
     assert X_skfp.dtype == np.float32
 
 
-def test_mordred_3D_without_3D_conformers(smallest_mols_list, mols_conformers_list):
-    # molecules without conformers, copies with a flat one, as read from 2D files, and
-    # with conf_id pointing to a conformer they do not have
-    flat_mols = [Mol(mol) for mol in smallest_mols_list]
-    for mol in flat_mols:
+def test_mordred_3D_without_conformers(smallest_smiles_list, smallest_mols_list):
+    mordred_fp = MordredFingerprint(use_3D=True)
+
+    with pytest.raises(TypeError, match="must have at least one conformation"):
+        mordred_fp.transform(smallest_mols_list)
+    with pytest.raises(TypeError, match="must have at least one conformation"):
+        mordred_fp.transform(smallest_smiles_list)
+
+
+def test_mordred_3D_flat_conformer(smallest_mols_list):
+    # a flat conformer, e.g. read from a 2D file, is still a valid 3D conformation
+    mols = [Mol(mol) for mol in smallest_mols_list]
+    for mol in mols:
         Compute2DCoords(mol)
-    missing_conformer_mols = [Mol(mol) for mol in mols_conformers_list]
-    for mol in missing_conformer_mols:
-        mol.SetIntProp("conf_id", max(c.GetId() for c in mol.GetConformers()) + 1)
-    mols = smallest_mols_list + flat_mols + missing_conformer_mols
 
     X = MordredFingerprint(use_3D=True).transform(mols)
     X_2D = MordredFingerprint().transform(mols)
 
     # 3D descriptors are appended after the 2D ones
     assert_allclose(X[:, : X_2D.shape[1]], X_2D, equal_nan=True)
-    assert np.isnan(X[:, X_2D.shape[1] :]).all()
+    assert not np.isnan(X[:, X_2D.shape[1] :]).all()
+    assert_equal(X.shape, (len(mols), 1826))
+
+
+def test_mordred_builds_implementation_once(monkeypatch, smallest_smiles_list):
+    # not for every batch, here every molecule, since the progress bar is shown
+    get_implementation = MordredFingerprint._get_implementation
+    calls = []
+
+    def get_implementation_spy(self):
+        calls.append(self.implementation)
+        return get_implementation(self)
+
+    monkeypatch.setattr(
+        MordredFingerprint, "_get_implementation", get_implementation_spy
+    )
+    mordred_fp = MordredFingerprint(verbose={"file": io.StringIO()})
+    mordred_fp.transform(smallest_smiles_list)
+
+    assert calls == ["optimized"]
 
 
 def test_mordred_feature_names():
@@ -134,7 +174,9 @@ def test_mordred_community_missing_dependency(monkeypatch):
     # it was not installed
     monkeypatch.setitem(sys.modules, "mordred", None)
     monkeypatch.delitem(
-        sys.modules, "skfp.fingerprints._new_mordred.mordred_community", raising=False
+        sys.modules,
+        "skfp.fingerprints._mordred_implementations.mordred_community",
+        raising=False,
     )
     mordred_fp = MordredFingerprint(implementation="mordredcommunity")
 
@@ -149,7 +191,9 @@ def test_mordred_community_other_import_error(monkeypatch):
     # only a missing mordred is solved by installing the extra, so other import
     # errors are raised unchanged
     monkeypatch.setitem(
-        sys.modules, "skfp.fingerprints._new_mordred.mordred_community", None
+        sys.modules,
+        "skfp.fingerprints._mordred_implementations.mordred_community",
+        None,
     )
     mordred_fp = MordredFingerprint(implementation="mordredcommunity")
 
@@ -165,7 +209,7 @@ def test_mordred_pickle_keeps_params():
 
 
 def test_mordred_unpickles_old_objects_with_mordredcommunity():
-    # objects pickled before the built-in implementation existed have none of its
+    # objects pickled before the optimized implementation existed have none of its
     # parameters, and computed descriptors with mordredcommunity
     old_fp = MordredFingerprint()
     for name in ["implementation", "timeout", "max_ring_system_rank"]:

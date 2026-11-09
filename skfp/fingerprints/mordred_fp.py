@@ -8,26 +8,26 @@ from scipy.sparse import csr_array
 from sklearn.utils._param_validation import Interval, StrOptions
 
 from skfp.bases import BaseFingerprintTransformer
-from skfp.utils import ensure_mols
-
-from ._new_mordred.descriptors.detour_matrix import DEFAULT_MAX_RING_SYSTEM_RANK
-from ._new_mordred.implementations import (
-    MordredImplementation,
-    SkfpMordredImplementation,
+from skfp.fingerprints._mordred_implementations.base import BaseMordredImplementation
+from skfp.fingerprints._mordred_implementations.optimized import (
+    OptimizedMordredImplementation,
 )
-from ._new_mordred.utils.descriptor_evaluation import DEFAULT_TIMEOUT
+from skfp.fingerprints._new_mordred.descriptors.detour_matrix import (
+    DEFAULT_MAX_RING_SYSTEM_RANK,
+)
+from skfp.fingerprints._new_mordred.utils.descriptor_evaluation import DEFAULT_TIMEOUT
+from skfp.utils import ensure_mols, require_mols_with_conformations
 
 
 class MordredFingerprint(BaseFingerprintTransformer):
     """
     Mordred fingerprint.
 
-    This is a descriptor-based fingerprint, implementing a very large number of 2D,
-    and optionally 3D, molecular descriptors, originally implemented in the Mordred
-    [2]_ library. By default, they are computed by a vectorized implementation built
-    into scikit-fingerprints, adapted from the ``mordredcommunity`` [3]_ library. The
-    ``mordredcommunity`` library itself can be used instead, with the
-    ``implementation`` parameter.
+    This is a descriptor-based fingerprint, implementing many 2D, and optionally 3D,
+    molecular descriptors, originally implemented in the Mordred [2]_ library. By
+    default, they are computed by an optimized implementation, built from scratch. The
+    ``mordredcommunity`` [3]_ library can be used instead, with the ``implementation``
+    parameter.
 
     Descriptors include simple counts (e.g. atom types, rings), topological indices,
     computed properties (e.g. ClogP, polarizability), and more. For a full list, see
@@ -41,34 +41,28 @@ class MordredFingerprint(BaseFingerprintTransformer):
     ----------
     use_3D : bool, default=False
         Whether to include 3D (conformer-based) descriptors. Using this option results
-        in longer computation time. Molecules without a 3D conformer get NaN for all
-        3D descriptors.
+        in longer computation time.
 
-    implementation : {"skfp", "mordredcommunity"}, default="skfp"
-        Which implementation computes the descriptors. ``"skfp"`` is the built-in
-        implementation. ``"mordredcommunity"`` uses the ``mordredcommunity`` library,
-        as earlier scikit-fingerprints versions did, and requires the
-        ``mordredcommunity`` optional dependency, installed with
-        ``pip install "scikit-fingerprints[mordredcommunity]"``. Objects pickled by
-        those earlier versions keep using it. Both implementations compute the same
-        set of descriptors, but under different feature names, and with 3D
-        descriptors in a different order, so their outputs are not interchangeable.
+    implementation : {"optimized", "mordredcommunity"}, default="optimized"
+        Which implementation computes the descriptors. ``"optimized"`` is the
+        implementation built into scikit-fingerprints. ``"mordredcommunity"`` uses the
+        ``mordredcommunity`` library, as earlier scikit-fingerprints versions did, and
+        requires the ``mordredcommunity`` optional dependency, installed with
+        ``pip install "scikit-fingerprints[mordredcommunity]"``. Both implementations
+        compute the same set of descriptors, but under different feature names, and
+        with 3D descriptors in a different order, so their outputs are not
+        interchangeable.
 
     timeout : float, default=60.0
-        Seconds given to each of the two descriptor families that have to enumerate
-        the simple paths of a molecule, the detour matrix and the molecular ID (MID)
-        descriptors. Both searches are exponential in the number of independent
-        cycles, and the ones that run over their time are reported as NaN. The default
-        matches Mordred's. With ``implementation="mordredcommunity"``, it limits only
-        the detour matrix descriptors.
+        Timeout in seconds for computing descriptors that can be very slow for
+        molecules with many rings. Descriptors not computed within it are NaN.
 
     max_ring_system_rank : int, default=23
-        Number of independent cycles above which a ring system is reported as NaN by
-        the detour matrix descriptors without being searched at all. Searching one
-        costs roughly 2.2x more per cycle, and rank 23 already takes minutes, so going
-        further only burns the timeout without ever producing a value. Raise it to let
-        very fused molecules through at the cost of waiting out the timeout on them.
-        Only used with ``implementation="skfp"``.
+        Maximal number of independent cycles of a ring system, for which the detour
+        matrix descriptors are computed. They are NaN for larger ring systems, since
+        their computation time grows exponentially with it. Increase it to compute them
+        for highly fused molecules, at the cost of much longer computation, limited by
+        ``timeout``. Only used with ``implementation="optimized"``.
 
     sparse : bool, default=False
         Whether to return dense NumPy array, or sparse SciPy CSR array.
@@ -95,11 +89,10 @@ class MordredFingerprint(BaseFingerprintTransformer):
         and 1826 if using 3D descriptors.
 
     requires_conformers : bool
-        Whether the fingerprint is 3D-based and needs molecules with conformers to
-        compute its 3D descriptors. This depends on the ``use_3D`` parameter, and has
-        the same value. If the ``conf_id`` property is set, it will be used to
-        determine the conformation. You can use
-        :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
+        Whether the fingerprint is 3D-based and requires molecules with conformers as
+        inputs. This depends on the ``use_3D`` parameter, and has the same value. If the
+        ``conf_id`` property is set, it will be used to determine the conformation.
+        You can use :class:`~skfp.preprocessing.ConformerGenerator` to generate them.
 
     References
     ----------
@@ -134,7 +127,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
     _parameter_constraints: dict = {
         **BaseFingerprintTransformer._parameter_constraints,
         "use_3D": ["boolean"],
-        "implementation": [StrOptions({"skfp", "mordredcommunity"})],
+        "implementation": [StrOptions({"optimized", "mordredcommunity"})],
         "timeout": [Interval(Real, 0, None, closed="neither")],
         "max_ring_system_rank": [Interval(Integral, 0, None, closed="left")],
     }
@@ -142,7 +135,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
     def __init__(
         self,
         use_3D: bool = False,
-        implementation: str = "skfp",
+        implementation: str = "optimized",
         timeout: float = DEFAULT_TIMEOUT,
         max_ring_system_rank: int = DEFAULT_MAX_RING_SYSTEM_RANK,
         sparse: bool = False,
@@ -166,7 +159,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
 
     def __setstate__(self, state: dict) -> None:
         """
-        Restore a pickled object. Objects pickled before the ``"skfp"``
+        Restore a pickled object. Objects pickled before the ``"optimized"``
         implementation existed computed their descriptors with ``mordredcommunity``,
         so they keep using it, to give the same values as before.
         """
@@ -177,25 +170,22 @@ class MordredFingerprint(BaseFingerprintTransformer):
 
     def _validate_params(self) -> None:
         super()._validate_params()
-        # built in the main process, so that a missing mordredcommunity fails
-        # before the molecules are split between joblib workers
-        self._get_implementation()
+        # built once, in the main process, and shared by all batches; this also makes
+        # a missing mordredcommunity fail before joblib splits the molecules
+        self._implementation = self._get_implementation()
         if (
             self.implementation == "mordredcommunity"
             and self.max_ring_system_rank != DEFAULT_MAX_RING_SYSTEM_RANK
         ):
             warnings.warn(
-                "max_ring_system_rank is only used with implementation='skfp', "
+                "max_ring_system_rank is only used with implementation='optimized', "
                 "ignoring it for implementation='mordredcommunity'"
             )
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:  # noqa: ARG002
         """
-        Get fingerprint output feature names. With ``implementation="skfp"``, they
-        are readable descriptor names taken from the descriptor literature, keeping
-        established acronyms and symbols (e.g. TPSA, BCUT, ETA) unchanged. With
-        ``implementation="mordredcommunity"``, they are the names used by
-        ``mordredcommunity``.
+        Get fingerprint output feature names. Depends on ``implementation``
+        parameter, including both order and names.
 
         Parameters
         ----------
@@ -219,8 +209,8 @@ class MordredFingerprint(BaseFingerprintTransformer):
         ----------
         X : {sequence, array-like} of shape (n_samples,)
             Sequence containing SMILES strings or RDKit ``Mol`` objects. If ``use_3D``
-            is True, 3D descriptors are computed only for ``Mol`` objects with a 3D
-            conformer, and are NaN for the other inputs.
+            is True, only ``Mol`` objects with computed conformations and with
+            ``conf_id`` property are allowed.
 
         copy : bool, default=False
             Copy the input X or not.
@@ -233,13 +223,17 @@ class MordredFingerprint(BaseFingerprintTransformer):
         return super().transform(X, copy)
 
     def _calculate_fingerprint(self, X: Sequence[str | Mol]) -> np.ndarray | csr_array:
-        X = ensure_mols(X)
-        X = self._get_implementation().compute(X)
-        return csr_array(X) if self.sparse else X
+        X = require_mols_with_conformations(X) if self.use_3D else ensure_mols(X)
+        X = self._implementation.compute(X)
+        return (
+            csr_array(X, dtype=np.float32)
+            if self.sparse
+            else np.array(X, dtype=np.float32)
+        )
 
-    def _get_implementation(self) -> MordredImplementation:
-        if self.implementation == "skfp":
-            return SkfpMordredImplementation(
+    def _get_implementation(self) -> BaseMordredImplementation:
+        if self.implementation == "optimized":
+            return OptimizedMordredImplementation(
                 use_3D=self.use_3D,
                 timeout=self.timeout,
                 max_ring_system_rank=self.max_ring_system_rank,
@@ -248,7 +242,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
         if self.implementation == "mordredcommunity":
             # mordredcommunity is an optional dependency, imported only when chosen
             try:
-                from ._new_mordred.mordred_community import (
+                from skfp.fingerprints._mordred_implementations.mordred_community import (
                     MordredCommunityImplementation,
                 )
             except ModuleNotFoundError as e:
@@ -266,6 +260,6 @@ class MordredFingerprint(BaseFingerprintTransformer):
             )
 
         raise ValueError(
-            "implementation must be 'skfp' or 'mordredcommunity', "
+            "implementation must be 'optimized' or 'mordredcommunity', "
             f"got: {self.implementation!r}"
         )

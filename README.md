@@ -62,7 +62,7 @@ If you want to use neural fingerprints (embeddings from pretrained neural networ
 pip install "scikit-fingerprints[neural]"
 ```
 
-Mordred descriptors are computed by a built-in implementation. If you want to use the `mordredcommunity` library instead (`MordredFingerprint(implementation="mordredcommunity")`), install the extra with:
+Mordred descriptors are computed with an optimized built-in implementation by default. If you want to use the `mordredcommunity` library instead, install the extra with:
 
 ```bash
 pip install "scikit-fingerprints[mordredcommunity]"
