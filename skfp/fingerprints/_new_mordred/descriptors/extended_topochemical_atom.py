@@ -10,7 +10,10 @@ from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     AtomicProperties,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix
-from skfp.fingerprints._new_mordred.utils.periodic_table import ELEMENT_PERIOD
+from skfp.fingerprints._new_mordred.utils.periodic_table import (
+    ELEMENT_PERIOD,
+    NUM_ELEMENTS,
+)
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -94,7 +97,7 @@ def calc(
 
     # atomic properties
     atomic_nums = props.atomic_nums
-    core_counts, epsilons = _core_counts_and_epsilons(atomic_nums)
+    core_counts, epsilons = _CORE_COUNTS[atomic_nums], _EPSILONS[atomic_nums]
     degrees = props.degrees
     # the alkane reference drops hydrogen atoms and their bonds, so it holds only the
     # heavy atoms; one surviving RemoveHs (isotope, hydride) would count as a carbon
@@ -134,15 +137,19 @@ def calc(
     # composite + functionality indices, which compare the molecule with its alkane
     # reference: the same skeleton with every atom a carbon and every bond single
     gamma_alkane = _alkane_gamma(alkane_degrees, degrees)
-    eta_composite = _composite_and_functionality(
-        gamma,
-        distance_matrix.matrix,
-        gamma_alkane,
+    atom_pairs = _AtomPairs(distance_matrix.matrix)
+    if gamma_alkane is None:
+        atom_pairs_alkane = None
+    elif is_heavy.all():
+        # the reference has the same atoms, so the same pairs
+        atom_pairs_alkane = atom_pairs
+    else:
         # hydrogens are terminal, so no heavy-atom distance runs through one
-        None
-        if gamma_alkane is None
-        else distance_matrix.matrix[np.ix_(is_heavy, is_heavy)],
-        num_atoms,
+        atom_pairs_alkane = _AtomPairs(
+            distance_matrix.matrix[np.ix_(is_heavy, is_heavy)]
+        )
+    eta_composite = _composite_and_functionality(
+        gamma, atom_pairs, gamma_alkane, atom_pairs_alkane, num_atoms
     )
 
     eta_branching = _branching_indices(eta_composite[6], ring_count, num_atoms)
@@ -218,6 +225,11 @@ def _core_counts_and_epsilons(atomic_nums: np.ndarray) -> tuple[np.ndarray, np.n
     return core_counts, epsilons
 
 
+# core count and epsilon of every element, so that a molecule looks its atoms up
+# rather than recomputing the formula for each of them
+_CORE_COUNTS, _EPSILONS = _core_counts_and_epsilons(np.arange(NUM_ELEMENTS))
+
+
 def _beta_and_gamma(
     props: AtomicProperties,
     bond_types: np.ndarray,
@@ -289,26 +301,40 @@ def _beta_delta(
     return np.where(eligible, 0.5, 0.0)
 
 
-def _composite_index_pair(gamma: np.ndarray, dists: np.ndarray) -> tuple[float, float]:
+class _AtomPairs:
+    """
+    Every unordered pair of atoms, with its squared distance and whether it is
+    bonded, shared by the composite indices of the molecule and its alkane
+    reference when the two have the same atoms.
+    """
+
+    def __init__(self, dists: np.ndarray):
+        self.upper_i, self.upper_j = np.triu_indices(dists.shape[0], k=1)
+        distances = dists[self.upper_i, self.upper_j]
+        self.squared_distances = distances**2
+        self.is_bonded = distances == 1.0
+
+
+def _composite_index_pair(gamma: np.ndarray, pairs: _AtomPairs) -> tuple[float, float]:
     """
     ETA composite index, returning (non_local, local) together.
 
     ``non_local = sum_{i<j} sqrt(gamma_i gamma_j / r_ij^2)`` and ``local`` is the
     same sum restricted to bonded pairs (``r_ij == 1``).
     """
-    upper_i, upper_j = np.triu_indices(gamma.shape[0], k=1)
-    d = dists[upper_i, upper_j]
-    terms = np.sqrt(gamma[upper_i] * gamma[upper_j] / d**2)
+    terms = np.sqrt(
+        gamma[pairs.upper_i] * gamma[pairs.upper_j] / pairs.squared_distances
+    )
     non_local = terms.sum()
-    local = terms[d == 1.0].sum()
+    local = terms[pairs.is_bonded].sum()
     return float(non_local), float(local)
 
 
 def _composite_and_functionality(
     gamma: np.ndarray,
-    distance_matrix: np.ndarray,
+    atom_pairs: _AtomPairs,
     gamma_alkane: np.ndarray | None,
-    distance_matrix_alkane: np.ndarray | None,
+    atom_pairs_alkane: _AtomPairs | None,
     num_atoms: int,
 ) -> np.ndarray:
     """
@@ -317,16 +343,17 @@ def _composite_and_functionality(
     Reference-alkane values (and the functionality indices derived from them)
     are NaN when the reference alkane could not be built.
     """
-    regular_non_local, regular_local = _composite_index_pair(gamma, distance_matrix)
+    regular_non_local, regular_local = _composite_index_pair(gamma, atom_pairs)
     regular_non_local_avg = regular_non_local / num_atoms
     regular_local_avg = regular_local / num_atoms
 
-    if gamma_alkane is None:
+    # the pairs of the reference exist exactly when the reference does
+    if gamma_alkane is None or atom_pairs_alkane is None:
         alkane_non_local = alkane_non_local_avg = np.nan
         alkane_local = alkane_local_avg = np.nan
     else:
         alkane_non_local, alkane_local = _composite_index_pair(
-            gamma_alkane, distance_matrix_alkane
+            gamma_alkane, atom_pairs_alkane
         )
         # an empty reference, as for a hydrogen molecule, has no atoms to average
         # over, which leaves Mordred's averages undefined too
@@ -387,8 +414,7 @@ def _epsilon_values(
     Types 3 and 4 (and the epsilon deltas derived from them) are NaN when the
     respective reference variant does not exist.
     """
-    atomic_nums = props_hydrogens.atomic_nums
-    eps_hydrogens = _core_counts_and_epsilons(atomic_nums)[1]
+    eps_hydrogens = _EPSILONS[props_hydrogens.atomic_nums]
 
     eps_1 = eps_hydrogens.mean()
     eps_2 = epsilons.mean()
@@ -401,11 +427,7 @@ def _epsilon_values(
     # there, e.g. ETA epsilon 5 of [Fe][H-]C is 1.175 here against Mordred's 0.883.
     is_hydrogen = props_hydrogens.is_hydrogen
     is_carbon = props_hydrogens.is_carbon
-    begins, ends = props_hydrogens.bond_begin_idxs, props_hydrogens.bond_end_idxs
-    # indices repeat, and both plain and in-place fancy indexing would keep one write
-    bonded_to_carbon = np.zeros(props_hydrogens.num_atoms, dtype=bool)
-    np.logical_or.at(bonded_to_carbon, begins, is_carbon[ends])
-    np.logical_or.at(bonded_to_carbon, ends, is_carbon[begins])
+    bonded_to_carbon = props_hydrogens.count_neighbors(is_carbon) > 0
     eps_5 = eps_hydrogens[~is_hydrogen | ~bonded_to_carbon].mean()
 
     return np.array(
@@ -427,10 +449,9 @@ def _epsilon_values(
 # degree it can have, and every bond with a single one
 _MAX_CARBON_DEGREE = 4
 
-_CARBON_CORE_COUNT, _CARBON_EPSILON = (
-    value.item() for value in _core_counts_and_epsilons(np.array([6]))
-)
-_HYDROGEN_EPSILON = _core_counts_and_epsilons(np.array([1]))[1].item()
+_CARBON_CORE_COUNT = _CORE_COUNTS[6].item()
+_CARBON_EPSILON = _EPSILONS[6].item()
+_HYDROGEN_EPSILON = _EPSILONS[1].item()
 
 
 def _alkane_gamma(alkane_degrees: np.ndarray, degrees: np.ndarray) -> np.ndarray | None:
@@ -487,7 +508,7 @@ def _saturated_mean_epsilon(props: AtomicProperties, bond_types: np.ndarray) -> 
     if num_hydrogens is None:
         return np.nan
 
-    epsilons = _core_counts_and_epsilons(atomic_nums)[1]
+    epsilons = _EPSILONS[atomic_nums]
     total = epsilons.sum() + num_hydrogens * _HYDROGEN_EPSILON
     return float(total / ((len(atomic_nums) + num_hydrogens) or np.nan))
 

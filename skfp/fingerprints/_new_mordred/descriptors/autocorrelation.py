@@ -64,13 +64,8 @@ def calc(
     num_atoms = atomic_props_hydrogens.num_atoms
 
     # one-hot stack of distance masks for d = 1...8, shape (8, n, n)
-    dist_masks = np.stack(
-        [
-            (distance_matrix_hydrogens.matrix == dist)
-            for dist in range(1, MAX_DISTANCE + 1)
-        ],
-        axis=0,
-    )
+    distances = np.arange(1, MAX_DISTANCE + 1)[:, np.newaxis, np.newaxis]
+    dist_masks = distance_matrix_hydrogens.matrix == distances
 
     # number of atoms exactly d bonds away from each atom, shape (8, n)
     neighbor_counts = dist_masks.sum(axis=2)

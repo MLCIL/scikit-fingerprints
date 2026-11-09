@@ -54,10 +54,11 @@ def spectral_attributes(
 
     eigvals, eigvecs = _eigendecompositions(matrices, hermitian, eigendecomposition)
     matrix_idxs = np.arange(len(matrices))
-    leading = eigvals[matrix_idxs, eigvals.argmax(axis=1)]
+    leading_idxs = eigvals.argmax(axis=1)
+    leading = eigvals[matrix_idxs, leading_idxs]
     smallest = eigvals[matrix_idxs, eigvals.argmin(axis=1)]
     # the eigenvector belonging to the largest eigenvalue of each matrix
-    leading_eigvecs = eigvecs[matrix_idxs, :, eigvals.argmax(axis=1)]
+    leading_eigvecs = eigvecs[matrix_idxs, :, leading_idxs]
 
     mean_eigenvalue = eigvals.mean(axis=1)
     sp_ad = np.abs(eigvals - mean_eigenvalue[:, np.newaxis]).sum(axis=1)

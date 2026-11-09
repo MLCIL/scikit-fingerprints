@@ -48,17 +48,19 @@ def calc(
         adjacency_matrix_regular.matrix, distance_matrix_regular.matrix
     )
 
-    # keep only lower-triangle atom pairs (strictly below the diagonal), so each
-    # unordered pair is counted once; everything else is mapped to order 0, which
-    # is dropped below
-    dist = distance_matrix_regular.matrix * np.tri(*charge_terms.shape)
+    # only lower-triangle atom pairs (strictly below the diagonal), so each unordered
+    # pair is counted once, in the same row-major order as the whole matrix; pairs
+    # further apart than the largest order are mapped to order 0, dropped below
+    rows, cols = np.tril_indices(len(charge_terms), k=-1)
+    dist = distance_matrix_regular.matrix[rows, cols]
     orders = np.where(dist <= _MAX_ORDER, dist, 0).astype(np.intp)
 
     # accumulate all orders
-    counts = np.bincount(orders.ravel(), minlength=_MAX_ORDER + 1)[1:]
+    counts = np.bincount(orders, minlength=_MAX_ORDER + 1)[1:]
+    # bincount returns integers when given no pairs at all, as for a single atom
     raw = np.bincount(
-        orders.ravel(), weights=np.abs(charge_terms).ravel(), minlength=_MAX_ORDER + 1
-    )
+        orders, weights=np.abs(charge_terms[rows, cols]), minlength=_MAX_ORDER + 1
+    ).astype(np.float64, copy=False)
 
     # drop the unused order 0 bucket
     raw = raw[1:]
@@ -79,8 +81,9 @@ def _charge_term_matrix(adj_matrix: np.ndarray, dist_matrix: np.ndarray) -> np.n
     """
     inv_sq_dist = dist_matrix.astype(np.float64, copy=True)
     nonzero = inv_sq_dist != 0
+    # the diagonal holds zero distances, which the mask skips, so it stays zero,
+    # as A . D needs
     inv_sq_dist[nonzero] = inv_sq_dist[nonzero] ** -2
-    np.fill_diagonal(inv_sq_dist, 0)
 
     galvez = adj_matrix.dot(inv_sq_dist)
     return galvez - galvez.T

@@ -41,13 +41,7 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
     Requires a connected molecule (single fragment).
     """
     if n_frags != 1:
-        values_nan = np.full(
-            len(ELEMENT_PROPERTY_TABLES) * len(ATTRIBUTE_NAMES),
-            np.nan,
-            dtype=np.float32,
-        )
-
-        return values_nan
+        return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
 
     # bond graph is the same for all properties, only the shortest paths weighted
     # by properties and the spectral attributes differ
@@ -57,13 +51,12 @@ def calc(atomic_props_regular: AtomicProperties, n_frags: int) -> np.ndarray:
 
     matrices = []
     for weight_row, diagonal in zip(
-        weights[is_defined], diagonals[is_defined], strict=True
+        weights[is_defined].astype(np.float32), diagonals[is_defined], strict=True
     ):
         # the bond graph stores each bond in one direction only, directed=False makes
         # every bond traversable both ways
         matrix = floyd_warshall(
-            bond_graph.get_prop_weighted_matrix(weight_row.astype(np.float32)),
-            directed=False,
+            bond_graph.get_prop_weighted_matrix(weight_row), directed=False
         )
         np.fill_diagonal(matrix, diagonal)
         matrices.append(matrix)
