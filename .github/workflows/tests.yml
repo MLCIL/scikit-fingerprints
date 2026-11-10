@@ -19,6 +19,9 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
         os: [macos-latest, ubuntu-latest, windows-latest]
+        # with all optional dependencies, and without any, where tests needing them
+        # are skipped
+        extras: ["all", "none"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repo
@@ -58,9 +61,22 @@ jobs:
           key: hf-models-${{ runner.os }}
 
       - name: Install the project dependencies
+        if: matrix.extras == 'all'
         env:
           UV_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
-        run: uv sync --group test --group docs --extra neural
+        run: uv sync --group test --group docs --extra mordredcommunity --extra neural
+
+      - name: Install the project dependencies without extras
+        if: matrix.extras == 'none'
+        run: uv sync --group test --group docs
+
+      - name: Check that no extras are installed
+        if: matrix.extras == 'none'
+        shell: bash
+        run: >
+          uv run python -c "import importlib.util, sys;
+          installed = [m for m in ('mordred', 'torch', 'chemprop') if importlib.util.find_spec(m)];
+          sys.exit(f'Optional dependencies installed: {installed}' if installed else 0)"
 
       - name: Check pre-commit
         run: uv run pre-commit run --all-files

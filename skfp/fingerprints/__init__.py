@@ -21,7 +21,6 @@ from .mhfp import MHFPFingerprint
 from .mordred_fp import MordredFingerprint
 from .morse import MORSEFingerprint
 from .mqns import MQNsFingerprint
-from .new_mordred_fp import NewMordredFingerprint
 from .pattern import PatternFingerprint
 from .pharmacophore import PharmacophoreFingerprint
 from .physiochemical_properties import PhysiochemicalPropertiesFingerprint

@@ -1,5 +1,4 @@
 import pytest
-from mordred._base.context import Context
 from rdkit import Chem
 from rdkit.Chem import AllChem, Mol
 
@@ -81,8 +80,10 @@ def _signature(mol: Mol) -> tuple[list[tuple], list[tuple]]:
 @pytest.mark.parametrize(("explicit_hydrogens", "kekulize"), _VARIANTS)
 @pytest.mark.parametrize("input_name", list(_INPUTS))
 def test_variants_match_mordred(input_name, explicit_hydrogens, kekulize):
+    context_module = pytest.importorskip("mordred._base.context")
+
     mol = _INPUTS[input_name]()
-    context = Context.from_query(
+    context = context_module.Context.from_query(
         mol, False, {explicit_hydrogens}, {kekulize}, -1, config={}
     )
     expected = context._mols[explicit_hydrogens, kekulize]

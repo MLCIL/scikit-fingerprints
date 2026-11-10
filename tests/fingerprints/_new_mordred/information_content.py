@@ -3,8 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from mordred import Calculator
-from mordred import InformationContent as MordredInformationContent
 from numpy.testing import assert_allclose
 from rdkit.Chem import Mol, MolFromSmiles, RenumberAtoms, SmilesParserParams
 from rdkit.Chem.rdchem import Bond
@@ -109,8 +107,12 @@ def test_modified_information_content_of_isotopes_matches_mordred(smiles):
     # Mordred weighs a class by the mass of its last atom, which for these inputs
     # agrees with the atomic mass of the class's atoms, or, for a class mixing
     # isotopes, with the atomic weight of their element
+    mordred = pytest.importorskip("mordred")
+
     mol = MolFromSmiles(smiles)
-    calculator = Calculator([MordredInformationContent.ModifiedIC(o) for o in range(6)])
+    calculator = mordred.Calculator(
+        [mordred.InformationContent.ModifiedIC(o) for o in range(6)]
+    )
     expected = [float(value) for value in calculator(mol)]
 
     assert_allclose(_modified_information_content(mol), expected, rtol=1e-6)
