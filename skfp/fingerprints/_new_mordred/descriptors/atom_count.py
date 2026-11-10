@@ -2,6 +2,9 @@ import numpy as np
 from rdkit.Chem import Mol, rdMolDescriptors
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.molecular_properties import (
+    MolecularProperties,
+)
 from skfp.fingerprints._new_mordred.utils.periodic_table import HALOGEN_ATOMIC_NUMS
 
 """
@@ -48,24 +51,30 @@ _ELEMENT_ATOMIC_NUMBERS = np.array(
     ]
 )
 _HALOGEN_ATOMIC_NUMS = np.array(sorted(HALOGEN_ATOMIC_NUMS))
+# the histogram over atomic numbers is padded up to this, so that every element of
+# interest and every halogen can be indexed without a bounds check
+_MAX_ATOMIC_NUM = max(_ELEMENT_ATOMIC_NUMBERS.max(), _HALOGEN_ATOMIC_NUMS.max())
 
 
-def calc(mol_regular: Mol, props_regular: AtomicProperties) -> np.ndarray:
+def calc(
+    mol_regular: Mol,
+    props_regular: AtomicProperties,
+    mol_properties: MolecularProperties,
+) -> np.ndarray:
     """
     Count atoms by common element and structural category.
     """
-    # histogram over atomic numbers, padded so that every element of interest and
-    # every halogen can be indexed without a bounds check
-    max_atomic_num = max(_ELEMENT_ATOMIC_NUMBERS.max(), _HALOGEN_ATOMIC_NUMS.max())
-    counts = np.bincount(props_regular.atomic_nums, minlength=max_atomic_num + 1)
+    counts = np.bincount(props_regular.atomic_nums, minlength=_MAX_ATOMIC_NUM + 1)
 
     values = [
-        rdMolDescriptors.CalcNumAtoms(mol_regular),
+        # hydrogens included, whether they are explicit atoms or not
+        mol_properties.num_atoms,
         # every atom left, hydrogens that RemoveHs keeps (e.g. isotopes) included
         props_regular.num_atoms,
         rdMolDescriptors.CalcNumSpiroAtoms(mol_regular),
         rdMolDescriptors.CalcNumBridgeheadAtoms(mol_regular),
-        rdMolDescriptors.CalcNumHeteroatoms(mol_regular),
+        # anything but carbon and hydrogen, as RDKit counts heteroatoms
+        np.count_nonzero(~props_regular.is_carbon & ~props_regular.is_hydrogen),
         # hydrogens stored on atoms, plus those that RemoveHs keeps as atoms
         props_regular.total_num_hs.sum() + np.count_nonzero(props_regular.is_hydrogen),
         *counts[_ELEMENT_ATOMIC_NUMBERS],

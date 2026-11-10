@@ -75,22 +75,22 @@ def calc(
     atomic_nums = props_regular.atomic_nums
     # a heteroatom here is anything but carbon and hydrogen, unlike the
     # carbon-only definition AtomicProperties.is_hetero uses
-    is_hetero = (atomic_nums != 1) & (atomic_nums != 6)
-    molecular_ids = [
-        atom_ids.sum(),  # every atom, so no selection to build
-        atom_ids[is_hetero].sum(),
-        atom_ids[atomic_nums == 6].sum(),  # carbon
-        atom_ids[atomic_nums == 7].sum(),  # nitrogen
-        atom_ids[atomic_nums == 8].sum(),  # oxygen
-        atom_ids[_IS_HALOGEN[atomic_nums]].sum(),
-    ]
+    is_hetero = props_regular.is_hetero & ~props_regular.is_hydrogen
+    molecular_ids = np.array(
+        [
+            atom_ids.sum(),  # every atom, so no selection to build
+            atom_ids[is_hetero].sum(),
+            atom_ids[props_regular.is_carbon].sum(),
+            atom_ids[atomic_nums == 7].sum(),  # nitrogen
+            atom_ids[atomic_nums == 8].sum(),  # oxygen
+            atom_ids[_IS_HALOGEN[atomic_nums]].sum(),
+        ]
+    )
 
-    values = []
-    for molecular_id in molecular_ids:
-        # averaged over every atom of the molecule, not over the selected ones
-        values += [molecular_id, molecular_id / props_regular.num_atoms]
-
-    return np.asarray(values, dtype=np.float32)
+    # every sum followed by its average over every atom of the molecule, not over
+    # the selected ones
+    averages = molecular_ids / props_regular.num_atoms
+    return np.column_stack([molecular_ids, averages]).ravel().astype(np.float32)
 
 
 def _atom_ids(props: AtomicProperties, deadline: float) -> np.ndarray:
@@ -99,7 +99,12 @@ def _atom_ids(props: AtomicProperties, deadline: float) -> np.ndarray:
     starting at that atom, of the inverse square root of the product of the
     path's edge weights.
     """
-    adjacency = _weighted_adjacency(props)
+    # every neighbor paired with the bond weight, the product of the degrees of the
+    # two bonded atoms
+    degrees = props.degrees
+    adjacency = props.neighbor_lists(
+        degrees[props.bond_begin_idxs] * degrees[props.bond_end_idxs]
+    )
     num_atoms = props.num_atoms
     visited = bytearray(num_atoms)
 
@@ -111,24 +116,6 @@ def _atom_ids(props: AtomicProperties, deadline: float) -> np.ndarray:
         dtype=np.float64,
         count=num_atoms,
     )
-
-
-def _weighted_adjacency(props: AtomicProperties) -> list[list[tuple[int, int]]]:
-    """
-    Neighbors of every atom paired with their bond weight, the product of the
-    degrees of the two bonded atoms.
-    """
-    degrees = props.degrees
-    begin_idxs = props.bond_begin_idxs.tolist()
-    end_idxs = props.bond_end_idxs.tolist()
-    weights = (degrees[props.bond_begin_idxs] * degrees[props.bond_end_idxs]).tolist()
-
-    adjacency: list[list[tuple[int, int]]] = [[] for _ in range(props.num_atoms)]
-    for begin, end, weight in zip(begin_idxs, end_idxs, weights, strict=True):
-        adjacency[begin].append((end, weight))
-        adjacency[end].append((begin, weight))
-
-    return adjacency
 
 
 def _sum_over_paths(

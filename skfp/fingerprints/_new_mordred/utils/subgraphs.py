@@ -167,12 +167,15 @@ class Subgraphs:
         max_degree = int(degrees.max()) if degrees.size else 0
         bonds_of_atom = np.full((self._num_atoms, max_degree), -1, dtype=np.intp)
 
-        # filling row by row keeps each atom's bonds in ascending order
-        next_slot = np.zeros(self._num_atoms, dtype=np.intp)
-        for bond, (begin, end) in zip(self._bonds.tolist(), bond_atoms, strict=True):
-            for atom in (begin, end):
-                bonds_of_atom[atom, next_slot[atom]] = bond
-                next_slot[atom] += 1
+        # every (atom, bond) incidence, grouped by atom; the stable sort keeps the
+        # bonds of each atom in ascending order, as they come in that order
+        atoms = bond_atoms.ravel()
+        bonds = np.repeat(self._bonds, 2)
+        order = np.argsort(atoms, kind="stable")
+        atoms, bonds = atoms[order], bonds[order]
+        # the slot of an incidence is how many of the same atom precede it
+        slots = np.arange(len(atoms)) - np.searchsorted(atoms, atoms)
+        bonds_of_atom[atoms, slots] = bonds
 
         return bonds_of_atom
 

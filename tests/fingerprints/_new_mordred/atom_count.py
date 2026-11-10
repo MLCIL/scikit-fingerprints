@@ -6,6 +6,9 @@ from rdkit.Chem import Mol, MolFromSmiles, SmilesParserParams
 from skfp.fingerprints._new_mordred.descriptors import atom_count
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
+from skfp.fingerprints._new_mordred.utils.molecular_properties import (
+    MolecularProperties,
+)
 
 FEATURE_NAMES = [
     "nAtom",
@@ -71,4 +74,6 @@ def test_hydrogens_kept_by_remove_hs_are_counted(
 
 def _calc(mol: Mol) -> np.ndarray:
     mol_regular = preprocess_mol(mol)
-    return atom_count.calc(mol_regular, AtomicProperties(mol_regular))
+    return atom_count.calc(
+        mol_regular, AtomicProperties(mol_regular), MolecularProperties(mol_regular)
+    )

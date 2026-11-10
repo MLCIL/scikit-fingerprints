@@ -1,14 +1,17 @@
 import numpy as np
 from rdkit.Chem import Atom, Mol, RWMol
 from rdkit.Chem.rdFreeSASA import CalcSASA, SASAAlgorithm, SASAOpts
-from scipy.spatial.distance import cdist
 
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 from skfp.fingerprints._new_mordred.utils.periodic_table import VAN_DER_WAALS_RADII
 
 
 def solvent_accessible_surface_area(
-    mol: Mol, conformer: int = -1, solvent_radius: float = 1.4
+    mol: Mol,
+    atomic_nums: np.ndarray,
+    distances: np.ndarray,
+    conformer: int = -1,
+    solvent_radius: float = 1.4,
 ) -> np.ndarray:
     """
     Solvent accessible surface area (SASA).
@@ -25,6 +28,13 @@ def solvent_accessible_surface_area(
     mol : rdkit.Chem.Mol
         Input molecule with at least one 3D conformer.
 
+    atomic_nums : np.ndarray of shape (n_atoms,)
+        Atomic number of every atom of ``mol``.
+
+    distances : np.ndarray of shape (n_atoms, n_atoms)
+        Euclidean distances between the atoms of ``mol`` in ``conformer``, as
+        :func:`rdkit.Chem.Get3DDistanceMatrix` computes them.
+
     conformer : int, default=-1
         Conformer ID passed to RDKit. The default value of ``-1`` selects
         the first conformer.
@@ -39,11 +49,9 @@ def solvent_accessible_surface_area(
         Per-atom solvent accessible surface areas, in the same order as atoms
         in ``mol``.
     """
-    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol, np.intp)
     radii = VAN_DER_WAALS_RADII.lookup(atomic_nums)
     # the sphere Shrake-Rupley measures, reaching out to the probe centre
     probe_reach = radii + solvent_radius
-    positions = mol.GetConformer(conformer).GetPositions()
 
     # CalcSASA reads an atom's first neighbor without checking that it has one, so
     # an atom whose probe sphere no other one's overlaps either faults the process
@@ -52,7 +60,7 @@ def solvent_accessible_surface_area(
     # here, and it occludes nothing, so the rest are unaffected by its leaving.
     # An atom without radius has a nan reach, so it overlaps nothing either and is
     # left out with a nan area, as Mordred leaves it out of every atom's neighbors.
-    overlaps = cdist(positions, positions) < probe_reach + probe_reach[:, np.newaxis]
+    overlaps = distances < probe_reach + probe_reach[:, np.newaxis]
     np.fill_diagonal(overlaps, False)  # an atom always overlaps itself
     # not only lone atoms: also those without radius, which overlap nothing
     is_lone = ~overlaps.any(axis=1)

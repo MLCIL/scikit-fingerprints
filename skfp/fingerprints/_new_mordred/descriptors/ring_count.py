@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import numpy as np
-from rdkit import Chem
 from rdkit.Chem import Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
@@ -43,21 +42,26 @@ class RingSets:
     a ring.
 
     Shared by the ring count, van der Waals volume, and extended topochemical
-    atom descriptors, which would otherwise each re-run ``GetSymmSSSR`` and
-    re-inspect every ring atom. Ring perception depends only on connectivity,
-    so the count is the same for the kekulized molecule.
+    atom descriptors, which would otherwise each read the rings and re-inspect
+    every ring atom. Ring perception depends only on connectivity, so the count is
+    the same for the kekulized molecule.
+
+    The molecule must be sanitized. The rings are read from the ring info that
+    sanitization stores on it, the symmetrized SSSR, rather than perceived again.
+    An unsanitized molecule has no ring info, and would silently appear to have no
+    rings at all.
     """
 
     def __init__(self, mol: Mol, props: AtomicProperties):
-        self.mol = mol
-
         # rings hold a handful of atoms each, so indexing Python lists per atom
         # beats NumPy fancy indexing, which allocates a temporary per ring; the
         # conversion is done once here and shared by both calls below
         self._is_aromatic = props.is_aromatic.tolist()
         self._is_hetero = props.is_hetero.tolist()
 
-        self.simple_ring_atom_sets = [set(ring) for ring in Chem.GetSymmSSSR(mol)]
+        self.simple_ring_atom_sets = [
+            set(ring) for ring in mol.GetRingInfo().AtomRings()
+        ]
         self.num_rings = len(self.simple_ring_atom_sets)
         # an atom lies in a ring when it belongs to at least one SSSR ring
         self.is_in_ring = np.zeros(props.num_atoms, dtype=bool)

@@ -4,6 +4,7 @@ from numpy.testing import assert_allclose
 from rdkit import Chem
 
 from skfp.fingerprints._new_mordred.descriptors import carbon_types
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 
 FEATURE_NAMES = [
@@ -59,6 +60,6 @@ def test_fraction_csp3_values(mol, expected_fraction):
 
 
 def _calc(mol: Chem.Mol) -> np.ndarray:
-    mol_kekulized = preprocess_mol(mol, explicit_hydrogens=False, kekulize=True)
+    mol_regular = preprocess_mol(mol)
     mol_hydrogens = preprocess_mol(mol, explicit_hydrogens=True)
-    return carbon_types.calc(mol_kekulized, mol_hydrogens)
+    return carbon_types.calc(AtomicProperties(mol_regular), mol_hydrogens)

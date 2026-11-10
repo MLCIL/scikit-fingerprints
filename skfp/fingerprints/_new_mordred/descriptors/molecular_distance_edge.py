@@ -53,24 +53,24 @@ def calc(
     atomic_props_regular: AtomicProperties,
     distance_matrix_regular: DistanceMatrix,
 ) -> np.ndarray:
-    num_atoms = atomic_props_regular.num_atoms
     dists = distance_matrix_regular.matrix
 
     atomic_nums = atomic_props_regular.atomic_nums
     valences = atomic_props_regular.degrees
 
-    # enumerate atom pairs (unordered) and bucket by valence
-    i, j = np.triu_indices(num_atoms, k=1)
+    # only atoms of the elements and valences the buckets cover can form a pair,
+    # so pair those alone - their pairs come in the same order as among all atoms
+    atoms = np.flatnonzero(np.isin(atomic_nums, _ELEMENTS) & (valences < 11))
+    rows, cols = np.triu_indices(len(atoms), k=1)
+    i, j = atoms[rows], atoms[cols]
+    same_element = atomic_nums[i] == atomic_nums[j]
+    i, j = i[same_element], j[same_element]
+
+    # bucket the unordered pairs by valence
     valence_low = np.minimum(valences[i], valences[j])
     valence_high = np.maximum(valences[i], valences[j])
-    same_element = (atomic_nums[i] == atomic_nums[j]) & np.isin(
-        atomic_nums[i], _ELEMENTS
-    )
-    in_range = (valence_low >= 0) & (valence_high < 11)
-    mask = same_element & in_range
-
-    bucket = _BUCKET_LOOKUP[atomic_nums[i[mask]], valence_low[mask], valence_high[mask]]
-    log_dists = np.log(dists[i[mask], j[mask]])
+    bucket = _BUCKET_LOOKUP[atomic_nums[i], valence_low, valence_high]
+    log_dists = np.log(dists[i, j])
     valid = bucket >= 0
     bucket, log_dists = bucket[valid], log_dists[valid]
 

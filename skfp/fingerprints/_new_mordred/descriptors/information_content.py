@@ -1,14 +1,10 @@
-from collections import Counter, defaultdict
-
 import numpy as np
-from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
     ATOMIC_WEIGHTS_RDKIT,
     BOND_ORDERS,
     AtomicProperties,
 )
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -38,7 +34,6 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_hydrogens: Mol,
     atomic_props_hydrogens: AtomicProperties,
     kekulized_bond_types_hydrogens: np.ndarray,
 ) -> np.ndarray:
@@ -78,12 +73,13 @@ def calc(
 
     atomic_nums = atomic_props_hydrogens.atomic_nums  # Z
     # RDKit masses, not the Mordred mass table used by the other descriptors
-    masses = atoms_apply_func(Atom.GetMass, mol_hydrogens, np.float64)
+    masses = atomic_props_hydrogens.masses
 
     bond_order_sum = BOND_ORDERS[kekulized_bond_types_hydrogens].sum()  # B
 
     codes = _neighborhood_codes(atomic_props_hydrogens, kekulized_bond_types_hydrogens)
-    class_size_per_atom = _class_size_per_atom(codes)
+    class_ids = _class_ids(codes)
+    class_size_per_atom = _class_size_per_atom(class_ids)
 
     ic = _shannon_entropy(class_size_per_atom)
     tic = num_atoms * ic
@@ -91,7 +87,7 @@ def calc(
     bic = ic / (np.log2(bond_order_sum) if bond_order_sum > 1 else np.nan)
     cic = np.log2(num_atoms) - ic
     mic = _shannon_entropy(
-        class_size_per_atom, _class_masses(codes, masses, atomic_nums)
+        class_size_per_atom, _class_masses(class_ids, masses, atomic_nums)
     )
     zmic = _shannon_entropy(class_size_per_atom, atomic_nums * class_size_per_atom)
 
@@ -113,7 +109,8 @@ def _neighborhood_codes(
     repeat among them kept. Order 0 reaches no bond at all and codes an atom by its
     atomic number alone, so its codes are plain integers.
     """
-    neighbors = _neighbors(props, bond_types)
+    # every neighbor with the type of the bond leading to it
+    neighbors = props.neighbor_lists(bond_types)
 
     # the element and the degree of every atom, which is all a path spells out about
     # the atoms it passes through; kept as a list of tuples, as the growing loop below
@@ -167,25 +164,36 @@ def _neighborhood_codes(
     return codes
 
 
-def _class_size_per_atom(codes: list[list[int | tuple]]) -> np.ndarray:
+def _class_ids(codes: list[list[int | tuple]]) -> np.ndarray:
     """
-    Size of the class every atom falls into, shaped ``(_MAX_ORDER + 1, num_atoms)``.
+    Class of every atom, numbered within each order, shaped
+    ``(_MAX_ORDER + 1, num_atoms)``.
 
     Atoms carrying the same neighborhood code of a given order make up one class of
-    that order. Every entry is the size of the class holding that atom, repeated once
-    per atom of the class rather than kept once per class.
+    that order. Numbering the classes once lets the class sizes and masses be read
+    off integers, rather than hashing the nested codes again for each.
     """
-    class_size_per_atom = np.empty((len(codes), len(codes[0])), dtype=np.intp)
+    class_ids = np.empty((len(codes), len(codes[0])), dtype=np.intp)
     for order, order_codes in enumerate(codes):
-        # an order holds one code per atom, so counting how often a whole code occurs
-        # among them counts the atoms of the class it stands for
-        class_counts = Counter(order_codes)
-        class_size_per_atom[order] = [class_counts[code] for code in order_codes]
-    return class_size_per_atom
+        id_of_code: dict[int | tuple, int] = {}
+        class_ids[order] = [
+            id_of_code.setdefault(code, len(id_of_code)) for code in order_codes
+        ]
+    return class_ids
+
+
+def _class_size_per_atom(class_ids: np.ndarray) -> np.ndarray:
+    """
+    Size of the class every atom falls into, shaped like ``class_ids``.
+
+    Every entry is the size of the class holding that atom, repeated once per atom
+    of the class rather than kept once per class.
+    """
+    return np.stack([np.bincount(ids)[ids] for ids in class_ids])
 
 
 def _class_masses(
-    codes: list[list[int | tuple]], masses: np.ndarray, atomic_nums: np.ndarray
+    class_ids: np.ndarray, masses: np.ndarray, atomic_nums: np.ndarray
 ) -> np.ndarray:
     """
     Mass weighting the class of every atom in the modified information content,
@@ -207,36 +215,16 @@ def _class_masses(
         # no isotope labels, so every class shares one mass already
         return masses
 
-    class_masses = np.empty((len(codes), len(masses)))
-    for order, order_codes in enumerate(codes):
-        atoms_of_class: defaultdict[int | tuple, list[int]] = defaultdict(list)
-        for atom_idx, code in enumerate(order_codes):
-            atoms_of_class[code].append(atom_idx)
-        for atom_idxs in atoms_of_class.values():
+    class_masses = np.empty(class_ids.shape)
+    for order, ids in enumerate(class_ids):
+        for class_id in range(ids.max() + 1):
+            atom_idxs = np.flatnonzero(ids == class_id)
             class_atom_masses = masses[atom_idxs]
             is_one_mass = (class_atom_masses == class_atom_masses[0]).all()
             class_masses[order, atom_idxs] = (
                 class_atom_masses[0] if is_one_mass else element_masses[atom_idxs[0]]
             )
     return class_masses
-
-
-def _neighbors(
-    props: AtomicProperties, bond_types: np.ndarray
-) -> list[list[tuple[int, int]]]:
-    """
-    Neighbors of every atom, each with the type of the bond leading to it.
-    """
-    neighbors: list[list[tuple[int, int]]] = [[] for _ in range(props.num_atoms)]
-    for begin, end, bond_type in zip(
-        props.bond_begin_idxs.tolist(),
-        props.bond_end_idxs.tolist(),
-        bond_types.tolist(),
-        strict=True,
-    ):
-        neighbors[begin].append((end, bond_type))
-        neighbors[end].append((begin, bond_type))
-    return neighbors
 
 
 def _shannon_entropy(

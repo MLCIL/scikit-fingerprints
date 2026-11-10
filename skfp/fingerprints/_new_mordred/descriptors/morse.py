@@ -1,12 +1,11 @@
 import numpy as np
-from rdkit.Chem import Atom, Mol
 
 from skfp.fingerprints._new_mordred.utils.atomic_properties import (
-    CARBON_PROPERTY_VALUES,
+    CARBON_ELEMENT_PROPERTIES,
     ELEMENT_PROPERTY_TABLES,
+    AtomicProperties,
 )
 from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -23,6 +22,9 @@ _PROPS = [
     "Sanderson_EN",
     "polarizability",
 ]
+# rows of AtomicProperties.element_properties holding the weighted properties
+_PROP_ROWS = [list(ELEMENT_PROPERTY_TABLES).index(name) for name in _PROPS[1:]]
+
 # MoRSE signals 1..32, signal k uses scattering parameter s = k - 1
 _SIGNALS = np.arange(1, 33)
 
@@ -35,7 +37,9 @@ FEATURE_NAMES = [
 
 
 @np.errstate(divide="ignore", invalid="ignore")
-def calc(mol_hydrogens: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray:
+def calc(
+    props_hydrogens: AtomicProperties, distance_matrix_3d: DistanceMatrix3D
+) -> np.ndarray:
     """
     MoRSE descriptors.
 
@@ -47,8 +51,7 @@ def calc(mol_hydrogens: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray
     pairs, for one atom weighting ``w`` and one scale ``s``. Only distinct pairs
     contribute, so we can sum over them, rather than using a symmetric matrix.
     """
-    atomic_nums = atoms_apply_func(Atom.GetAtomicNum, mol_hydrogens, np.intp)
-    num_atoms = len(atomic_nums)
+    num_atoms = props_hydrogens.num_atoms
 
     if num_atoms < 2:
         return np.full(len(FEATURE_NAMES), np.nan, dtype=np.float32)
@@ -65,17 +68,13 @@ def calc(mol_hydrogens: Mol, distance_matrix_3d: DistanceMatrix3D) -> np.ndarray
         np.multiply.outer(_SIGNALS[1:] - 1, pair_distances)
     )
 
-    # carbon-normalized atom weights, shape (n_props, n_atoms)
-    prop_vectors = np.stack(
-        [
-            np.ones(num_atoms)
-            if name == "unweighted"
-            # normalize by value for carbon
-            else ELEMENT_PROPERTY_TABLES[name].lookup(atomic_nums)
-            / CARBON_PROPERTY_VALUES[name]
-            for name in _PROPS
-        ]
+    # carbon-normalized atom weights, shape (n_props, n_atoms), the unweighted
+    # variant first
+    weights = (
+        props_hydrogens.element_properties[_PROP_ROWS]
+        / CARBON_ELEMENT_PROPERTIES[_PROP_ROWS, np.newaxis]
     )
+    prop_vectors = np.vstack([np.ones(num_atoms), weights])
     # w_i * w_j over the unordered pairs, shape (n_props, n_pairs)
     pair_weights = prop_vectors[:, first] * prop_vectors[:, second]
 

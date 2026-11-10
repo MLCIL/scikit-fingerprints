@@ -13,7 +13,11 @@ from skfp.fingerprints._new_mordred.descriptors.cpsa import (
     calc_2d,
     calc_3d,
 )
-from skfp.fingerprints._new_mordred.utils.atomic_properties import gasteiger_charges
+from skfp.fingerprints._new_mordred.utils.atomic_properties import (
+    AtomicProperties,
+    gasteiger_charges,
+)
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 from skfp.fingerprints._new_mordred.utils.mol_preprocess import preprocess_mol
 from skfp.utils import get_conf_id
 
@@ -59,9 +63,7 @@ def computed_values(mordred_test_mols_hydrogens_3d):
     computed = {}
     for name in _MOLECULES:
         mol = mordred_test_mols_hydrogens_3d[name]
-        charges = gasteiger_charges(mol)
-        cpsa_2d = calc_2d(charges)
-        values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
+        cpsa_2d, values_3d = _calc_2d_3d(mol)
         computed[name] = dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
             zip(FEATURE_NAMES_3D, values_3d, strict=True)
         )
@@ -82,10 +84,16 @@ def _embedded(smiles: str) -> Mol:
     return mol
 
 
+def _calc_2d_3d(mol: Mol) -> tuple[np.ndarray, np.ndarray]:
+    props = AtomicProperties(mol)
+    conf_id = get_conf_id(mol)
+    cpsa_2d = calc_2d(props.gasteiger_charges)
+    values_3d = calc_3d(props, DistanceMatrix3D(mol, conf_id), conf_id, cpsa_2d)
+    return cpsa_2d, values_3d
+
+
 def _compute(mol: Mol) -> dict[str, float]:
-    charges = gasteiger_charges(mol)
-    cpsa_2d = calc_2d(charges)
-    values_3d = calc_3d(mol, get_conf_id(mol), cpsa_2d, charges)
+    cpsa_2d, values_3d = _calc_2d_3d(mol)
     return dict(zip(FEATURE_NAMES_2D, cpsa_2d, strict=True)) | dict(
         zip(FEATURE_NAMES_3D, values_3d, strict=True)
     )

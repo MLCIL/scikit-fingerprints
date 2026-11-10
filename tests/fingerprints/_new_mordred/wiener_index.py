@@ -38,5 +38,5 @@ def test_wiener_index_values(name, expected, mordred_test_mols):
     mol_regular = preprocess_mol(mordred_test_mols[name])
     distance_matrix_regular = DistanceMatrix.from_mol(mol_regular)
 
-    values = calc(mol_regular, distance_matrix_regular)
+    values = calc(distance_matrix_regular)
     assert_allclose(values, np.asarray(expected, dtype=np.float32), rtol=1e-6)

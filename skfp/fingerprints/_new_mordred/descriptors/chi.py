@@ -69,13 +69,17 @@ def calc(props: AtomicProperties, subgraphs: Subgraphs) -> np.ndarray:
         [props.vertex_degree.astype(float), props.valence_vertex_degree]
     )
 
+    # products over the atoms of every subgraph of an order, filled on first use and
+    # shared by the classes of that order, which only pick different subgraphs
+    order_products: dict[int, np.ndarray] = {}
+
     values = []
     # properties with negative values end up as NaNs
     with np.errstate(divide="ignore", invalid="ignore"):
         for subgraph_type, orders, averaged_flags in _FAMILIES:
             for order in orders:
                 products = _subgraph_prop_products(
-                    subgraphs, order, subgraph_type, prop_vals
+                    subgraphs, order, subgraph_type, prop_vals, order_products
                 )
                 totals, num_subgraphs = _chi_sums(products)
 
@@ -93,13 +97,15 @@ def _subgraph_prop_products(
     order: int,
     subgraph_type: str,
     prop_vals: np.ndarray,
+    order_products: dict[int, np.ndarray],
 ) -> np.ndarray:
     """
     Product of every property over the atoms of each subgraph of one order and chi
     class, shape ``(n_props, n_subgraphs)``.
 
     Order 0 and the paths are read off directly. Other classes need this
-    order's subgraphs classified.
+    order's subgraphs classified, the products over all of them are computed once
+    per order and kept in ``order_products``.
     """
     if order == 0:
         # order 0 subgraphs are the individual atoms, which belong to every class,
@@ -112,7 +118,11 @@ def _subgraph_prop_products(
 
     topology = subgraphs.topology(order)
     class_mask = _class_mask(topology, subgraph_type)
-    return topology.atom_products(prop_vals)[:, class_mask]
+
+    if order not in order_products:
+        order_products[order] = topology.atom_products(prop_vals)
+
+    return order_products[order][:, class_mask]
 
 
 def _class_mask(topology: SubgraphsTopology, subgraph_type: str) -> np.ndarray:

@@ -1,11 +1,7 @@
 import numpy as np
-from rdkit.Chem import Atom, Mol
 
-from skfp.fingerprints._new_mordred.utils.graph_matrix import (
-    AdjacencyMatrix,
-    DistanceMatrix3D,
-)
-from skfp.fingerprints._new_mordred.utils.mol_preprocess import atoms_apply_func
+from skfp.fingerprints._new_mordred.utils.atomic_properties import AtomicProperties
+from skfp.fingerprints._new_mordred.utils.graph_matrix import DistanceMatrix3D
 
 """
 This code has been adapted from the BSD-licensed mordred-community library.
@@ -23,12 +19,10 @@ FEATURE_NAMES = [
 
 
 def calc(
-    mol_regular: Mol,
-    mol_hydrogens: Mol,
+    props_regular: AtomicProperties,
+    props_hydrogens: AtomicProperties,
     distance_matrix_3d_regular: DistanceMatrix3D,
     distance_matrix_3d_hydrogens: DistanceMatrix3D,
-    adjacency_matrix_regular: AdjacencyMatrix,
-    adjacency_matrix_hydrogens: AdjacencyMatrix,
 ) -> np.ndarray:
     """
     Compute Mordred gravitational index descriptors.
@@ -39,39 +33,34 @@ def calc(
 
     The four variants are the 2x2 product of two flags:
 
-    - ``H`` suffix: use the hydrogen-explicit molecule
-      (``mol_hydrogens``) instead of the heavy-atom-only molecule
-      (``mol_regular``, with hydrogens suppressed).
-    - ``p`` suffix: sum only over bonded pairs (adjacency matrix) instead of
-      over all atom pairs.
+    - ``H`` suffix: use the hydrogen-explicit molecule (``props_hydrogens``)
+      instead of the heavy-atom-only molecule (``props_regular``, with hydrogens
+      suppressed).
+    - ``p`` suffix: sum only over bonded pairs instead of over all atom pairs.
 
-    All distance and adjacency matrices are injected by the calculator.
-    ``mol_regular`` still carries the 3D conformer (``RemoveHs`` preserves the
-    heavy-atom coordinates), so its 3D distance matrix is well defined.
+    Each molecule comes with its own 3D distance matrix. The hydrogen-suppressed
+    molecule still carries the 3D conformer (``RemoveHs`` preserves the heavy-atom
+    coordinates), so its 3D distance matrix is well defined.
     """
-    grav, grav_pair = _variant_values(
-        mol_regular, distance_matrix_3d_regular, adjacency_matrix_regular
-    )
-    grav_h, grav_h_pair = _variant_values(
-        mol_hydrogens,
-        distance_matrix_3d_hydrogens,
-        adjacency_matrix_hydrogens,
-    )
+    grav, grav_pair = _variant_values(props_regular, distance_matrix_3d_regular)
+    grav_h, grav_h_pair = _variant_values(props_hydrogens, distance_matrix_3d_hydrogens)
 
     values = np.asarray([grav, grav_h, grav_pair, grav_h_pair], dtype=np.float32)
     return values
 
 
 def _variant_values(
-    mol: Mol,
-    distance_matrix_3d: DistanceMatrix3D,
-    adjacency_matrix: AdjacencyMatrix,
+    props: AtomicProperties, distance_matrix_3d: DistanceMatrix3D
 ) -> tuple[np.float32, np.float32]:
     """
     Return the (all-pairs, bonded-pairs) gravitational indices for one molecule.
+
+    Mordred sums the bonded pairs as ``0.5 * sum(W * A)``. ``A`` is 1 at ``[b, e]``
+    and ``[e, b]`` for each bond, and ``W`` is symmetric, so this equals the sum of
+    ``W[b, e]`` over the bonds, read directly from the bond index arrays.
     """
     # RDKit masses, not the Mordred mass table used by the other descriptors
-    masses = atoms_apply_func(Atom.GetMass, mol, np.float32)
+    masses = props.masses.astype(np.float32)
     mass_products = masses[:, np.newaxis] * masses
     np.fill_diagonal(mass_products, 0.0)
 
@@ -89,7 +78,7 @@ def _variant_values(
 
     weighted = mass_products * inverse_squared_distances
     all_pairs = 0.5 * np.sum(weighted)
-    bonded_pairs = 0.5 * np.sum(weighted * adjacency_matrix.matrix)
+    bonded_pairs = weighted[props.bond_begin_idxs, props.bond_end_idxs].sum()
     # cast the final scalars to float32 (the fingerprint's dtype); the heavy math
     # above stays in float64
     return np.float32(all_pairs), np.float32(bonded_pairs)

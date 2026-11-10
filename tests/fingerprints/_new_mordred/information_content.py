@@ -49,11 +49,7 @@ def computed_values(mordred_test_mols):
             Bond.GetBondType, mol_kekulized_hydrogens, np.intp
         )
 
-        values = calc(
-            mol_hydrogens,
-            AtomicProperties(mol_hydrogens),
-            kekulized_bond_types_hydrogens,
-        )
+        values = calc(AtomicProperties(mol_hydrogens), kekulized_bond_types_hydrogens)
         computed[name] = dict(zip(FEATURE_NAMES, values, strict=True))
     return computed
 
@@ -81,9 +77,7 @@ def _calc(mol: Mol) -> dict[str, float]:
         preprocess_mol(mol_hydrogens, kekulize=True, sanitize=False),
         np.intp,
     )
-    values = calc(
-        mol_hydrogens, AtomicProperties(mol_hydrogens), kekulized_bond_types_hydrogens
-    )
+    values = calc(AtomicProperties(mol_hydrogens), kekulized_bond_types_hydrogens)
     return dict(zip(FEATURE_NAMES, values, strict=True))
 
 

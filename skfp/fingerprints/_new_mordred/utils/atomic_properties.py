@@ -1,3 +1,5 @@
+from functools import cached_property
+
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem.rdchem import Atom, Bond, BondType, Mol
@@ -195,6 +197,15 @@ class AtomicProperties:
             ]
         )
 
+    @cached_property
+    def masses(self) -> np.ndarray:
+        """
+        RDKit mass of every atom, in double precision. Read on first use only, as
+        few descriptors need it: those that do take RDKit masses rather than the
+        Mordred mass table of :attr:`element_properties`.
+        """
+        return atoms_apply_func(Atom.GetMass, self.mol, np.float64)
+
     def get(self, name: str) -> np.ndarray:
         """
         Weighting property array by name, for any of
@@ -225,6 +236,28 @@ class AtomicProperties:
             self.bond_end_idxs, weights=at_end, minlength=self.num_atoms
         )
         return totals
+
+    def neighbor_lists(
+        self, bond_values: np.ndarray | None = None
+    ) -> list[list[tuple[int, int]]]:
+        """
+        Neighbors of every atom, each paired with an integer value of the bond leading
+        to it: ``bond_values[i]`` for bond ``i`` when given, otherwise the bond index.
+
+        Python lists rather than arrays, for the searches that walk the molecule
+        atom by atom. Neighbors come in bond order.
+        """
+        values = range(self.num_bonds) if bond_values is None else bond_values.tolist()
+        neighbors: list[list[tuple[int, int]]] = [[] for _ in range(self.num_atoms)]
+        for begin, end, value in zip(
+            self.bond_begin_idxs.tolist(),
+            self.bond_end_idxs.tolist(),
+            values,
+            strict=True,
+        ):
+            neighbors[begin].append((end, value))
+            neighbors[end].append((begin, value))
+        return neighbors
 
     def count_neighbors(self, atom_mask: np.ndarray) -> np.ndarray:
         """
