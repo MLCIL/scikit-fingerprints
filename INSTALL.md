@@ -34,4 +34,4 @@ pip install --extra-index-url https://download.pytorch.org/whl/cpu "scikit-finge
 pip install "scikit-fingerprints[mordredcommunity]"
 ```
 
-This installs **mordredcommunity**. `MordredFingerprint` computes Mordred descriptors with an optimized built-in implementation by default, and needs this extra only with `implementation="mordredcommunity"`. Use it to reproduce results of earlier scikit-fingerprints versions, which computed Mordred descriptors with `mordredcommunity`.
+This installs **mordredcommunity**. `MordredFingerprint` computes Mordred descriptors with an optimized built-in implementation by default, and needs this extra only with `implementation="mordredcommunity"`.

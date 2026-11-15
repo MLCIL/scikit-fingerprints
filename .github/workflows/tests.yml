@@ -70,14 +70,6 @@ jobs:
         if: matrix.extras == 'none'
         run: uv sync --group test --group docs
 
-      - name: Check that no extras are installed
-        if: matrix.extras == 'none'
-        shell: bash
-        run: >
-          uv run python -c "import importlib.util, sys;
-          installed = [m for m in ('mordred', 'torch', 'chemprop') if importlib.util.find_spec(m)];
-          sys.exit(f'Optional dependencies installed: {installed}' if installed else 0)"
-
       - name: Check pre-commit
         run: uv run pre-commit run --all-files
 

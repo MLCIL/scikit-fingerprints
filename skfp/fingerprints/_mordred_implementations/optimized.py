@@ -10,7 +10,7 @@ from skfp.fingerprints._new_mordred import calculator
 
 class OptimizedMordredImplementation(BaseMordredImplementation):
     """
-    Optimized Mordred descriptors, built from scratch in scikit-fingerprints.
+    Optimized Mordred descriptors, built from scratch.
     """
 
     def __init__(self, use_3D: bool, timeout: float, max_ring_system_rank: int):

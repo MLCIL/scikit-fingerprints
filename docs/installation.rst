@@ -41,6 +41,3 @@ built-in implementation by default. To use the ``mordredcommunity`` library inst
 .. code-block:: console
 
     pip install "scikit-fingerprints[mordredcommunity]"
-
-Use it to reproduce results of earlier scikit-fingerprints versions, which computed Mordred
-descriptors with ``mordredcommunity``.

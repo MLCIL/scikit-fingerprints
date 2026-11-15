@@ -45,7 +45,7 @@ class MordredFingerprint(BaseFingerprintTransformer):
 
     implementation : {"optimized", "mordredcommunity"}, default="optimized"
         Which implementation computes the descriptors. ``"optimized"`` is the
-        implementation built into scikit-fingerprints. ``"mordredcommunity"`` uses the
+        implementation built from scratch. ``"mordredcommunity"`` uses the
         ``mordredcommunity`` library, as earlier scikit-fingerprints versions did, and
         requires the ``mordredcommunity`` optional dependency, installed with
         ``pip install "scikit-fingerprints[mordredcommunity]"``. Both implementations
