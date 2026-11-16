@@ -50,7 +50,6 @@ Classes for computing molecular fingerprints.
     USRCATFingerprint
     VSAFingerprint
     WHIMFingerprint
-    NewMordredFingerprint
 
 Neural fingerprints
 -------------------

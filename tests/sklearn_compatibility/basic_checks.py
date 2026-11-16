@@ -62,6 +62,18 @@ def test_basic_sklearn_checks_for_fingerprints(fp_name, fp_cls, mols_conformers_
     run_checks(fp_name, fp_obj)
 
 
+def test_basic_sklearn_checks_for_mordredcommunity(mols_conformers_list):
+    # the default implementation is checked with the other fingerprints
+    pytest.importorskip("mordred")
+
+    global X, y
+    X = mols_conformers_list[:n_samples]
+    y = np.arange(n_samples) % 2
+
+    fp_obj = skfp.fingerprints.MordredFingerprint(implementation="mordredcommunity")
+    run_checks("MordredFingerprint", fp_obj)
+
+
 @pytest.mark.parametrize("preproc_name, preproc_cls", get_all_preprocessors())
 def test_basic_sklearn_checks_for_preprocessors(
     preproc_name, preproc_cls, smallest_smiles_list, smallest_mols_list, fasta_list

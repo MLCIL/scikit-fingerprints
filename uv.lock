@@ -3330,7 +3330,6 @@ dependencies = [
     { name = "e3fp" },
     { name = "huggingface-hub" },
     { name = "joblib" },
-    { name = "mordredcommunity" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pandas" },
@@ -3342,6 +3341,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+mordredcommunity = [
+    { name = "mordredcommunity" },
+]
 neural = [
     { name = "chemprop" },
     { name = "torch" },
@@ -3392,7 +3394,7 @@ requires-dist = [
     { name = "e3fp", specifier = ">=1.2.6,<2" },
     { name = "huggingface-hub", specifier = ">=0.20.0,<2" },
     { name = "joblib", specifier = ">=1.0.0,<2" },
-    { name = "mordredcommunity", specifier = ">=2.0.0,<3" },
+    { name = "mordredcommunity", marker = "extra == 'mordredcommunity'", specifier = ">=2.0.0,<3" },
     { name = "numpy", specifier = ">=1.26.4,<3" },
     { name = "pandas", specifier = ">=1.5.3,<4" },
     { name = "rdkit", specifier = ">=2023.9.6,<=2026.3.5" },
@@ -3401,7 +3403,7 @@ requires-dist = [
     { name = "torch", marker = "extra == 'neural'", specifier = ">=2.0.0" },
     { name = "tqdm", specifier = ">=4.0.0,<5" },
 ]
-provides-extras = ["neural"]
+provides-extras = ["mordredcommunity", "neural"]
 
 [package.metadata.requires-dev]
 dev = [
