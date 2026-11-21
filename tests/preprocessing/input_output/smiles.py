@@ -1,5 +1,7 @@
 import numpy as np
-from numpy.testing import assert_equal
+import pandas as pd
+import pytest
+from numpy.testing import assert_array_equal, assert_equal
 from rdkit.Chem import Mol
 
 from skfp.preprocessing import MolFromSmilesTransformer, MolToSmilesTransformer
@@ -74,3 +76,26 @@ def test_from_invalid_smiles_with_y(smiles_list):
     assert_equal(len(y), len(all_smiles_list))
     assert_equal(len(y_2), len(smiles_list))
     assert_equal(len(mols_list_2), len(y_2))
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [10, 20, 30],
+        np.array([10, 20, 30]),
+        pd.Series([10, 20, 30], index=[100, 200, 300]),
+        pd.DataFrame({"label": [10, 20, 30]}, index=[100, 200, 300]),
+    ],
+)
+def test_from_invalid_smiles_with_different_label_types(labels):
+    smiles = ["CCO", "invalid", "O"]
+    mol_from_smiles = MolFromSmilesTransformer(valid_only=True, suppress_warnings=True)
+
+    mols, selected_labels = mol_from_smiles.transform_x_y(smiles, labels)
+
+    assert_equal(len(mols), 2)
+    assert isinstance(selected_labels, type(labels))
+    assert_array_equal(np.asarray(selected_labels).ravel(), [10, 30])
+
+    if isinstance(selected_labels, (pd.Series, pd.DataFrame)):
+        assert_array_equal(selected_labels.index, [100, 300])
