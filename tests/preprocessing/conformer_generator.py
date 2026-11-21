@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal, assert_equal
 from rdkit.Chem import AddHs, MolFromSmiles
+from rdkit.Chem.PropertyMol import PropertyMol
 
 from skfp.preprocessing import ConformerGenerator, MolFromSmilesTransformer
 
@@ -159,3 +161,29 @@ def test_conformer_generator_copy_y():
 
     assert_array_equal(labels_out, labels)
     assert labels_out is not labels
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [10, 20, 30],
+        np.array([10, 20, 30]),
+        pd.Series([10, 20, 30], index=[100, 200, 300]),
+        pd.DataFrame({"label": [10, 20, 30]}, index=[100, 200, 300]),
+    ],
+)
+def test_conformer_generator_with_different_label_types(labels, monkeypatch):
+    mols = [PropertyMol(MolFromSmiles(smi)) for smi in ("CCO", "CC", "O")]
+    for mol, conf_id in zip(mols, (0, -1, 0), strict=True):
+        mol.SetIntProp("conf_id", conf_id)
+
+    conf_gen = ConformerGenerator(errors="filter")
+    monkeypatch.setattr(conf_gen, "_transform_batch", lambda mols: mols)
+    mols, selected_labels = conf_gen.transform_x_y(mols, labels)
+
+    assert_equal(len(mols), 2)
+    assert isinstance(selected_labels, type(labels))
+    assert_array_equal(np.asarray(selected_labels).ravel(), [10, 30])
+
+    if isinstance(selected_labels, (pd.Series, pd.DataFrame)):
+        assert_array_equal(selected_labels.index, [100, 300])

@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from copy import deepcopy
 from functools import partial
 from numbers import Integral
+from typing import Any
 
 import numpy as np
 from rdkit.Chem import AddHs, Mol, MolToSmiles, RemoveHs, SanitizeMol
@@ -22,6 +23,7 @@ from rdkit.Chem.rdForceFieldHelpers import (
     UFFGetMoleculeForceField,
 )
 from rdkit.ForceField import ForceField
+from sklearn.utils import _safe_indexing
 from sklearn.utils._param_validation import Interval, InvalidParameterError, StrOptions
 
 from skfp.bases import BasePreprocessor
@@ -206,8 +208,8 @@ class ConformerGenerator(BasePreprocessor):
             )
 
     def transform_x_y(
-        self, X: Sequence[Mol], y: np.ndarray, copy: bool = False
-    ) -> tuple[list[PropertyMol], np.ndarray]:
+        self, X: Sequence[Mol], y, copy: bool = False
+    ) -> tuple[list[PropertyMol], Any]:
         """
         Generate conformers for molecules.
 
@@ -221,8 +223,8 @@ class ConformerGenerator(BasePreprocessor):
         X : {sequence, array-like} of shape (n_samples,)
             Sequence containing RDKit ``Mol`` objects.
 
-        y : np.ndarray of shape (n_samples,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for molecules.
 
         copy : bool, default=False
             Copy the labels ``y`` or not. Input molecules are never modified in
@@ -234,8 +236,8 @@ class ConformerGenerator(BasePreprocessor):
             List with RDKit ``PropertyMol`` objects, each one with conformers computed
             and ``conf_id`` integer property set.
 
-        y : np.ndarray of shape (n_samples_conf_gen,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for the returned molecules, preserving the input type.
         """
         return self._transform(X, y, copy)
 
@@ -283,7 +285,7 @@ class ConformerGenerator(BasePreprocessor):
                 mols_with_conformers.append(mol)
                 idxs_to_keep.append(idx)
 
-        y = y[idxs_to_keep]
+        y = _safe_indexing(y, idxs_to_keep)
 
         return mols_with_conformers, y
 

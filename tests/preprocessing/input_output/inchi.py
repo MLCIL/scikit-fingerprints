@@ -1,6 +1,7 @@
 import numpy as np
+import pandas as pd
 import pytest
-from numpy.testing import assert_equal
+from numpy.testing import assert_array_equal, assert_equal
 from rdkit.Chem import Mol, MolFromSmiles, MolToInchi
 
 from skfp.preprocessing import MolFromInchiTransformer, MolToInchiTransformer
@@ -74,3 +75,30 @@ def test_inchi_transform_x_y(inchi_list):
 
     assert_equal(len(mols), len(inchi_list))
     assert_equal(len(labels), len(inchi_list))
+
+
+@pytest.mark.parametrize(
+    "labels",
+    [
+        [10, 20, 30],
+        np.array([10, 20, 30]),
+        pd.Series([10, 20, 30], index=[100, 200, 300]),
+        pd.DataFrame({"label": [10, 20, 30]}, index=[100, 200, 300]),
+    ],
+)
+def test_from_invalid_inchi_with_different_label_types(labels):
+    inchi = [
+        MolToInchi(MolFromSmiles("CCO")),
+        "invalid",
+        MolToInchi(MolFromSmiles("O")),
+    ]
+    mol_from_inchi = MolFromInchiTransformer(valid_only=True, suppress_warnings=True)
+
+    mols, selected_labels = mol_from_inchi.transform_x_y(inchi, labels)
+
+    assert_equal(len(mols), 2)
+    assert isinstance(selected_labels, type(labels))
+    assert_array_equal(np.asarray(selected_labels).ravel(), [10, 30])
+
+    if isinstance(selected_labels, (pd.Series, pd.DataFrame)):
+        assert_array_equal(selected_labels.index, [100, 300])

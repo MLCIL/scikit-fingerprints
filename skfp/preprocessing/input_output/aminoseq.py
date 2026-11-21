@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from contextlib import nullcontext
+from typing import Any
 
-import numpy as np
 from rdkit.Chem import Mol, MolFromFASTA
+from sklearn.utils import _safe_indexing
 from sklearn.utils._param_validation import Options
 
 from skfp.bases import BasePreprocessor
@@ -125,7 +126,7 @@ class MolFromAminoseqTransformer(BasePreprocessor):
             X = [mol for mol in X if mol is not None and mol.GetNumAtoms() > 0]
         return X
 
-    def transform_x_y(self, X, y, copy: bool = False) -> tuple[list[Mol], np.ndarray]:
+    def transform_x_y(self, X, y, copy: bool = False) -> tuple[list[Mol], Any]:
         """
         Create RDKit ``Mol`` objects from amino-acid sequence strings. If ``valid_only``
         is set to True, returns only a subset of molecules which could be successfully
@@ -136,8 +137,8 @@ class MolFromAminoseqTransformer(BasePreprocessor):
         X : {sequence, array-like} of shape (n_samples,)
             Sequence containing amino-acid sequence strings.
 
-        y : np.ndarray of shape (n_samples,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for molecules.
 
         copy : bool, default=False
             Unused, kept for scikit-learn compatibility.
@@ -147,8 +148,8 @@ class MolFromAminoseqTransformer(BasePreprocessor):
         X : list of shape (n_samples,)
             List with RDKit ``Mol`` objects.
 
-        y : np.ndarray of shape (n_samples,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for the returned molecules, preserving the input type.
         """
         X = super().transform(X, copy)
         if self.valid_only:
@@ -158,7 +159,7 @@ class MolFromAminoseqTransformer(BasePreprocessor):
                 if mol is not None and mol.GetNumAtoms() > 0
             ]
             X = get_data_from_indices(X, idxs_to_keep)
-            y = y[idxs_to_keep]
+            y = _safe_indexing(y, idxs_to_keep)
 
         return X, y
 

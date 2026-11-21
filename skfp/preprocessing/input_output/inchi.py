@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from contextlib import nullcontext
+from typing import Any
 
-import numpy as np
 from rdkit.Chem import Mol, MolFromInchi, MolToInchi
+from sklearn.utils import _safe_indexing
 
 from skfp.bases import BasePreprocessor
 from skfp.utils import (
@@ -120,7 +121,7 @@ class MolFromInchiTransformer(BasePreprocessor):
             X = [mol for mol in X if mol is not None]
         return X
 
-    def transform_x_y(self, X, y, copy: bool = False) -> tuple[list[Mol], np.ndarray]:
+    def transform_x_y(self, X, y, copy: bool = False) -> tuple[list[Mol], Any]:
         """
         Create RDKit ``Mol`` objects from InChI strings. If ``valid_only`` is set to
         True, returns only a subset of molecules and labels which could be successfully
@@ -131,8 +132,8 @@ class MolFromInchiTransformer(BasePreprocessor):
         X : {sequence, array-like} of shape (n_samples,)
             Sequence containing InChI strings
 
-        y : np.ndarray of shape (n_samples,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for molecules.
 
         copy : bool, default=False
             Unused, kept for scikit-learn compatibility.
@@ -142,14 +143,14 @@ class MolFromInchiTransformer(BasePreprocessor):
         X : list of shape (n_samples,)
             List with RDKit ``Mol`` objects.
 
-        y : np.ndarray of shape (n_samples,)
-            Array with labels for molecules.
+        y : {list, np.ndarray, pd.Series, pd.DataFrame}
+            Labels for the returned molecules, preserving the input type.
         """
         X = super().transform(X, copy)
         if self.valid_only:
             idxs_to_keep = [idx for idx, mol in enumerate(X) if mol is not None]
             X = get_data_from_indices(X, idxs_to_keep)
-            y = y[idxs_to_keep]
+            y = _safe_indexing(y, idxs_to_keep)
 
         return X, y
 
